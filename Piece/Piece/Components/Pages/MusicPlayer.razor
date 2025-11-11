@@ -1,0 +1,204 @@
+﻿@page "/player"
+@rendermode InteractiveServer
+@inject ApplicationDbContext DbContext
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Music Player</PageTitle>
+
+<div class="container mt-4">
+    <h2>🎵 Music Player</h2>
+    <p class="text-muted">Your local music library</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading your music...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Now Playing Section -->
+        @if (currentTrack != null)
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title">▶️ Now Playing</h4>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="mb-1">@currentTrack.Title</h5>
+                            <p class="text-muted mb-1">
+                                <strong>Artist:</strong> @currentTrack.ArtistName
+                            </p>
+                            <p class="text-muted mb-1">
+                                <strong>Album:</strong> @currentTrack.AlbumName
+                            </p>
+                            <p class="text-muted mb-3">
+                                <strong>Genre:</strong> @(currentTrack.Genre?.Name ?? "Unknown")
+                            </p>
+
+                            <!-- Audio Player -->
+                            <audio id="audioPlayer" controls style="width: 100%;" @onended="OnTrackEnded">
+                                <source src="@currentTrack.LocalFilePath" type="audio/mpeg" />
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-success mb-2">Local File</span><br />
+                            <small class="text-muted">
+                                Duration: @FormatDuration(currentTrack.DurationSeconds)
+                            </small><br />
+                            <small class="text-muted">
+                                Plays: @currentTrack.PlayCount
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                👇 Click a track below to start playing!
+            </div>
+        }
+
+        <!-- Track List -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📚 Your Music Library (@tracks.Count tracks)</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (tracks.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var track in tracks)
+                        {
+                            <button type="button"
+                                    class="list-group-item list-group-item-action @(currentTrack?.Id == track.Id ? "active" : "")"
+                                    @onclick="() => PlayTrack(track)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            @if (currentTrack?.Id == track.Id)
+                                            {
+                                                <span>🔊 </span>
+                                            }
+                                            @track.Title
+                                        </h6>
+                                        <small>
+                                            @track.ArtistName • @track.AlbumName
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-secondary">@(track.Genre?.Name ?? "Unknown")</span><br />
+                                        <small class="text-muted">@FormatDuration(track.DurationSeconds)</small>
+                                    </div>
+                                </div>
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <p>No tracks found in your library.</p>
+                        <p>Make sure your MP3 files are in wwwroot/music/ and seeded in the database.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-primary">@tracks.Count</h3>
+                        <p class="text-muted mb-0">Total Tracks</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-success">@genres.Count</h3>
+                        <p class="text-muted mb-0">Genres</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-info">@FormatDuration(tracks.Sum(t => t.DurationSeconds))</h3>
+                        <p class="text-muted mb-0">Total Duration</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Track> tracks = new();
+    private List<Genre> genres = new();
+    private Track? currentTrack;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load all local tracks with their genre information
+            tracks = await DbContext.Tracks
+                .Include(t => t.Genre)
+                .Where(t => t.Source == TrackSource.Local && t.IsActive)
+                .OrderBy(t => t.Title)
+                .ToListAsync();
+
+            // Load genres
+            genres = await DbContext.Genres.ToListAsync();
+
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading tracks: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+    private async Task PlayTrack(Track track)
+    {
+        currentTrack = track;
+
+        // Increment play count (we'll save this later)
+        track.PlayCount++;
+
+        StateHasChanged();
+
+        // Force the audio player to reload and play the new track
+        await Task.Delay(10); // Small delay to ensure UI updates
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            var audio = document.getElementById('audioPlayer');
+            if (audio) {
+                audio.load();
+                audio.play();
+            }
+        ");
+    }
+
+    private void OnTrackEnded()
+    {
+        // Optional: Auto-play next track
+        Console.WriteLine("Track ended!");
+    }
+
+    private string FormatDuration(int seconds)
+    {
+        var time = TimeSpan.FromSeconds(seconds);
+        return time.ToString(@"mm\:ss");
+    }
+}
