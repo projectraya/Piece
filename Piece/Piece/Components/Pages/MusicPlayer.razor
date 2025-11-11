@@ -3,163 +3,425 @@
 @inject ApplicationDbContext DbContext
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Music Player</PageTitle>
+<PageTitle>Piece - Music Player</PageTitle>
 
-<div class="container mt-4">
-    <h2>🎵 Music Player</h2>
-    <p class="text-muted">Your local music library</p>
-
-    @if (isLoading)
-    {
-        <div class="text-center my-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2">Loading your music...</p>
-        </div>
+<style>
+    /* Dark Theme Styling */
+    body {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
-    else
-    {
-        <!-- Now Playing Section -->
-        @if (currentTrack != null)
-        {
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h4 class="card-title">▶️ Now Playing</h4>
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h5 class="mb-1">@currentTrack.Title</h5>
-                            <p class="text-muted mb-1">
-                                <strong>Artist:</strong> @currentTrack.ArtistName
-                            </p>
-                            <p class="text-muted mb-1">
-                                <strong>Album:</strong> @currentTrack.AlbumName
-                            </p>
-                            <p class="text-muted mb-3">
-                                <strong>Genre:</strong> @(currentTrack.Genre?.Name ?? "Unknown")
-                            </p>
 
-                            <!-- Audio Player -->
-                            <audio id="audioPlayer" controls style="width: 100%;" @onended="OnTrackEnded">
-                                <source src="@currentTrack.LocalFilePath" type="audio/mpeg" />
-                                Your browser does not support the audio element.
-                            </audio>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <span class="badge bg-success mb-2">Local File</span><br />
-                            <small class="text-muted">
-                                Duration: @FormatDuration(currentTrack.DurationSeconds)
-                            </small><br />
-                            <small class="text-muted">
-                                Plays: @currentTrack.PlayCount
-                            </small>
-                        </div>
+    .player-container {
+        display: flex;
+        height: calc(100vh - 120px);
+        background-color: #1a1a1a;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    
+
+    /* Main Content */
+    .main-content {
+        flex: 1;
+        background-color: #1a1a1a;
+        padding: 30px;
+        overflow-y: auto;
+    }
+
+    .content-section {
+        margin-bottom: 40px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .see-all {
+        color: #888;
+        font-size: 14px;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+        .see-all:hover {
+            color: #ffffff;
+        }
+
+    /* Track Grid */
+    .track-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
+    }
+
+    .track-card {
+        background-color: #2a2a2a;
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .track-card:hover {
+            background-color: #3a3a3a;
+            transform: translateY(-5px);
+        }
+
+        .track-card.playing {
+            background-color: #4a4a4a;
+            border: 2px solid #ffffff;
+        }
+
+    .track-art {
+        width: 100%;
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+    }
+
+    .track-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .track-artist {
+        font-size: 12px;
+        color: #888;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .track-genre-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    /* Bottom Player Bar */
+    .player-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background-color: #2a2a2a;
+        border-top: 1px solid #3a3a3a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 30px;
+        z-index: 1000;
+    }
+
+    .player-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex: 1;
+    }
+
+    .now-playing-art {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .now-playing-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        color: #ffffff;
+    }
+
+    .now-playing-info p {
+        font-size: 12px;
+        color: #888;
+        margin: 2px 0 0 0;
+    }
+
+    .player-center {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .player-controls {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .control-btn {
+        background: none;
+        border: none;
+        color: #ffffff;
+        font-size: 32px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.play-pause {
+            font-size: 40px;
+        }
+
+    .audio-player {
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .player-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 24px;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+        .icon-btn:hover, .icon-btn.active {
+            color: #ffffff;
+        }
+
+    /* Loading State */
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        color: #888;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #3a3a3a;
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    /* Scrollbar Styling */
+    .main-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .main-content::-webkit-scrollbar-track {
+        background: #1a1a1a;
+    }
+
+    .main-content::-webkit-scrollbar-thumb {
+        background: #3a3a3a;
+        border-radius: 4px;
+    }
+
+        .main-content::-webkit-scrollbar-thumb:hover {
+            background: #4a4a4a;
+        }
+</style>
+
+@if (isLoading)
+{
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px;">Loading your music...</p>
+    </div>
+}
+else
+{
+    <div class="player-container">
+        
+
+        <!-- Main Content -->
+        <div class="main-content">
+            @if (tracks.Any())
+            {
+                <!-- Your Library Section -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Your Library</h2>
+                        <span class="see-all">See all ›</span>
                     </div>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-info">
-                👇 Click a track below to start playing!
-            </div>
-        }
-
-        <!-- Track List -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">📚 Your Music Library (@tracks.Count tracks)</h5>
-            </div>
-            <div class="card-body p-0">
-                @if (tracks.Any())
-                {
-                    <div class="list-group list-group-flush">
+                    <div class="track-grid">
                         @foreach (var track in tracks)
                         {
-                            <button type="button"
-                                    class="list-group-item list-group-item-action @(currentTrack?.Id == track.Id ? "active" : "")"
-                                    @onclick="() => PlayTrack(track)">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            @if (currentTrack?.Id == track.Id)
-                                            {
-                                                <span>🔊 </span>
-                                            }
-                                            @track.Title
-                                        </h6>
-                                        <small>
-                                            @track.ArtistName • @track.AlbumName
-                                        </small>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-secondary">@(track.Genre?.Name ?? "Unknown")</span><br />
-                                        <small class="text-muted">@FormatDuration(track.DurationSeconds)</small>
-                                    </div>
-                                </div>
-                            </button>
+                            <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                 @onclick="() => PlayTrack(track)">
+                                @if (track.Genre != null)
+                                {
+                                    <div class="track-genre-badge">@track.Genre.Name</div>
+                                }
+                                <div class="track-art">🎵</div>
+                                <div class="track-title">@track.Title</div>
+                                <div class="track-artist">@track.ArtistName</div>
+                            </div>
                         }
                     </div>
-                }
-                else
-                {
-                    <div class="p-4 text-center text-muted">
-                        <p>No tracks found in your library.</p>
-                        <p>Make sure your MP3 files are in wwwroot/music/ and seeded in the database.</p>
-                    </div>
-                }
-            </div>
-        </div>
+                </div>
 
-        <!-- Statistics -->
-        <div class="row mt-4">
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-primary">@tracks.Count</h3>
-                        <p class="text-muted mb-0">Total Tracks</p>
-                    </div>
+                <!-- Genres Section -->
+                @if (genreGroups.Any())
+                {
+                    @foreach (var genreGroup in genreGroups.Take(3))
+                    {
+                        <div class="content-section">
+                            <div class="section-header">
+                                <h2 class="section-title">@genreGroup.Key</h2>
+                                <span class="see-all">See all ›</span>
+                            </div>
+                            <div class="track-grid">
+                                @foreach (var track in genreGroup.Take(6))
+                                {
+                                    <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                         @onclick="() => PlayTrack(track)">
+                                        <div class="track-genre-badge">@track.Genre?.Name</div>
+                                        <div class="track-art">🎵</div>
+                                        <div class="track-title">@track.Title</div>
+                                        <div class="track-artist">@track.ArtistName</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">🎵</div>
+                    <h3>No music found</h3>
+                    <p>Add some tracks to get started</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Bottom Player Bar -->
+    @if (currentTrack != null)
+    {
+        <div class="player-bar">
+            <div class="player-left">
+                <div class="now-playing-art">🎵</div>
+                <div class="now-playing-info">
+                    <h4>@currentTrack.Title</h4>
+                    <p>@currentTrack.ArtistName</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-success">@genres.Count</h3>
-                        <p class="text-muted mb-0">Genres</p>
-                    </div>
+
+            <div class="player-center">
+                <div class="player-controls">
+                    <button class="control-btn">⏮</button>
+                    <button class="control-btn play-pause">▶</button>
+                    <button class="control-btn">⏭</button>
                 </div>
+                <audio id="audioPlayer" controls class="audio-player"
+                       @onended="OnTrackEnded">
+                    <source src="@currentTrack.LocalFilePath" type="audio/mpeg" />
+                </audio>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h3 class="text-info">@FormatDuration(tracks.Sum(t => t.DurationSeconds))</h3>
-                        <p class="text-muted mb-0">Total Duration</p>
-                    </div>
-                </div>
+
+            <div class="player-right">
+                <button class="icon-btn">❤</button>
+                <button class="icon-btn">🔊</button>
             </div>
         </div>
     }
-</div>
+}
 
 @code {
     private List<Track> tracks = new();
-    private List<Genre> genres = new();
     private Track? currentTrack;
     private bool isLoading = true;
+    private IEnumerable<IGrouping<string, Track>> genreGroups = Enumerable.Empty<IGrouping<string, Track>>();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Load all local tracks with their genre information
             tracks = await DbContext.Tracks
                 .Include(t => t.Genre)
                 .Where(t => t.Source == TrackSource.Local && t.IsActive)
                 .OrderBy(t => t.Title)
                 .ToListAsync();
 
-            // Load genres
-            genres = await DbContext.Genres.ToListAsync();
+            // Group tracks by genre
+            genreGroups = tracks
+                .Where(t => t.Genre != null)
+                .GroupBy(t => t.Genre!.Name)
+                .OrderByDescending(g => g.Count());
 
             isLoading = false;
         }
@@ -173,14 +435,10 @@
     private async Task PlayTrack(Track track)
     {
         currentTrack = track;
-
-        // Increment play count (we'll save this later)
         track.PlayCount++;
-
         StateHasChanged();
 
-        // Force the audio player to reload and play the new track
-        await Task.Delay(10); // Small delay to ensure UI updates
+        await Task.Delay(10);
         await JSRuntime.InvokeVoidAsync("eval", @"
             var audio = document.getElementById('audioPlayer');
             if (audio) {
@@ -192,13 +450,6 @@
 
     private void OnTrackEnded()
     {
-        // Optional: Auto-play next track
         Console.WriteLine("Track ended!");
-    }
-
-    private string FormatDuration(int seconds)
-    {
-        var time = TimeSpan.FromSeconds(seconds);
-        return time.ToString(@"mm\:ss");
     }
 }
