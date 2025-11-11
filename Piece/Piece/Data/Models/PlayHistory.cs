@@ -1,17 +1,22 @@
-﻿namespace Piece.Data.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Piece.Data.Models
 {
 	public class PlayHistory
 	{
 		public int Id { get; set; }
 
-		// Foreign keys
+		[Required]
 		public string UserId { get; set; } = string.Empty;
+		public ApplicationUser User { get; set; } = null!;
+
 		public int TrackId { get; set; }
+		public Track Track { get; set; } = null!;
 
 		public DateTime PlayedAt { get; set; } = DateTime.UtcNow;
 
-		// Navigation properties
-		public ApplicationUser User { get; set; } = null!;
-		public Track Track { get; set; } = null!;
+		public int PlayDurationSeconds { get; set; }
+
+		public bool CompletedTrack { get; set; } = false;
 	}
 }

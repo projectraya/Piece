@@ -1,4 +1,5 @@
-﻿using Piece.Data.Enums;
+﻿using Humanizer.Localisation;
+using Piece.Data.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace Piece.Data.Models
@@ -8,42 +9,47 @@ namespace Piece.Data.Models
 		public int Id { get; set; }
 
 		[Required]
-		[StringLength(200)]
+		[MaxLength(200)]
 		public string Title { get; set; } = string.Empty;
 
 		[Required]
-		[StringLength(200)]
-		public string Artist { get; set; } = string.Empty;
+		[MaxLength(200)]
+		public string ArtistName { get; set; } = string.Empty;
 
-		[StringLength(200)]
-		public string Album { get; set; } = string.Empty;
+		[MaxLength(200)]
+		public string AlbumName { get; set; } = string.Empty;
+
+		// Genre relationship
+		public int? GenreId { get; set; }
+		public Genre? Genre { get; set; }
+
+		public int? YearPublished { get; set; }
 
 		public int DurationSeconds { get; set; }
 
-		[StringLength(100)]
-		public string Genre { get; set; } = string.Empty;
+		public int PlayCount { get; set; } = 0;
 
-		[StringLength(500)]
-		public string? AlbumArtUrl { get; set; }
+		[MaxLength(500)]
+		public string? CoverImageUrl { get; set; }
 
-		// Source identification
+		// Hybrid system: Local files OR Jamendo streaming
 		public TrackSource Source { get; set; }
 
 		// For LOCAL tracks only
-		[StringLength(500)]
+		[MaxLength(500)]
 		public string? LocalFilePath { get; set; }
 
 		// For JAMENDO tracks only
-		[StringLength(100)]
+		[MaxLength(100)]
 		public string? JamendoTrackId { get; set; }
 
-		// Metadata
-		public DateTime AddedAt { get; set; } = DateTime.UtcNow;
-		public int PlayCount { get; set; } = 0;
+		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+		public bool IsActive { get; set; } = true;
 
 		// Navigation properties
 		public ICollection<PlaylistTrack> PlaylistTracks { get; set; } = new List<PlaylistTrack>();
-		public ICollection<UserFavorites> LikedByUsers { get; set; } = new List<UserFavorites>();
+		public ICollection<UserFavorites> UserTrackLikes { get; set; } = new List<UserFavorites>();
 		public ICollection<PlayHistory> PlayHistories { get; set; } = new List<PlayHistory>();
 	}
 

@@ -6,11 +6,12 @@ using Piece.Components;
 using Piece.Components.Account;
 using Piece.Data;
 
+
 namespace Piece
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,9 @@ namespace Piece
                 .AddInteractiveServerComponents()
                 .AddInteractiveWebAssemblyComponents();
 
-            builder.Services.AddCascadingAuthenticationState();
+			builder.Services.AddScoped<DatabaseSeeder>();
+
+			builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IdentityUserAccessor>();
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
@@ -70,6 +73,13 @@ namespace Piece
 
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
+
+            //// Seed database on startup
+            using (var scope = app.Services.CreateScope())
+            {
+                var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+                await seeder.SeedAllAsync();
+            }
 
             app.Run();
         }
