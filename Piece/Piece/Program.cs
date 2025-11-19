@@ -5,6 +5,7 @@ using Piece.Client.Pages;
 using Piece.Components;
 using Piece.Components.Account;
 using Piece.Data;
+using Piece.Services;
 
 
 namespace Piece
@@ -21,6 +22,7 @@ namespace Piece
                 .AddInteractiveWebAssemblyComponents();
 
 			builder.Services.AddScoped<DatabaseSeeder>();
+			builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 
 			builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IdentityUserAccessor>();
@@ -45,8 +47,9 @@ namespace Piece
                 .AddDefaultTokenProviders();
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+			builder.Services.AddHttpClient<JamendoService>();
 
-            var app = builder.Build();
+			var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

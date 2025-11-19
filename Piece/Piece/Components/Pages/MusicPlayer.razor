@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @inject ApplicationDbContext DbContext
 @inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
 
 <PageTitle>Piece - Music Player</PageTitle>
 
@@ -22,8 +24,6 @@
         overflow: hidden;
     }
 
-    
-
     /* Main Content */
     .main-content {
         flex: 1;
@@ -31,6 +31,93 @@
         padding: 30px;
         overflow-y: auto;
     }
+
+    /* Search Bar */
+    .search-container {
+        margin-bottom: 30px;
+        position: sticky;
+        top: 0;
+        background-color: #1a1a1a;
+        padding: 20px 0;
+        z-index: 100;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        background-color: #2a2a2a;
+        border-radius: 24px;
+        padding: 12px 20px;
+        gap: 12px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+        .search-box:focus-within {
+            border-color: #667eea;
+            background-color: #3a3a3a;
+        }
+
+    .search-icon {
+        font-size: 20px;
+        color: #888;
+    }
+
+    .search-input {
+        flex: 1;
+        background: none;
+        border: none;
+        color: #ffffff;
+        font-size: 16px;
+        outline: none;
+    }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+    .search-clear {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        transition: color 0.3s;
+    }
+
+        .search-clear:hover {
+            color: #ffffff;
+        }
+
+    .search-tabs {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .search-tab {
+        padding: 8px 16px;
+        background-color: #2a2a2a;
+        border: none;
+        border-radius: 20px;
+        color: #888;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+        .search-tab.active {
+            background-color: #667eea;
+            color: #ffffff;
+        }
+
+        .search-tab:hover:not(.active) {
+            background-color: #3a3a3a;
+            color: #ffffff;
+        }
 
     .content-section {
         margin-bottom: 40px;
@@ -97,7 +184,14 @@
         align-items: center;
         justify-content: center;
         font-size: 48px;
+        overflow: hidden;
     }
+
+        .track-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .track-title {
         font-size: 14px;
@@ -115,6 +209,19 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .track-source-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(102, 126, 234, 0.9);
+        backdrop-filter: blur(10px);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #ffffff;
     }
 
     .track-genre-badge {
@@ -162,7 +269,14 @@
         align-items: center;
         justify-content: center;
         font-size: 24px;
+        overflow: hidden;
     }
+
+        .now-playing-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .now-playing-info h4 {
         font-size: 14px;
@@ -291,6 +405,17 @@
         .main-content::-webkit-scrollbar-thumb:hover {
             background: #4a4a4a;
         }
+
+    /* Search Loading */
+    .search-loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: #888;
+    }
+
+        .search-loading .spinner {
+            margin: 0 auto 20px;
+        }
 </style>
 
 @if (isLoading)
@@ -303,81 +428,164 @@
 else
 {
     <div class="player-container">
-        
-
         <!-- Main Content -->
         <div class="main-content">
-            @if (tracks.Any())
+            <!-- Search Section -->
+            <div class="search-container">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text"
+                           class="search-input"
+                           placeholder="Search for music on Jamendo..."
+                           @bind="searchQuery"
+                           @bind:event="oninput"
+                           @onkeyup="HandleSearchKeyUp" />
+                    @if (!string.IsNullOrEmpty(searchQuery))
+                    {
+                        <button class="search-clear" @onclick="ClearSearch">✕</button>
+                    }
+                </div>
+                <div class="search-tabs">
+                    <button class="search-tab @(activeTab == "library" ? "active" : "")"
+                            @onclick='() => SetActiveTab("library")'>
+                        Your Library
+                    </button>
+                    <button class="search-tab @(activeTab == "jamendo" ? "active" : "")"
+                            @onclick='() => SetActiveTab("jamendo")'>
+                        Jamendo
+                    </button>
+                </div>
+            </div>
+
+            @if (activeTab == "jamendo" && isSearching)
             {
-                <!-- Your Library Section -->
+                <div class="search-loading">
+                    <div class="spinner"></div>
+                    <p>Searching Jamendo...</p>
+                </div>
+            }
+            else if (activeTab == "jamendo" && jamendoResults.Any())
+            {
+                <!-- Jamendo Search Results -->
                 <div class="content-section">
                     <div class="section-header">
-                        <h2 class="section-title">Your Library</h2>
-                        <span class="see-all">See all ›</span>
+                        <h2 class="section-title">Jamendo Results</h2>
+                        <span style="color: #888; font-size: 14px;">@jamendoResults.Count tracks found</span>
                     </div>
                     <div class="track-grid">
-                        @foreach (var track in tracks)
+                        @foreach (var track in jamendoResults)
                         {
-                            <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
-                                 @onclick="() => PlayTrack(track)">
-                                @if (track.Genre != null)
-                                {
-                                    <div class="track-genre-badge">@track.Genre.Name</div>
-                                }
-                                <div class="track-art">🎵</div>
-                                <div class="track-title">@track.Title</div>
+                            <div class="track-card @(currentJamendoTrack?.Id == track.Id ? "playing" : "")"
+                                 @onclick="() => PlayJamendoTrack(track)">
+                                <div class="track-source-badge">JAMENDO</div>
+                                <div class="track-art">
+                                    @if (!string.IsNullOrEmpty(track.AlbumImage))
+                                    {
+                                        <img src="@track.AlbumImage" alt="@track.Name" />
+                                    }
+                                    else
+                                    {
+                                        <span>🎵</span>
+                                    }
+                                </div>
+                                <div class="track-title">@track.Name</div>
                                 <div class="track-artist">@track.ArtistName</div>
                             </div>
                         }
                     </div>
                 </div>
-
-                <!-- Genres Section -->
-                @if (genreGroups.Any())
-                {
-                    @foreach (var genreGroup in genreGroups.Take(3))
-                    {
-                        <div class="content-section">
-                            <div class="section-header">
-                                <h2 class="section-title">@genreGroup.Key</h2>
-                                <span class="see-all">See all ›</span>
-                            </div>
-                            <div class="track-grid">
-                                @foreach (var track in genreGroup.Take(6))
-                                {
-                                    <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
-                                         @onclick="() => PlayTrack(track)">
-                                        <div class="track-genre-badge">@track.Genre?.Name</div>
-                                        <div class="track-art">🎵</div>
-                                        <div class="track-title">@track.Title</div>
-                                        <div class="track-artist">@track.ArtistName</div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                }
             }
-            else
+            else if (activeTab == "jamendo" && !string.IsNullOrEmpty(searchQuery) && !isSearching)
             {
                 <div class="empty-state">
-                    <div class="empty-state-icon">🎵</div>
-                    <h3>No music found</h3>
-                    <p>Add some tracks to get started</p>
+                    <div class="empty-state-icon">🔍</div>
+                    <h3>No results found</h3>
+                    <p>Try searching for something else</p>
                 </div>
+            }
+            else if (activeTab == "library")
+            {
+                @if (tracks.Any())
+                {
+                    <!-- Your Library Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Your Library</h2>
+                            <span class="see-all">See all ›</span>
+                        </div>
+                        <div class="track-grid">
+                            @foreach (var track in tracks)
+                            {
+                                <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                     @onclick="() => PlayTrack(track)">
+                                    @if (track.Genre != null)
+                                    {
+                                        <div class="track-genre-badge">@track.Genre.Name</div>
+                                    }
+                                    <div class="track-art">🎵</div>
+                                    <div class="track-title">@track.Title</div>
+                                    <div class="track-artist">@track.ArtistName</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Genres Section -->
+                    @if (genreGroups.Any())
+                    {
+                        @foreach (var genreGroup in genreGroups.Take(3))
+                        {
+                            <div class="content-section">
+                                <div class="section-header">
+                                    <h2 class="section-title">@genreGroup.Key</h2>
+                                    <span class="see-all">See all ›</span>
+                                </div>
+                                <div class="track-grid">
+                                    @foreach (var track in genreGroup.Take(6))
+                                    {
+                                        <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                             @onclick="() => PlayTrack(track)">
+                                            <div class="track-genre-badge">@track.Genre?.Name</div>
+                                            <div class="track-art">🎵</div>
+                                            <div class="track-title">@track.Title</div>
+                                            <div class="track-artist">@track.ArtistName</div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎵</div>
+                        <h3>No music found</h3>
+                        <p>Add some tracks to get started</p>
+                    </div>
+                }
             }
         </div>
     </div>
 
     <!-- Bottom Player Bar -->
-    @if (currentTrack != null)
+    @if (currentTrack != null || currentJamendoTrack != null)
     {
         <div class="player-bar">
             <div class="player-left">
-                <div class="now-playing-art">🎵</div>
+                <div class="now-playing-art">
+                    @if (currentJamendoTrack != null && !string.IsNullOrEmpty(currentJamendoTrack.AlbumImage))
+                    {
+                        <img src="@currentJamendoTrack.AlbumImage" alt="@currentJamendoTrack.Name" />
+                    }
+                    else
+                    {
+                        <span>🎵</span>
+                    }
+                </div>
                 <div class="now-playing-info">
-                    <h4>@currentTrack.Title</h4>
-                    <p>@currentTrack.ArtistName</p>
+                    <h4>@(currentJamendoTrack?.Name ?? currentTrack?.Title)</h4>
+                    <p>@(currentJamendoTrack?.ArtistName ?? currentTrack?.ArtistName)</p>
                 </div>
             </div>
 
@@ -389,7 +597,14 @@ else
                 </div>
                 <audio id="audioPlayer" controls class="audio-player"
                        @onended="OnTrackEnded">
-                    <source src="@currentTrack.LocalFilePath" type="audio/mpeg" />
+                    @if (currentJamendoTrack != null)
+                    {
+                        <source src="@currentJamendoTrack.AudioUrl" type="audio/mpeg" />
+                    }
+                    else if (currentTrack != null)
+                    {
+                        <source src="@currentTrack.LocalFilePath" type="audio/mpeg" />
+                    }
                 </audio>
             </div>
 
@@ -406,6 +621,14 @@ else
     private Track? currentTrack;
     private bool isLoading = true;
     private IEnumerable<IGrouping<string, Track>> genreGroups = Enumerable.Empty<IGrouping<string, Track>>();
+
+    // Search functionality
+    private string searchQuery = "";
+    private string activeTab = "library";
+    private bool isSearching = false;
+    private List<JamendoTrack> jamendoResults = new();
+    private JamendoTrack? currentJamendoTrack;
+    private System.Threading.Timer? searchDebounceTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -435,6 +658,7 @@ else
     private async Task PlayTrack(Track track)
     {
         currentTrack = track;
+        currentJamendoTrack = null;
         track.PlayCount++;
         StateHasChanged();
 
@@ -448,8 +672,132 @@ else
         ");
     }
 
+    private async Task PlayJamendoTrack(JamendoTrack track)
+    {
+        currentJamendoTrack = track;
+        currentTrack = null;
+        StateHasChanged();
+
+        await Task.Delay(10);
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            var audio = document.getElementById('audioPlayer');
+            if (audio) {
+                audio.load();
+                audio.play();
+            }
+        ");
+    }
+
+    private void HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        searchDebounceTimer?.Dispose();
+        searchDebounceTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                if (activeTab == "jamendo" && !string.IsNullOrEmpty(searchQuery))
+                {
+                    await SearchJamendo();
+                }
+            });
+        }, null, 500, Timeout.Infinite);
+    }
+
+    private async Task SearchJamendo()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            jamendoResults.Clear();
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            isSearching = true;
+            StateHasChanged();
+
+            var clientId = Configuration["Jamendo:ClientId"];
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=20&search={Uri.EscapeDataString(searchQuery)}&include=musicinfo&audioformat=mp32";
+
+            var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
+
+            if (response?.Results != null)
+            {
+                jamendoResults = response.Results;
+            }
+            else
+            {
+                jamendoResults.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error searching Jamendo: {ex.Message}");
+            jamendoResults.Clear();
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        if (tab == "jamendo" && !string.IsNullOrEmpty(searchQuery))
+        {
+            _ = SearchJamendo();
+        }
+        StateHasChanged();
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = "";
+        jamendoResults.Clear();
+        StateHasChanged();
+    }
+
     private void OnTrackEnded()
     {
         Console.WriteLine("Track ended!");
+    }
+
+    public void Dispose()
+    {
+        searchDebounceTimer?.Dispose();
+    }
+
+    // Jamendo API Models
+    public class JamendoResponse
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("results")]
+        public List<JamendoTrack> Results { get; set; } = new();
+    }
+
+    public class JamendoTrack
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public string Id { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("artist_name")]
+        public string ArtistName { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("album_name")]
+        public string AlbumName { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("album_image")]
+        public string AlbumImage { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("audio")]
+        public string AudioUrl { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("duration")]
+        public int Duration { get; set; }
     }
 }
