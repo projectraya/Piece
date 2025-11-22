@@ -1,0 +1,136 @@
+﻿@using Piece.Data.Enums
+@using Piece.DTOs
+@using Piece.Services
+@inject PlayerService PlayerService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+
+@if (PlayerService.CurrentTrack != null)
+{
+    <div style="position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 100px;
+                background-color: #2a2a2a;
+                border-top: 1px solid #3a3a3a;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 30px;
+                z-index: 9999;">
+
+        <!-- Left: Now Playing Info -->
+        <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+            <div style="width: 60px;
+                        height: 60px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                        overflow: hidden;">
+                @if (!string.IsNullOrEmpty(PlayerService.CurrentTrack.AlbumImage))
+                {
+                    <img src="@PlayerService.CurrentTrack.AlbumImage"
+                         alt="@PlayerService.CurrentTrack.Title"
+                         style="width: 100%; height: 100%; object-fit: cover;" />
+                }
+                else
+                {
+                    <span>🎵</span>
+                }
+            </div>
+            <div>
+                <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #ffffff;">
+                    @PlayerService.CurrentTrack.Title
+                </h4>
+                <p style="font-size: 12px; color: #888; margin: 2px 0 0 0;">
+                    @PlayerService.CurrentTrack.ArtistName
+                    @if (PlayerService.CurrentTrack.Source == TrackSource.Jamendo)
+                    {
+                        <span style="color: #667eea; margin-left: 8px;">• Jamendo</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        <!-- Center: Player Controls & Audio -->
+        <div style="flex: 2; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <button @onclick="PlayerService.PlayPrevious"
+                        style="background: none; border: none; color: #ffffff; font-size: 32px; cursor: pointer;">
+                    ⏮
+                </button>
+                <button @onclick="TogglePlayPause"
+                        style="background: none; border: none; color: #ffffff; font-size: 40px; cursor: pointer;">
+                    @(PlayerService.IsPlaying ? "⏸" : "▶")
+                </button>
+                <button @onclick="PlayerService.PlayNext"
+                        style="background: none; border: none; color: #ffffff; font-size: 32px; cursor: pointer;">
+                    ⏭
+                </button>
+            </div>
+
+            @* Key prop forces re-render when track changes *@
+            <audio @key="PlayerService.CurrentTrack.Id"
+                   id="globalAudioPlayer"
+                   controls
+                   autoplay
+                   @onended="OnTrackEnded"
+                   style="width: 100%; max-width: 500px;">
+                <source src="@PlayerService.CurrentTrack.AudioUrl" type="audio/mpeg" />
+            </audio>
+        </div>
+
+        <!-- Right: Extra Controls -->
+        <div style="display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
+            <button style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer;">❤</button>
+            <button style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer;">🔊</button>
+        </div>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        PlayerService.OnChange += StateHasChanged;
+        PlayerService.OnTrackChanged += OnTrackChanged;
+    }
+
+    private void OnTrackChanged()
+    {
+        Console.WriteLine($"[GlobalPlayer] Track changed to: {PlayerService.CurrentTrack?.Title}");
+        StateHasChanged();
+    }
+
+    private async Task TogglePlayPause()
+    {
+        PlayerService.TogglePlayPause();
+
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            var audio = document.getElementById('globalAudioPlayer');
+            if (audio) {
+                if (audio.paused) {
+                    audio.play().catch(e => console.error('Play failed:', e));
+                } else {
+                    audio.pause();
+                }
+            }
+        ");
+    }
+
+    private void OnTrackEnded()
+    {
+        Console.WriteLine("[GlobalPlayer] Track ended");
+        PlayerService.PlayNext();
+    }
+
+    public void Dispose()
+    {
+        PlayerService.OnChange -= StateHasChanged;
+        PlayerService.OnTrackChanged -= OnTrackChanged;
+    }
+}

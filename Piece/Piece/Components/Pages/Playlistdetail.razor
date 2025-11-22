@@ -1,6 +1,8 @@
 ﻿@page "/playlist/{id:int}"
 @rendermode InteractiveServer
 @inherits Piece.Components.Pages.PlaylistDetail
+@using Piece.Services
+@inject PlayerService PlayerService
 
 <PageTitle>@(playlist?.Name ?? "Playlist") - Piece</PageTitle>
 
@@ -490,7 +492,7 @@
                     {
                         var track = playlistTracks[i];
                         var index = i;
-                        <div class="track-row @(currentTrack?.Id == track.Id ? "playing" : "")"
+                        <div class="track-row @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
                              @onclick="() => PlayTrack(track)">
                             <div class="track-number">@(index + 1)</div>
                             <div class="track-info">

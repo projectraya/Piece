@@ -6,6 +6,7 @@ using Piece.Data.Models;
 using Piece.Data;
 using Piece.Services;
 using Microsoft.EntityFrameworkCore;
+using Piece.DTOs;
 
 namespace Piece.Components.Pages
 {
@@ -14,6 +15,7 @@ namespace Piece.Components.Pages
 		[Parameter] public int Id { get; set; }
 
 		[Inject] private IPlaylistService PlaylistService { get; set; } = default!;
+		[Inject] private PlayerService PlayerService { get; set; } = default!;
 		[Inject] private ApplicationDbContext DbContext { get; set; } = default!;
 		[Inject] private NavigationManager Navigation { get; set; } = default!;
 		[Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -140,25 +142,20 @@ namespace Piece.Components.Pages
 
 		public async Task PlayTrack(Track track)
 		{
-			currentTrack = track;
+			var playableTrack = PlayableTrack.FromLocalTrack(track);
+			PlayerService.PlayTrack(playableTrack);
 			track.PlayCount++;
 			StateHasChanged();
-
-			await Task.Delay(10);
-			await JSRuntime.InvokeVoidAsync("eval", @"
-                var audio = document.getElementById('audioPlayer');
-                if (audio) {
-                    audio.load();
-                    audio.play();
-                }
-            ");
 		}
 
 		public void PlayPlaylist()
 		{
 			if (playlistTracks.Any())
 			{
-				_ = PlayTrack(playlistTracks.First());
+				var playableTracks = playlistTracks
+					.Select(t => PlayableTrack.FromLocalTrack(t))
+					.ToList();
+				PlayerService.PlayPlaylist(playableTracks, 0);
 			}
 		}
 	}

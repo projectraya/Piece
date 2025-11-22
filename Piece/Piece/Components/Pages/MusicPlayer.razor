@@ -1,8 +1,11 @@
 ﻿@page "/player"
 @rendermode InteractiveServer
+@using Piece.DTOs
+@using Piece.Services
 @inject ApplicationDbContext DbContext
 @inject IJSRuntime JSRuntime
 @inject HttpClient HttpClient
+@inject PlayerService PlayerService
 @inject IConfiguration Configuration
 
 <PageTitle>Piece - Music Player</PageTitle>
@@ -475,7 +478,7 @@ else
                     <div class="track-grid">
                         @foreach (var track in jamendoResults)
                         {
-                            <div class="track-card @(currentJamendoTrack?.Id == track.Id ? "playing" : "")"
+                            <div class="track-card @(PlayerService.CurrentTrack?.Id == $"jamendo-{track.Id}" ? "playing" : "")"
                                  @onclick="() => PlayJamendoTrack(track)">
                                 <div class="track-source-badge">JAMENDO</div>
                                 <div class="track-art">
@@ -516,7 +519,7 @@ else
                         <div class="track-grid">
                             @foreach (var track in tracks)
                             {
-                                <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
                                      @onclick="() => PlayTrack(track)">
                                     @if (track.Genre != null)
                                     {
@@ -543,7 +546,7 @@ else
                                 <div class="track-grid">
                                     @foreach (var track in genreGroup.Take(6))
                                     {
-                                        <div class="track-card @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                        <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
                                              @onclick="() => PlayTrack(track)">
                                             <div class="track-genre-badge">@track.Genre?.Name</div>
                                             <div class="track-art">🎵</div>
@@ -568,57 +571,11 @@ else
         </div>
     </div>
 
-    <!-- Bottom Player Bar -->
-    @if (currentTrack != null || currentJamendoTrack != null)
-    {
-        <div class="player-bar">
-            <div class="player-left">
-                <div class="now-playing-art">
-                    @if (currentJamendoTrack != null && !string.IsNullOrEmpty(currentJamendoTrack.AlbumImage))
-                    {
-                        <img src="@currentJamendoTrack.AlbumImage" alt="@currentJamendoTrack.Name" />
-                    }
-                    else
-                    {
-                        <span>🎵</span>
-                    }
-                </div>
-                <div class="now-playing-info">
-                    <h4>@(currentJamendoTrack?.Name ?? currentTrack?.Title)</h4>
-                    <p>@(currentJamendoTrack?.ArtistName ?? currentTrack?.ArtistName)</p>
-                </div>
-            </div>
-
-            <div class="player-center">
-                <div class="player-controls">
-                    <button class="control-btn">⏮</button>
-                    <button class="control-btn play-pause">▶</button>
-                    <button class="control-btn">⏭</button>
-                </div>
-                <audio id="audioPlayer" controls class="audio-player"
-                       @onended="OnTrackEnded">
-                    @if (currentJamendoTrack != null)
-                    {
-                        <source src="@currentJamendoTrack.AudioUrl" type="audio/mpeg" />
-                    }
-                    else if (currentTrack != null)
-                    {
-                        <source src="@currentTrack.LocalFilePath" type="audio/mpeg" />
-                    }
-                </audio>
-            </div>
-
-            <div class="player-right">
-                <button class="icon-btn">❤</button>
-                <button class="icon-btn">🔊</button>
-            </div>
-        </div>
-    }
+   
 }
 
 @code {
     private List<Track> tracks = new();
-    private Track? currentTrack;
     private bool isLoading = true;
     private IEnumerable<IGrouping<string, Track>> genreGroups = Enumerable.Empty<IGrouping<string, Track>>();
 
@@ -627,7 +584,6 @@ else
     private string activeTab = "library";
     private bool isSearching = false;
     private List<JamendoTrack> jamendoResults = new();
-    private JamendoTrack? currentJamendoTrack;
     private System.Threading.Timer? searchDebounceTimer;
 
     protected override async Task OnInitializedAsync()
@@ -657,35 +613,23 @@ else
 
     private async Task PlayTrack(Track track)
     {
-        currentTrack = track;
-        currentJamendoTrack = null;
+        var playableTrack = PlayableTrack.FromLocalTrack(track);
+        PlayerService.PlayTrack(playableTrack);
         track.PlayCount++;
         StateHasChanged();
-
-        await Task.Delay(10);
-        await JSRuntime.InvokeVoidAsync("eval", @"
-            var audio = document.getElementById('audioPlayer');
-            if (audio) {
-                audio.load();
-                audio.play();
-            }
-        ");
     }
 
     private async Task PlayJamendoTrack(JamendoTrack track)
     {
-        currentJamendoTrack = track;
-        currentTrack = null;
+        var playableTrack = PlayableTrack.FromJamendoTrack(
+         track.Id,
+         track.Name,
+         track.ArtistName,
+         track.AudioUrl,
+         track.AlbumImage
+     );
+        PlayerService.PlayTrack(playableTrack);
         StateHasChanged();
-
-        await Task.Delay(10);
-        await JSRuntime.InvokeVoidAsync("eval", @"
-            var audio = document.getElementById('audioPlayer');
-            if (audio) {
-                audio.load();
-                audio.play();
-            }
-        ");
     }
 
     private void HandleSearchKeyUp(KeyboardEventArgs e)
