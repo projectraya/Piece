@@ -19,6 +19,7 @@ namespace Piece.Components.Pages
 		[Inject] private ApplicationDbContext DbContext { get; set; } = default!;
 		[Inject] private NavigationManager Navigation { get; set; } = default!;
 		[Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+		[Inject] private IFavoriteService FavoriteService { get; set; } = default!;
 		[Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
 		public Playlist? playlist;
@@ -142,7 +143,16 @@ namespace Piece.Components.Pages
 
 		public async Task PlayTrack(Track track)
 		{
-			var playableTrack = PlayableTrack.FromLocalTrack(track);
+			Console.WriteLine($"PlaylistDetail: Playing track {track.Title}");
+
+			// Check if track is favorited
+			bool isFavorite = false;
+			if (!string.IsNullOrEmpty(currentUserId))
+			{
+				isFavorite = await FavoriteService.IsFavoriteAsync(currentUserId, track.Id);
+			}
+
+			var playableTrack = PlayableTrack.FromLocalTrack(track, isFavorite);
 			PlayerService.PlayTrack(playableTrack);
 			track.PlayCount++;
 			StateHasChanged();

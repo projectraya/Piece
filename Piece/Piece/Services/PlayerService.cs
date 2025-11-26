@@ -6,21 +6,34 @@ namespace Piece.Services
 	{
 		private PlayableTrack? _currentTrack;
 		private List<PlayableTrack> _queue = new();
+		private List<PlayableTrack> _allAvailableTracks = new();
+		private List<PlayableTrack> _history = new();
 		private int _currentIndex = 0;
 
-		// Events to notify UI of changes
 		public event Action? OnChange;
 		public event Action? OnTrackChanged;
 
-		// Public properties
 		public PlayableTrack? CurrentTrack => _currentTrack;
 		public List<PlayableTrack> Queue => _queue;
 		public bool IsPlaying { get; private set; }
 
-		// Play a single track
+		// Add this method
+		public void SetAvailableTracks(List<PlayableTrack> tracks)
+		{
+			_allAvailableTracks = tracks;
+			Console.WriteLine($"[PlayerService] Set {tracks.Count} available tracks");
+		}
+
 		public void PlayTrack(PlayableTrack track)
 		{
 			Console.WriteLine($"[PlayerService] Playing: {track.Title}");
+
+			// Add current track to history before switching
+			if (_currentTrack != null && (_history.Count == 0 || _history.Last().Id != _currentTrack.Id))
+			{
+				_history.Add(_currentTrack);
+			}
+
 			_currentTrack = track;
 			IsPlaying = true;
 
@@ -35,14 +48,10 @@ namespace Piece.Services
 				_currentIndex = _queue.FindIndex(t => t.Id == track.Id);
 			}
 
-			Console.WriteLine($"[PlayerService] About to notify track changed");
 			NotifyTrackChanged();
-			Console.WriteLine($"[PlayerService] About to notify state changed");
 			NotifyStateChanged();
-			Console.WriteLine($"[PlayerService] Notifications sent");
 		}
 
-		// Play a playlist/queue
 		public void PlayPlaylist(List<PlayableTrack> tracks, int startIndex = 0)
 		{
 			Console.WriteLine($"[PlayerService] Playing playlist: {tracks.Count} tracks");
@@ -58,12 +67,39 @@ namespace Piece.Services
 			}
 		}
 
-		// Next track
 		public void PlayNext()
 		{
-			if (_queue.Any() && _currentIndex < _queue.Count - 1)
+			// Add current to history
+			if (_currentTrack != null)
 			{
-				_currentIndex++;
+				_history.Add(_currentTrack);
+			}
+
+			// Pick a random track from ALL available tracks
+			if (_allAvailableTracks.Any())
+			{
+				var random = new Random();
+				var randomTrack = _allAvailableTracks[random.Next(_allAvailableTracks.Count)];
+
+				_currentTrack = randomTrack;
+
+				// Add to queue if not already there
+				if (!_queue.Any(t => t.Id == randomTrack.Id))
+				{
+					_queue.Add(randomTrack);
+				}
+				_currentIndex = _queue.FindIndex(t => t.Id == randomTrack.Id);
+
+				IsPlaying = true;
+				NotifyTrackChanged();
+				NotifyStateChanged();
+				Console.WriteLine($"[PlayerService] Playing random track: {_currentTrack.Title}");
+			}
+			else if (_queue.Any())
+			{
+				// Fallback: pick from queue if no available tracks set
+				var random = new Random();
+				_currentIndex = random.Next(_queue.Count);
 				_currentTrack = _queue[_currentIndex];
 				IsPlaying = true;
 				NotifyTrackChanged();
@@ -71,45 +107,49 @@ namespace Piece.Services
 			}
 		}
 
-		// Previous track
 		public void PlayPrevious()
 		{
-			if (_queue.Any() && _currentIndex > 0)
+			// Play the last track from history
+			if (_history.Any())
 			{
-				_currentIndex--;
-				_currentTrack = _queue[_currentIndex];
+				var previousTrack = _history.Last();
+				_history.RemoveAt(_history.Count - 1);
+
+				_currentTrack = previousTrack;
+				_currentIndex = _queue.FindIndex(t => t.Id == previousTrack.Id);
+				if (_currentIndex == -1)
+				{
+					_queue.Add(previousTrack);
+					_currentIndex = _queue.Count - 1;
+				}
+
 				IsPlaying = true;
 				NotifyTrackChanged();
 				NotifyStateChanged();
+				Console.WriteLine($"[PlayerService] Playing previous track: {_currentTrack.Title}");
 			}
-		}
-		public void UpdateFavoriteStatus(bool isFavorite)
-		{
-			if(_currentTrack != null)
+			else
 			{
-				_currentTrack.IsFavorite = isFavorite;
-				NotifyStateChanged();
+				Console.WriteLine("[PlayerService] No previous track in history");
 			}
 		}
 
-		// Toggle play/pause
 		public void TogglePlayPause()
 		{
 			IsPlaying = !IsPlaying;
 			NotifyStateChanged();
 		}
 
-		private void NotifyStateChanged()
+		public void UpdateFavoriteStatus(bool isFavorite)
 		{
-			Console.WriteLine($"[PlayerService] NotifyStateChanged called, listeners: {OnChange?.GetInvocationList().Length ?? 0}");
-			OnChange?.Invoke();
+			if (_currentTrack != null)
+			{
+				_currentTrack.IsFavorite = isFavorite;
+				NotifyStateChanged();
+			}
 		}
 
-		private void NotifyTrackChanged()
-		{
-			Console.WriteLine($"[PlayerService] NotifyTrackChanged called, listeners: {OnTrackChanged?.GetInvocationList().Length ?? 0}");
-			OnTrackChanged?.Invoke();
-		}
+		private void NotifyStateChanged() => OnChange?.Invoke();
+		private void NotifyTrackChanged() => OnTrackChanged?.Invoke();
 	}
 }
-

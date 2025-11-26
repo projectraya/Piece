@@ -88,7 +88,7 @@
                     border-radius: 3px;
                     cursor: pointer;
                     position: relative;">
-                    <div style="width: @progressPercent%;
+                    <div style="width: @((int)progressPercent)%;
                         height: 100%;
                         background-color: #667eea;
                         border-radius: 3px;
@@ -103,7 +103,7 @@
                    autoplay
                    @ref="audioElement"
                    @onended="OnTrackEnded"
-                   @ontimeupdate="OnTimeUpdate"
+                  
                    style="display: none;">
                 <source src="@PlayerService.CurrentTrack.AudioUrl" type="audio/mpeg" />
             </audio>
@@ -136,12 +136,13 @@
 
 @code {
     private ElementReference audioElement;
-    private string currentTime = "0.00";
-    private string totalTime = "0.00";
+    private string currentTime = "0:00";
+    private string totalTime = "0:00";
     private double progressPercent = 0;
     private double duration = 0;
     private double currentPosition = 0;
     private string? currentUserId;
+    private System.Threading.Timer? progressTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,10 +151,19 @@
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        if(user.Identity?.IsAuthenticated == true)
+        if (user.Identity?.IsAuthenticated == true)
         {
             currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         }
+
+        // Start progress timer
+        progressTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await UpdateProgress();
+            });
+        }, null, 0, 500); // Update every 500ms
     }
 
     private void OnTrackChanged()
@@ -165,43 +175,24 @@
         StateHasChanged();
     }
 
-    private async Task ToggleFavorite()
+    private async Task UpdateProgress()
     {
-        if (string.IsNullOrEmpty(currentUserId) ||
-        PlayerService.CurrentTrack?.LocalTrackId == null)
-            return;
+        if (PlayerService.CurrentTrack == null) return;
 
-        try
-        {
-            var isFavorite = await FavoriteService.ToggleFavoriteAsync(
-            currentUserId,
-            PlayerService.CurrentTrack.LocalTrackId.Value
-            );
-            PlayerService.UpdateFavoriteStatus(isFavorite);
-            Console.WriteLine($"[GlobalPlayer] Track {(isFavorite ? "liked" : "unliked")}");
-        }
-        catch(Exception ex)
-        {
-            Console.WriteLine($"[GlobalPlayer] Error toggling favorite: {ex.Message}");
-        }
-    }
-
-    private async Task OnTimeUpdate()
-    {
         try
         {
             var timeData = await JSRuntime.InvokeAsync<TimeData>("eval", @"
-                (function() {
-                    var audio = document.getElementById('globalAudioPlayer');
-                    if (audio) {
-                        return {
-                            currentTime: audio.currentTime,
-                            duration: audio.duration
-                        };
-                    }
-                    return { currentTime: 0, duration: 0 };
-                })()
-            ");
+            (function() {
+                var audio = document.getElementById('globalAudioPlayer');
+                if (audio && !isNaN(audio.duration)) {
+                    return {
+                        currentTime: audio.currentTime,
+                        duration: audio.duration
+                    };
+                }
+                return { currentTime: 0, duration: 0 };
+            })()
+        ");
 
             currentPosition = timeData.CurrentTime;
             duration = timeData.Duration;
@@ -211,10 +202,36 @@
                 progressPercent = (currentPosition / duration) * 100;
                 currentTime = FormatTime(currentPosition);
                 totalTime = FormatTime(duration);
+                
                 StateHasChanged();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Progress] Error: {ex.Message}");
+        }
+    }
+
+
+    private async Task ToggleFavorite()
+    {
+        if (string.IsNullOrEmpty(currentUserId) ||
+            PlayerService.CurrentTrack?.LocalTrackId == null)
+            return;
+
+        try
+        {
+            var isFavorite = await FavoriteService.ToggleFavoriteAsync(
+                currentUserId,
+                PlayerService.CurrentTrack.LocalTrackId.Value
+            );
+            PlayerService.UpdateFavoriteStatus(isFavorite);
+            Console.WriteLine($"[GlobalPlayer] Track {(isFavorite ? "liked" : "unliked")}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GlobalPlayer] Error toggling favorite: {ex.Message}");
+        }
     }
 
     private async Task SeekTo(MouseEventArgs e)
@@ -222,10 +239,10 @@
         try
         {
             var clickX = e.OffsetX;
-            var width = await JSRuntime.InvokeAsync<double>("eval",
+            var element = await JSRuntime.InvokeAsync<double>("eval",
                 "document.querySelector('.progress-bar-container').offsetWidth");
 
-            var seekPercent = clickX / width;
+            var seekPercent = clickX / element;
             var seekTime = duration * seekPercent;
 
             await JSRuntime.InvokeVoidAsync("eval", $@"
@@ -251,7 +268,6 @@
             ? $"{time.Hours}:{time.Minutes:D2}:{time.Seconds:D2}"
             : $"{time.Minutes}:{time.Seconds:D2}";
     }
-
 
     private async Task TogglePlayPause()
     {
@@ -279,6 +295,7 @@
     {
         PlayerService.OnChange -= StateHasChanged;
         PlayerService.OnTrackChanged -= OnTrackChanged;
+        progressTimer?.Dispose();
     }
 
     private class TimeData
