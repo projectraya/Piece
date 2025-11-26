@@ -83,6 +83,14 @@ namespace Piece.Services
 				NotifyStateChanged();
 			}
 		}
+		public void UpdateFavoriteStatus(bool isFavorite)
+		{
+			if(_currentTrack != null)
+			{
+				_currentTrack.IsFavorite = isFavorite;
+				NotifyStateChanged();
+			}
+		}
 
 		// Toggle play/pause
 		public void TogglePlayPause()

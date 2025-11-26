@@ -1,6 +1,9 @@
 ﻿@using Piece.Data.Enums
 @using Piece.DTOs
 @using Piece.Services
+@using System;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IFavoriteService FavoriteService
 @inject PlayerService PlayerService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -35,8 +38,8 @@
                 @if (!string.IsNullOrEmpty(PlayerService.CurrentTrack.AlbumImage))
                 {
                     <img src="@PlayerService.CurrentTrack.AlbumImage"
-                         alt="@PlayerService.CurrentTrack.Title"
-                         style="width: 100%; height: 100%; object-fit: cover;" />
+                    alt="@PlayerService.CurrentTrack.Title"
+                    style="width: 100%; height: 100%; object-fit: cover;" />
                 }
                 else
                 {
@@ -74,37 +77,181 @@
                 </button>
             </div>
 
-            @* Key prop forces re-render when track changes *@
+            <!-- Custom Progress Bar -->
+            <div style="width: 100%; max-width: 500px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 12px; color: #888; min-width: 40px;">@currentTime</span>
+                <div @onclick="SeekTo"
+                     class="progress-bar-container"
+                     style="flex: 1;
+                    height: 6px;
+                    background-color: #3a3a3a;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    position: relative;">
+                    <div style="width: @progressPercent%;
+                        height: 100%;
+                        background-color: #667eea;
+                        border-radius: 3px;
+                        transition: width 0.1s;"></div>
+                </div>
+                <span style="font-size: 12px; color: #888; min-width: 40px;">@totalTime</span>
+            </div>
+
+            @* Hidden audio element *@
             <audio @key="PlayerService.CurrentTrack.Id"
                    id="globalAudioPlayer"
-                   controls
                    autoplay
+                   @ref="audioElement"
                    @onended="OnTrackEnded"
-                   style="width: 100%; max-width: 500px;">
+                   @ontimeupdate="OnTimeUpdate"
+                   style="display: none;">
                 <source src="@PlayerService.CurrentTrack.AudioUrl" type="audio/mpeg" />
             </audio>
         </div>
 
         <!-- Right: Extra Controls -->
         <div style="display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
-            <button style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer;">❤</button>
+            @if(PlayerService.CurrentTrack.Source == TrackSource.Local && PlayerService.CurrentTrack.LocalTrackId.HasValue)
+            {
+                <button @onclick="ToggleFavorite"
+                style="background: none; 
+                           border: none;
+                            color: @(PlayerService.CurrentTrack.IsFavorite ? "#ff4444" : "#888");
+                            font-size: 24px;
+                            cursor: pointer;
+                            transition: all 0.3s;">
+                    @(PlayerService.CurrentTrack.IsFavorite ? "❤" : "🤍")
+                </button>
+            }
+            else
+            {
+                <button style="background: none; border: none; color: #444; font-size: 24px; cursor: not-allowed;">
+                    🤍
+                </button>
+            }
             <button style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer;">🔊</button>
         </div>
     </div>
 }
 
 @code {
-    protected override void OnInitialized()
+    private ElementReference audioElement;
+    private string currentTime = "0.00";
+    private string totalTime = "0.00";
+    private double progressPercent = 0;
+    private double duration = 0;
+    private double currentPosition = 0;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
     {
         PlayerService.OnChange += StateHasChanged;
         PlayerService.OnTrackChanged += OnTrackChanged;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if(user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
     }
 
     private void OnTrackChanged()
     {
         Console.WriteLine($"[GlobalPlayer] Track changed to: {PlayerService.CurrentTrack?.Title}");
+        currentTime = "0:00";
+        totalTime = "0:00";
+        progressPercent = 0;
         StateHasChanged();
     }
+
+    private async Task ToggleFavorite()
+    {
+        if (string.IsNullOrEmpty(currentUserId) ||
+        PlayerService.CurrentTrack?.LocalTrackId == null)
+            return;
+
+        try
+        {
+            var isFavorite = await FavoriteService.ToggleFavoriteAsync(
+            currentUserId,
+            PlayerService.CurrentTrack.LocalTrackId.Value
+            );
+            PlayerService.UpdateFavoriteStatus(isFavorite);
+            Console.WriteLine($"[GlobalPlayer] Track {(isFavorite ? "liked" : "unliked")}");
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"[GlobalPlayer] Error toggling favorite: {ex.Message}");
+        }
+    }
+
+    private async Task OnTimeUpdate()
+    {
+        try
+        {
+            var timeData = await JSRuntime.InvokeAsync<TimeData>("eval", @"
+                (function() {
+                    var audio = document.getElementById('globalAudioPlayer');
+                    if (audio) {
+                        return {
+                            currentTime: audio.currentTime,
+                            duration: audio.duration
+                        };
+                    }
+                    return { currentTime: 0, duration: 0 };
+                })()
+            ");
+
+            currentPosition = timeData.CurrentTime;
+            duration = timeData.Duration;
+
+            if (duration > 0)
+            {
+                progressPercent = (currentPosition / duration) * 100;
+                currentTime = FormatTime(currentPosition);
+                totalTime = FormatTime(duration);
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private async Task SeekTo(MouseEventArgs e)
+    {
+        try
+        {
+            var clickX = e.OffsetX;
+            var width = await JSRuntime.InvokeAsync<double>("eval",
+                "document.querySelector('.progress-bar-container').offsetWidth");
+
+            var seekPercent = clickX / width;
+            var seekTime = duration * seekPercent;
+
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                var audio = document.getElementById('globalAudioPlayer');
+                if (audio) {{
+                    audio.currentTime = {seekTime.ToString(System.Globalization.CultureInfo.InvariantCulture)};
+                }}
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Seek error: {ex.Message}");
+        }
+    }
+
+    private string FormatTime(double seconds)
+    {
+        if (double.IsNaN(seconds) || double.IsInfinity(seconds))
+            return "0:00";
+
+        var time = TimeSpan.FromSeconds(seconds);
+        return time.Hours > 0
+            ? $"{time.Hours}:{time.Minutes:D2}:{time.Seconds:D2}"
+            : $"{time.Minutes}:{time.Seconds:D2}";
+    }
+
 
     private async Task TogglePlayPause()
     {
@@ -132,5 +279,11 @@
     {
         PlayerService.OnChange -= StateHasChanged;
         PlayerService.OnTrackChanged -= OnTrackChanged;
+    }
+
+    private class TimeData
+    {
+        public double CurrentTime { get; set; }
+        public double Duration { get; set; }
     }
 }

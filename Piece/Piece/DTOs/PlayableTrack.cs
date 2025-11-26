@@ -1,5 +1,6 @@
 ﻿using Piece.Data.Enums;
 using Piece.Data.Models;
+using System.Diagnostics.Eventing.Reader;
 
 namespace Piece.DTOs
 {
@@ -11,12 +12,11 @@ namespace Piece.DTOs
 		public string AudioUrl { get; set; } = "";
 		public string? AlbumImage { get; set; }
 		public TrackSource Source { get; set; }
-
-		// For local tracks - to update play count
+		public bool IsFavorite { get; set; }
 		public int? LocalTrackId { get; set; }
 
-		// Convert from local Track
-		public static PlayableTrack FromLocalTrack(Track track)
+		
+		public static PlayableTrack FromLocalTrack(Track track, bool isFavorite = false)
 		{
 			return new PlayableTrack
 			{
@@ -26,11 +26,11 @@ namespace Piece.DTOs
 				AudioUrl = track.LocalFilePath,
 				AlbumImage = null,
 				Source = TrackSource.Local,
-				LocalTrackId = track.Id
+				LocalTrackId = track.Id,
+				IsFavorite = isFavorite
 			};
 		}
 
-		// Convert from Jamendo track
 		public static PlayableTrack FromJamendoTrack(string id, string name, string artistName, string audioUrl, string? albumImage)
 		{
 			return new PlayableTrack
@@ -41,7 +41,8 @@ namespace Piece.DTOs
 				AudioUrl = audioUrl,
 				AlbumImage = albumImage,
 				Source = TrackSource.Jamendo,
-				LocalTrackId = null
+				LocalTrackId = null,
+				IsFavorite = false
 			};
 		}
 	}

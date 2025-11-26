@@ -29,6 +29,7 @@ namespace Piece
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
             builder.Services.AddSingleton<PlayerService>();
+            builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 
             builder.Services.AddAuthentication(options =>
                 {
