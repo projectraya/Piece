@@ -379,7 +379,16 @@ else
                                         {
                                             <div class="track-genre-badge">@track.Genre.Name</div>
                                         }
-                                        <div class="track-art">🎵</div>
+                                        <div class="track-art">
+                                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                            {
+                                                <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                            }
+                                            else
+                                            {
+                                                <span>🎵</span>
+                                            }
+                                        </div>
                                         <div class="track-title">@track.Title</div>
                                         <div class="track-artist">@track.ArtistName</div>
                                     </div>
@@ -467,7 +476,16 @@ else
                                     {
                                         <div class="track-genre-badge">@track.Genre.Name</div>
                                     }
-                                    <div class="track-art">🎵</div>
+                                    <div class="track-art">
+                                        @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                        {
+                                            <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                        }
+                                        else
+                                        {
+                                            <span>🎵</span>
+                                        }
+                                    </div>
                                     <div class="track-title">@track.Title</div>
                                     <div class="track-artist">@track.ArtistName</div>
                                 </div>
@@ -491,7 +509,16 @@ else
                                         <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
                                              @onclick="() => PlayTrack(track)">
                                             <div class="track-genre-badge">@track.Genre?.Name</div>
-                                            <div class="track-art">🎵</div>
+                                            <div class="track-art">
+                                                @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                                {
+                                                    <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                                }
+                                                else
+                                                {
+                                                    <span>🎵</span>
+                                                }
+                                            </div>
                                             <div class="track-title">@track.Title</div>
                                             <div class="track-artist">@track.ArtistName</div>
                                         </div>
@@ -520,6 +547,7 @@ else
     private bool isLoading = true;
     private IEnumerable<IGrouping<string, Track>> genreGroups = Enumerable.Empty<IGrouping<string, Track>>();
     private HashSet<int> favoriteTrackIds = new();
+    private HashSet<string> favoriteJamendoIds = new();
 
     // Search functionality
     private string searchQuery = "";
@@ -538,11 +566,15 @@ else
         {
             currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-            // Load favorite track IDs
             if (!string.IsNullOrEmpty(currentUserId))
             {
+                // Load local favorites
                 var favoriteIds = await FavoriteService.GetUserFavoriteTrackIdsAsync(currentUserId);
                 favoriteTrackIds = new HashSet<int>(favoriteIds);
+
+                // Load Jamendo favorites (just IDs)
+                var jamendoFavorites = await FavoriteService.GetUserExternalFavoritesAsync(currentUserId, TrackSource.Jamendo);
+                favoriteJamendoIds = jamendoFavorites.Select(f => f.ExternalId).ToHashSet();
             }
         }
 

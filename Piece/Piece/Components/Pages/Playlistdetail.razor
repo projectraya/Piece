@@ -496,7 +496,16 @@
                              @onclick="() => PlayTrack(track)">
                             <div class="track-number">@(index + 1)</div>
                             <div class="track-info">
-                                <div class="track-art-small">🎵</div>
+                                <div class="track-art-small">
+                                    @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                    {
+                                        <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                    }
+                                    else
+                                    {
+                                        <span>🎵</span>
+                                    }
+                                </div>
                                 <div class="track-text">
                                     <div class="track-name">@track.Title</div>
                                     <div class="track-artist-small">@track.ArtistName</div>
@@ -552,7 +561,16 @@
                     var isInPlaylist = playlistTracks.Any(t => t.Id == track.Id);
                     <div class="available-track-row @(isInPlaylist ? "disabled" : "")"
                          @onclick="() => AddTrackToPlaylist(track.Id)">
-                        <div class="track-art-small">🎵</div>
+                        <div class="track-art-small">
+                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                            {
+                                <img src="@track.CoverImageUrl" alt="@track.Title" />
+                            }
+                            else
+                            {
+                                <span>🎵</span>
+                            }
+                        </div>
                         <div class="track-text" style="flex: 1;">
                             <div class="track-name">@track.Title</div>
                             <div class="track-artist-small">@track.ArtistName</div>

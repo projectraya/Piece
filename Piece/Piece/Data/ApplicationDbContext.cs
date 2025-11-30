@@ -18,6 +18,7 @@ namespace Piece.Data
 		public DbSet<PlaylistTrack> PlaylistTracks { get; set; }
 		public DbSet<UserFavorites> UserTrackLikes { get; set; }
 		public DbSet<PlayHistory> PlayHistories { get; set; }
+		public DbSet<ExternalFavorite> ExternalFavorites { get; set; }
 
 		// Map feature entities
 		public DbSet<Country> Countries { get; set; }

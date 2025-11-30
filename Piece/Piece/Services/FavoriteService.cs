@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Piece.Data;
+using Piece.Data.Enums;
 using Piece.Data.Models;
 using System.Linq.Expressions;
 
@@ -11,6 +12,9 @@ namespace Piece.Services
 		Task<bool> IsFavoriteAsync(string userId, int trackId);
 		Task<List<Track>> GetUserFavoritesAsync(string userId);
 		Task<List<int>> GetUserFavoriteTrackIdsAsync(string userId);
+		Task<bool> ToggleExternalFavoriteAsync(string userId, TrackSource source, string externalId, string title, string artistName, string audioUrl, string? albumImage);
+		Task<bool> IsExternalFavoriteAsync(string userId, TrackSource source, string externalId);
+		Task<List<ExternalFavorite>> GetUserExternalFavoritesAsync(string userId, TrackSource? source = null);
 	}
 	public class FavoriteService : IFavoriteService
 	{
@@ -71,6 +75,57 @@ namespace Piece.Services
 				return true;
 			}
 
+		}
+
+		public async Task<bool> ToggleExternalFavoriteAsync(string userId, TrackSource source, string externalId, string title, string artistName, string audioUrl, string? albumImage)
+		{
+			var existing = await _dbContext.ExternalFavorites
+				.FirstOrDefaultAsync(f => f.UserId == userId && f.Source == source && f.ExternalId == externalId);
+
+			if (existing != null)
+			{
+				// Unlike - remove
+				_dbContext.ExternalFavorites.Remove(existing);
+				await _dbContext.SaveChangesAsync();
+				return false;
+			}
+			else
+			{
+				// Like - add
+				var favorite = new ExternalFavorite
+				{
+					UserId = userId,
+					Source = source,
+					ExternalId = externalId,
+					Title = title,
+					ArtistName = artistName,
+					AlbumImage = albumImage,
+					AudioUrl = audioUrl,
+					LikedAt = DateTime.UtcNow
+				};
+
+				_dbContext.ExternalFavorites.Add(favorite);
+				await _dbContext.SaveChangesAsync();
+				return true;
+			}
+		}
+
+		public async Task<bool> IsExternalFavoriteAsync(string userId, TrackSource source, string externalId)
+		{
+			return await _dbContext.ExternalFavorites
+				.AnyAsync(f => f.UserId == userId && f.Source == source && f.ExternalId == externalId);
+		}
+
+		public async Task<List<ExternalFavorite>> GetUserExternalFavoritesAsync(string userId, TrackSource? source = null)
+		{
+			var query = _dbContext.ExternalFavorites.Where(f => f.UserId == userId);
+
+			if (source.HasValue)
+				query = query.Where(f => f.Source == source.Value);
+
+			return await query
+				.OrderByDescending(f => f.LikedAt)
+				.ToListAsync();
 		}
 	}
 

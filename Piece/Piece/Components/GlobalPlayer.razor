@@ -111,24 +111,15 @@
 
         <!-- Right: Extra Controls -->
         <div style="display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
-            @if(PlayerService.CurrentTrack.Source == TrackSource.Local && PlayerService.CurrentTrack.LocalTrackId.HasValue)
-            {
-                <button @onclick="ToggleFavorite"
-                style="background: none; 
-                           border: none;
-                            color: @(PlayerService.CurrentTrack.IsFavorite ? "#ff4444" : "#888");
-                            font-size: 24px;
-                            cursor: pointer;
-                            transition: all 0.3s;">
-                    @(PlayerService.CurrentTrack.IsFavorite ? "❤" : "🤍")
-                </button>
-            }
-            else
-            {
-                <button style="background: none; border: none; color: #444; font-size: 24px; cursor: not-allowed;">
-                    🤍
-                </button>
-            }
+            <button @onclick="ToggleFavorite"
+                    style="background: none;
+                   border: none;
+                   color: @(PlayerService.CurrentTrack.IsFavorite ? "#ff4444" : "#888");
+                   font-size: 24px;
+                   cursor: pointer;
+                   transition: all 0.3s;">
+                @(PlayerService.CurrentTrack.IsFavorite ? "❤" : "🤍")
+            </button>
             <button style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer;">🔊</button>
         </div>
     </div>
@@ -215,22 +206,62 @@
 
     private async Task ToggleFavorite()
     {
-        if (string.IsNullOrEmpty(currentUserId) ||
-            PlayerService.CurrentTrack?.LocalTrackId == null)
+        Console.WriteLine("[GlobalPlayer] ToggleFavorite called");
+
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            Console.WriteLine("[GlobalPlayer] No currentUserId - user not logged in?");
             return;
+        }
+
+        if (PlayerService.CurrentTrack == null)
+        {
+            Console.WriteLine("[GlobalPlayer] No current track");
+            return;
+        }
+
+        Console.WriteLine($"[GlobalPlayer] Toggling favorite for: {PlayerService.CurrentTrack.Title}, Source: {PlayerService.CurrentTrack.Source}");
 
         try
         {
-            var isFavorite = await FavoriteService.ToggleFavoriteAsync(
-                currentUserId,
-                PlayerService.CurrentTrack.LocalTrackId.Value
-            );
+            bool isFavorite = false;
+
+            if (PlayerService.CurrentTrack.Source == TrackSource.Local &&
+                PlayerService.CurrentTrack.LocalTrackId.HasValue)
+            {
+                Console.WriteLine("[GlobalPlayer] Processing local track");
+                isFavorite = await FavoriteService.ToggleFavoriteAsync(
+                    currentUserId,
+                    PlayerService.CurrentTrack.LocalTrackId.Value
+                );
+            }
+            else if (PlayerService.CurrentTrack.Source == TrackSource.Jamendo)
+            {
+                Console.WriteLine("[GlobalPlayer] Processing Jamendo track");
+                var jamendoId = PlayerService.CurrentTrack.Id.Replace("jamendo-", "");
+                Console.WriteLine($"[GlobalPlayer] Jamendo ID: {jamendoId}");
+
+                isFavorite = await FavoriteService.ToggleExternalFavoriteAsync(
+                    currentUserId,
+                    TrackSource.Jamendo,
+                    jamendoId,
+                    PlayerService.CurrentTrack.Title,
+                    PlayerService.CurrentTrack.ArtistName,
+                    PlayerService.CurrentTrack.AudioUrl,
+                    PlayerService.CurrentTrack.AlbumImage
+                );
+
+                Console.WriteLine($"[GlobalPlayer] ToggleExternalFavoriteAsync returned: {isFavorite}");
+            }
+
             PlayerService.UpdateFavoriteStatus(isFavorite);
-            Console.WriteLine($"[GlobalPlayer] Track {(isFavorite ? "liked" : "unliked")}");
+            Console.WriteLine($"[GlobalPlayer] Track {(isFavorite ? "liked" : "unliked")} - updating UI");
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[GlobalPlayer] Error toggling favorite: {ex.Message}");
+            Console.WriteLine($"[GlobalPlayer] Stack trace: {ex.StackTrace}");
         }
     }
 
@@ -239,18 +270,18 @@
         try
         {
             var clickX = e.OffsetX;
-            var element = await JSRuntime.InvokeAsync<double>("eval",
+            var width = await JSRuntime.InvokeAsync<double>("eval",
                 "document.querySelector('.progress-bar-container').offsetWidth");
 
-            var seekPercent = clickX / element;
+            var seekPercent = clickX / width;
             var seekTime = duration * seekPercent;
 
             await JSRuntime.InvokeVoidAsync("eval", $@"
-                var audio = document.getElementById('globalAudioPlayer');
-                if (audio) {{
-                    audio.currentTime = {seekTime.ToString(System.Globalization.CultureInfo.InvariantCulture)};
-                }}
-            ");
+            var audio = document.getElementById('globalAudioPlayer');
+            if (audio) {{
+                audio.currentTime = {seekTime.ToString(System.Globalization.CultureInfo.InvariantCulture)};
+            }}
+        ");
         }
         catch (Exception ex)
         {

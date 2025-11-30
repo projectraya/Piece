@@ -24,7 +24,7 @@ namespace Piece.DTOs
 				Title = track.Title,
 				ArtistName = track.ArtistName,
 				AudioUrl = track.LocalFilePath,
-				AlbumImage = null,
+				AlbumImage = track.CoverImageUrl,
 				Source = TrackSource.Local,
 				LocalTrackId = track.Id,
 				IsFavorite = isFavorite
