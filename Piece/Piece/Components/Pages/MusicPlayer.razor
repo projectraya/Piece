@@ -337,6 +337,10 @@ else
                     }
                 </div>
                 <div class="search-tabs">
+                    <button class="search-tab @(activeTab == "all" ? "active" : "")"
+                            @onclick='() => SetActiveTab("all")'>
+                        All Results
+                    </button>
                     <button class="search-tab @(activeTab == "library" ? "active" : "")"
                             @onclick='() => SetActiveTab("library")'>
                         Your Library
@@ -348,54 +352,104 @@ else
                 </div>
             </div>
 
-            @if (activeTab == "jamendo" && isSearching)
+            @if (isSearching)
             {
                 <div class="search-loading">
                     <div class="spinner"></div>
-                    <p>Searching Jamendo...</p>
+                    <p>Searching...</p>
                 </div>
             }
-            else if (activeTab == "jamendo" && jamendoResults.Any())
+            else if (!string.IsNullOrEmpty(searchQuery))
             {
-                <!-- Jamendo Search Results -->
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Jamendo Results</h2>
-                        <span style="color: #888; font-size: 14px;">@jamendoResults.Count tracks found</span>
-                    </div>
-                    <div class="track-grid">
-                        @foreach (var track in jamendoResults)
-                        {
-                            <div class="track-card @(PlayerService.CurrentTrack?.Id == $"jamendo-{track.Id}" ? "playing" : "")"
-                                 @onclick="() => PlayJamendoTrack(track)">
-                                <div class="track-source-badge">JAMENDO</div>
-                                <div class="track-art">
-                                    @if (!string.IsNullOrEmpty(track.AlbumImage))
-                                    {
-                                        <img src="@track.AlbumImage" alt="@track.Name" />
-                                    }
-                                    else
-                                    {
-                                        <span>🎵</span>
-                                    }
-                                </div>
-                                <div class="track-title">@track.Name</div>
-                                <div class="track-artist">@track.ArtistName</div>
+                <!-- Search Results View -->
+                @if (activeTab == "all" || activeTab == "library")
+                {
+                    @if (filteredLocalTracks.Any())
+                    {
+                        <div class="content-section">
+                            <div class="section-header">
+                                <h2 class="section-title">Your Library (@filteredLocalTracks.Count)</h2>
                             </div>
-                        }
+                            <div class="track-grid">
+                                @foreach (var track in filteredLocalTracks)
+                                {
+                                    <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
+                                         @onclick="() => PlayTrack(track)">
+                                        @if (track.Genre != null)
+                                        {
+                                            <div class="track-genre-badge">@track.Genre.Name</div>
+                                        }
+                                        <div class="track-art">🎵</div>
+                                        <div class="track-title">@track.Title</div>
+                                        <div class="track-artist">@track.ArtistName</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (activeTab == "library")
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <h3>No results in your library</h3>
+                            <p>Try a different search term</p>
+                        </div>
+                    }
+                }
+
+                @if (activeTab == "all" || activeTab == "jamendo")
+                {
+                    @if (jamendoResults.Any())
+                    {
+                        <div class="content-section">
+                            <div class="section-header">
+                                <h2 class="section-title">Jamendo (@jamendoResults.Count)</h2>
+                            </div>
+                            <div class="track-grid">
+                                @foreach (var track in jamendoResults)
+                                {
+                                    <div class="track-card @(PlayerService.CurrentTrack?.Id == $"jamendo-{track.Id}" ? "playing" : "")"
+                                         @onclick="() => PlayJamendoTrack(track)">
+                                        <div class="track-source-badge">JAMENDO</div>
+                                        <div class="track-art">
+                                            @if (!string.IsNullOrEmpty(track.AlbumImage))
+                                            {
+                                                <img src="@track.AlbumImage" alt="@track.Name" />
+                                            }
+                                            else
+                                            {
+                                                <span>🎵</span>
+                                            }
+                                        </div>
+                                        <div class="track-title">@track.Name</div>
+                                        <div class="track-artist">@track.ArtistName</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (activeTab == "jamendo")
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <h3>No Jamendo results found</h3>
+                            <p>Try a different search term</p>
+                        </div>
+                    }
+                }
+
+                @if (activeTab == "all" && !filteredLocalTracks.Any() && !jamendoResults.Any())
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <h3>No results found</h3>
+                        <p>Try searching for something else</p>
                     </div>
-                </div>
+                }
             }
-            else if (activeTab == "jamendo" && !string.IsNullOrEmpty(searchQuery) && !isSearching)
+            else
             {
-                <div class="empty-state">
-                    <div class="empty-state-icon">🔍</div>
-                    <h3>No results found</h3>
-                    <p>Try searching for something else</p>
-                </div>
-            }
-            else if (activeTab == "library")
-            {
+                <!-- Default Library View (no search) -->
                 @if (tracks.Any())
                 {
                     <!-- Your Library Section -->
@@ -456,6 +510,7 @@ else
                     </div>
                 }
             }
+            
         </div>
     </div>
 }
@@ -468,11 +523,12 @@ else
 
     // Search functionality
     private string searchQuery = "";
-    private string activeTab = "library";
+    private string activeTab = "all";
     private bool isSearching = false;
     private List<JamendoTrack> jamendoResults = new();
     private System.Threading.Timer? searchDebounceTimer;
     private string? currentUserId;
+    private List<Track> filteredLocalTracks = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -519,6 +575,17 @@ else
         }
     }
 
+    private IEnumerable<Track> GetFilteredLocalTracks()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+            return tracks;
+
+        return tracks.Where(t =>
+            t.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            t.ArtistName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            (t.Genre?.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+        );
+    }
     private void PlayTrack(Track track)
     {
         Console.WriteLine($"[MusicPlayer] Button clicked for: {track.Title}");
@@ -553,9 +620,20 @@ else
         {
             await InvokeAsync(async () =>
             {
-                if (activeTab == "jamendo" && !string.IsNullOrEmpty(searchQuery))
+                if (!string.IsNullOrEmpty(searchQuery))
                 {
+                    // Filter local tracks immediately
+                    filteredLocalTracks = GetFilteredLocalTracks().ToList();
+
+                    // Search Jamendo
                     await SearchJamendo();
+                }
+                else
+                {
+                    // Clear search results
+                    filteredLocalTracks.Clear();
+                    jamendoResults.Clear();
+                    StateHasChanged();
                 }
             });
         }, null, 500, Timeout.Infinite);
@@ -604,9 +682,10 @@ else
     private void SetActiveTab(string tab)
     {
         activeTab = tab;
-        if (tab == "jamendo" && !string.IsNullOrEmpty(searchQuery))
+        if (!string.IsNullOrEmpty(searchQuery))
         {
             _ = SearchJamendo();
+            filteredLocalTracks = GetFilteredLocalTracks().ToList();
         }
         StateHasChanged();
     }
@@ -615,6 +694,8 @@ else
     {
         searchQuery = "";
         jamendoResults.Clear();
+        filteredLocalTracks.Clear();
+        activeTab = "all";
         StateHasChanged();
     }
 
