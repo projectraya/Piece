@@ -28,24 +28,42 @@ public class DatabaseSeeder
 		await _context.SaveChangesAsync();
 	}
 
-	private async Task SeedGenresAsync()
+	public async Task SeedGenresAsync()
 	{
 		var genres = new List<Genre>
-			{
-				new Genre { Name = "EDM", Description = "Electronic and dance music" },
-				new Genre { Name = "Jazz", Description = "Jazz and smooth jazz" },
-				new Genre { Name = "Dance", Description = "Music to dance to" },
-				new Genre { Name = "Pop", Description = "Pop music" },
-				new Genre { Name = "Trance", Description = "Subgenre of trap" },
-				new Genre { Name = "Trap", Description = "Bass based" },
-				new Genre { Name = "Lofi", Description = "Slow and calm" },
-				new Genre { Name = "Bounce", Description = "Bouncy ambient music" },
-				new Genre { Name = "RNB", Description = "Rock and blues music" },
-				new Genre { Name = "Electronic", Description = "Music created by electric impulses" }
-			};
+	{
+		new Genre { Name = "EDM", Description = "Electronic and dance music", Color = "#e91e63" },
+		new Genre { Name = "Jazz", Description = "Jazz and smooth jazz", Color = "#f39c12" },
+		new Genre { Name = "Dance", Description = "Music to dance to", Color = "#1abc9c" },
+		new Genre { Name = "Pop", Description = "Pop music", Color = "#9b59b6" },
+		new Genre { Name = "Trance", Description = "Subgenre of trap", Color = "#ffeb3b" },
+		new Genre { Name = "Trap", Description = "Bass based", Color = "#3498db" },
+		new Genre { Name = "Lofi", Description = "Slow and calm", Color = "#CBC3E3" },
+		new Genre { Name = "Bounce", Description = "Bouncy ambient music", Color = "#41dc8e" }, // Added # here
+        new Genre { Name = "RNB", Description = "Rock and blues music", Color = "#FF474C" },
+		new Genre { Name = "Electronic", Description = "Music created by electric impulses", Color = "#FF00FF" }
+	};
 
-		await _context.Genres.AddRangeAsync(genres);
-		await _context.SaveChangesAsync(); // Save to get Genre IDs
+		if (!_context.Genres.Any())
+		{
+			await _context.Genres.AddRangeAsync(genres); // Added await
+			await _context.SaveChangesAsync(); // Added await
+		}
+		else
+		{
+			// Update existing genres with colors
+			foreach (var genre in genres)
+			{
+				var existing = _context.Genres.FirstOrDefault(g => g.Name == genre.Name);
+				if (existing != null)
+				{
+					existing.Color = genre.Color;
+				}
+			}
+			await _context.SaveChangesAsync(); // Added await
+		}
+
+		Console.WriteLine("Genres seeded/updated with colors!");
 	}
 
 	private async Task SeedSubscriptionPlansAsync()

@@ -10,6 +10,8 @@ namespace Piece.Data.Models
 		[MaxLength(50)]
 		public string Name { get; set; } = string.Empty;
 
+		public string Color { get; set; } = "#667eea";
+
 		[MaxLength(500)]
 		public string? Description { get; set; }
 

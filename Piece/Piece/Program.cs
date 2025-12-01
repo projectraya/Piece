@@ -30,8 +30,9 @@ namespace Piece
             builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
             builder.Services.AddSingleton<PlayerService>();
             builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+			builder.Services.AddScoped<IListeningHistoryService, ListeningHistoryService>();
 
-            builder.Services.AddAuthentication(options =>
+			builder.Services.AddAuthentication(options =>
                 {
                     options.DefaultScheme = IdentityConstants.ApplicationScheme;
                     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
@@ -53,8 +54,14 @@ namespace Piece
 
 			var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+			using (var scope = app.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
+				var seeder = services.GetRequiredService<DatabaseSeeder>();
+				await seeder.SeedGenresAsync(); // Make sure this method is public!
+			}
+			// Configure the HTTP request pipeline.
+			if (app.Environment.IsDevelopment())
             {
                 app.UseWebAssemblyDebugging();
                 app.UseMigrationsEndPoint();

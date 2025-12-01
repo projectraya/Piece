@@ -9,6 +9,7 @@
 @implements IDisposable
 
 
+
 @if (PlayerService.CurrentTrack != null)
 {
     <div style="position: fixed;
@@ -28,7 +29,7 @@
         <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
             <div style="width: 60px;
                         height: 60px;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
                         border-radius: 8px;
                         display: flex;
                         align-items: center;
@@ -54,7 +55,7 @@
                     @PlayerService.CurrentTrack.ArtistName
                     @if (PlayerService.CurrentTrack.Source == TrackSource.Jamendo)
                     {
-                        <span style="color: #667eea; margin-left: 8px;">• Jamendo</span>
+                        <span style="color: #FFD335; margin-left: 8px;">• Jamendo</span>
                     }
                 </p>
             </div>
@@ -90,7 +91,7 @@
                     position: relative;">
                     <div style="width: @((int)progressPercent)%;
                         height: 100%;
-                        background-color: #667eea;
+                        background-color: #FFD335;
                         border-radius: 3px;
                         transition: width 0.1s;"></div>
                 </div>
@@ -134,6 +135,9 @@
     private double currentPosition = 0;
     private string? currentUserId;
     private System.Threading.Timer? progressTimer;
+    [Inject] private IListeningHistoryService? ListeningHistoryService { get; set; }
+    private DateTime trackStartTime;
+    private string? lastTrackedTrackId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,10 +164,59 @@
     private void OnTrackChanged()
     {
         Console.WriteLine($"[GlobalPlayer] Track changed to: {PlayerService.CurrentTrack?.Title}");
+        Console.WriteLine($"[GlobalPlayer] Current user ID: {currentUserId}");
+        Console.WriteLine($"[GlobalPlayer] Last tracked track ID: {lastTrackedTrackId}");
+
+        // Record the previous track's listening time
+        if (!string.IsNullOrEmpty(currentUserId) &&
+            !string.IsNullOrEmpty(lastTrackedTrackId))
+        {
+            var duration = (int)(DateTime.UtcNow - trackStartTime).TotalSeconds;
+            Console.WriteLine($"[GlobalPlayer] Track duration: {duration} seconds");
+
+            if (duration > 5) // Only track if listened for more than 5 seconds
+            {
+                Console.WriteLine($"[GlobalPlayer] Recording listening for track {lastTrackedTrackId}");
+                _ = RecordListening(lastTrackedTrackId, duration);
+            }
+            else
+            {
+                Console.WriteLine($"[GlobalPlayer] Not recording - duration too short");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[GlobalPlayer] Not recording - missing userId or trackId");
+        }
+
+        // Start tracking new track
+        if (PlayerService.CurrentTrack?.Source == TrackSource.Local &&
+            PlayerService.CurrentTrack.LocalTrackId.HasValue)
+        {
+            trackStartTime = DateTime.UtcNow;
+            lastTrackedTrackId = PlayerService.CurrentTrack.LocalTrackId.Value.ToString();
+            Console.WriteLine($"[GlobalPlayer] Started tracking track {lastTrackedTrackId}");
+        }
+
         currentTime = "0:00";
         totalTime = "0:00";
         progressPercent = 0;
         StateHasChanged();
+    }
+    private async Task RecordListening(string trackId, int duration)
+    {
+        try
+        {
+            if (int.TryParse(trackId, out int id) && ListeningHistoryService != null)
+            {
+                await ListeningHistoryService.RecordListeningAsync(currentUserId!, id, duration);
+                Console.WriteLine($"[GlobalPlayer] Recorded {duration}s of listening for track {id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GlobalPlayer] Error recording listening: {ex.Message}");
+        }
     }
 
     private async Task UpdateProgress()
@@ -316,9 +369,19 @@
         ");
     }
 
-    private void OnTrackEnded()
+    private async void OnTrackEnded()
     {
         Console.WriteLine("[GlobalPlayer] Track ended");
+
+        // Record the full track play
+        if (!string.IsNullOrEmpty(currentUserId) &&
+            !string.IsNullOrEmpty(lastTrackedTrackId) &&
+            ListeningHistoryService != null)
+        {
+            var duration = (int)(DateTime.UtcNow - trackStartTime).TotalSeconds;
+            await RecordListening(lastTrackedTrackId, duration);
+        }
+
         PlayerService.PlayNext();
     }
 
