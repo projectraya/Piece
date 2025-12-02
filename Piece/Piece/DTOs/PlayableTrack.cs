@@ -31,7 +31,7 @@ namespace Piece.DTOs
 			};
 		}
 
-		public static PlayableTrack FromJamendoTrack(string id, string name, string artistName, string audioUrl, string? albumImage)
+		public static PlayableTrack FromJamendoTrack(string id, string name, string artistName, string audioUrl, string? albumImage, bool isFavorite)
 		{
 			return new PlayableTrack
 			{
@@ -42,7 +42,7 @@ namespace Piece.DTOs
 				AlbumImage = albumImage,
 				Source = TrackSource.Jamendo,
 				LocalTrackId = null,
-				IsFavorite = false
+				IsFavorite = isFavorite
 			};
 		}
 	}
