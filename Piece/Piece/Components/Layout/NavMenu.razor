@@ -1,4 +1,4 @@
-﻿@implements IDisposable
+﻿@*  @implements IDisposable
 
 @inject NavigationManager NavigationManager
 
@@ -105,3 +105,258 @@
     }
 }
 
+  *@
+
+    @using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="nav-menu">
+    <div class="nav-header">
+        <div class="app-logo">
+            <span class="logo-icon">🎵</span>
+            <span class="logo-text">Piece</span>
+        </div>
+    </div>
+
+    <nav class="nav-items">
+        <div class="nav-section">
+            <div class="section-label">DISCOVER</div>
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Home</span>
+            </NavLink>
+            <NavLink class="nav-link" href="player">
+                <span class="nav-icon">▶️</span>
+                <span class="nav-text">Player</span>
+            </NavLink>
+            <NavLink class="nav-link" href="map">
+                <span class="nav-icon"></span>
+                <span class="nav-text">Map</span>
+            </NavLink>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-label">YOURS</div>
+            <NavLink class="nav-link" href="playlists">
+                <span class="nav-icon">📚</span>
+                <span class="nav-text">Library</span>
+            </NavLink>
+            <NavLink class="nav-link" href="liked-songs">
+                <span class="nav-icon">❤️</span>
+                <span class="nav-text">Favorites</span>
+            </NavLink>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-section">
+                    <div class="section-label">ACCOUNT</div>
+                    
+                    <NavLink class="nav-link" href="Account/Manage/Statistics">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Weekly Colors</span>
+                    </NavLink>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-section">
+                    <NavLink class="nav-link" href="Account/Login">
+                        <span class="nav-icon">🔐</span>
+                        <span class="nav-text">Login</span>
+                    </NavLink>
+                    <NavLink class="nav-link" href="Account/Register">
+                        <span class="nav-icon">✨</span>
+                        <span class="nav-text">Sign Up</span>
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+
+    <div class="nav-footer">
+        <AuthorizeView>
+            <Authorized>
+                <form action="Account/Logout" method="post" class="logout-form">
+                    <AntiforgeryToken />
+                    <NavLink class="nav-link" href="Account/Manage">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Profile</span>
+                    </NavLink>
+                    <button type="submit" class="logout-btn">
+                        <span class="nav-icon">🚪</span>
+                        <span class="nav-text">Logout</span>
+                    </button>
+                </form>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+<style>
+    /* Apple Music Inspired Sidebar */
+    .nav-menu {
+        width: 250px;
+        height: 100vh;
+        background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255, 211, 53, 0.1);
+        position: fixed;
+        left: 0;
+        top: 0;
+        overflow-y: auto;
+    }
+
+        /* Custom Scrollbar */
+        .nav-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .nav-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 211, 53, 0.3);
+            border-radius: 3px;
+        }
+
+            .nav-menu::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 211, 53, 0.5);
+            }
+
+    /* Header */
+    .nav-header {
+        padding: 30px 20px 20px;
+        border-bottom: 1px solid rgba(255, 211, 53, 0.1);
+    }
+
+    .app-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        font-size: 32px;
+        filter: drop-shadow(0 0 10px rgba(255, 211, 53, 0.5));
+    }
+
+    .logo-text {
+        font-size: 24px;
+        font-weight: 700;
+        color: #FFD335;
+        letter-spacing: -0.5px;
+    }
+
+    /* Navigation Items */
+    .nav-items {
+        flex: 1;
+        padding: 20px 0;
+    }
+
+    .nav-section {
+        margin-bottom: 30px;
+    }
+
+    .section-label {
+        padding: 0 20px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #666;
+        letter-spacing: 1px;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: #ccc;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        position: relative;
+        border-left: 3px solid transparent;
+    }
+
+        .nav-link:hover {
+            background: rgba(255, 211, 53, 0.1);
+            color: #FFD335;
+            border-left-color: rgba(255, 211, 53, 0.3);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 211, 53, 0.15);
+            color: #FFD335;
+            border-left-color: #FFD335;
+            font-weight: 600;
+        }
+
+            .nav-link.active .nav-icon {
+                filter: drop-shadow(0 0 8px rgba(255, 211, 53, 0.6));
+            }
+
+    .nav-icon {
+        font-size: 20px;
+        width: 24px;
+        text-align: center;
+    }
+
+    .nav-text {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Footer */
+    .nav-footer {
+        padding: 20px;
+        border-top: 1px solid rgba(255, 211, 53, 0.1);
+    }
+
+    .logout-form {
+        margin: 0;
+    }
+
+    .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 20px;
+        background: rgba(255, 211, 53, 0.1);
+        border: 1px solid rgba(255, 211, 53, 0.3);
+        border-radius: 8px;
+        color: #FFD335;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .logout-btn:hover {
+            background: rgba(255, 211, 53, 0.2);
+            border-color: #FFD335;
+            transform: translateY(-2px);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .nav-menu {
+            width: 70px;
+        }
+
+        .logo-text,
+        .nav-text,
+        .section-label {
+            display: none;
+        }
+
+        .nav-link {
+            justify-content: center;
+        }
+    }
+</style>

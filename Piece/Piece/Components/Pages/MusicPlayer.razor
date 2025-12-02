@@ -13,300 +13,306 @@
 <PageTitle>Piece - Music Player</PageTitle>
 
 <style>
+    .filter-section {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        margin-top: 10px;
+    }
     /* Dark Theme Styling */
     body {
-        background-color: #1a1a1a;
-        color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
     .player-container {
-        display: flex;
-        height: calc(100vh - 120px);
-        background-color: #1a1a1a;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
+    display: flex;
+    height: calc(100vh - 120px);
+    background-color: #1a1a1a;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
     }
 
     /* Main Content */
     .main-content {
-        flex: 1;
-        background-color: #1a1a1a;
-        padding: 30px;
-        overflow-y: auto;
+    flex: 1;
+    background-color: #1a1a1a;
+    padding: 30px;
+    overflow-y: auto;
     }
 
     /* Search Bar */
     .search-container {
-        margin-bottom: 30px;
-        position: sticky;
-        top: 0;
-        background-color: #1a1a1a;
-        padding: 20px 0;
-        z-index: 100;
+    margin-bottom: 30px;
+    position: sticky;
+    top: 0;
+    background-color: #1a1a1a;
+    padding: 20px 0;
+    z-index: 100;
     }
 
     .search-box {
-        display: flex;
-        align-items: center;
-        background-color: #2a2a2a;
-        border-radius: 24px;
-        padding: 12px 20px;
-        gap: 12px;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    background-color: #2a2a2a;
+    border-radius: 24px;
+    padding: 12px 20px;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
     }
 
-        .search-box:focus-within {
-            border-color: #FFD335;
-            background-color: #3a3a3a;
-        }
+    .search-box:focus-within {
+    border-color: #FFD335;
+    background-color: #3a3a3a;
+    }
 
     .search-icon {
-        font-size: 20px;
-        color: #888;
+    font-size: 20px;
+    color: #888;
     }
 
     .search-input {
-        flex: 1;
-        background: none;
-        border: none;
-        color: #ffffff;
-        font-size: 16px;
-        outline: none;
+    flex: 1;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 16px;
+    outline: none;
     }
 
-        .search-input::placeholder {
-            color: #666;
-        }
+    .search-input::placeholder {
+    color: #666;
+    }
 
     .search-clear {
-        background: none;
-        border: none;
-        color: #888;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        transition: color 0.3s;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s;
     }
 
-        .search-clear:hover {
-            color: #ffffff;
-        }
+    .search-clear:hover {
+    color: #ffffff;
+    }
 
     .search-tabs {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
     }
 
     .search-tab {
-        padding: 8px 16px;
-        background-color: #2a2a2a;
-        border: none;
-        border-radius: 20px;
-        color: #888;
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.3s ease;
+    padding: 8px 16px;
+    background-color: #2a2a2a;
+    border: none;
+    border-radius: 20px;
+    color: #888;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
     }
 
-        .search-tab.active {
-            background-color: #FFD335;
-            color: #ffffff;
-        }
+    .search-tab.active {
+    background-color: #FFD335;
+    color: #ffffff;
+    }
 
-        .search-tab:hover:not(.active) {
-            background-color: #3a3a3a;
-            color: #ffffff;
-        }
+    .search-tab:hover:not(.active) {
+    background-color: #3a3a3a;
+    color: #ffffff;
+    }
 
     .content-section {
-        margin-bottom: 40px;
+    margin-bottom: 40px;
     }
 
     .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
     }
 
     .section-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
     }
 
     .see-all {
-        color: #888;
-        font-size: 14px;
-        cursor: pointer;
-        transition: color 0.3s;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.3s;
     }
 
-        .see-all:hover {
-            color: #ffffff;
-        }
+    .see-all:hover {
+    color: #ffffff;
+    }
 
     /* Track Grid */
     .track-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
     }
 
     .track-card {
-        background-color: #2a2a2a;
-        border-radius: 12px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+    background-color: #2a2a2a;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
     }
 
-        .track-card:hover {
-            background-color: #3a3a3a;
-            transform: translateY(-5px);
-        }
+    .track-card:hover {
+    background-color: #3a3a3a;
+    transform: translateY(-5px);
+    }
 
-        .track-card.playing {
-            background-color: #4a4a4a;
-            border: 2px solid #ffffff;
-        }
+    .track-card.playing {
+    background-color: #4a4a4a;
+    border: 2px solid #ffffff;
+    }
 
     .track-art {
-        width: 100%;
-        aspect-ratio: 1;
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
-        border-radius: 8px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 48px;
-        overflow: hidden;
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    overflow: hidden;
     }
 
-        .track-art img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .track-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
 
     .track-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: #ffffff;
-        margin-bottom: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .track-artist {
-        font-size: 12px;
-        color: #888;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 12px;
+    color: #888;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .track-source-badge {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background-color: #FFD335;
-        backdrop-filter: blur(10px);
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 600;
-        color: #ffffff;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: #FFD335;
+    backdrop-filter: blur(10px);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #ffffff;
     }
 
     .track-genre-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 600;
-        color: #ffffff;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    /* background-color: rgba(255, 255, 255, 0.2) */
+    backdrop-filter: blur(10px);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #ffffff;
     }
 
     /* Loading State */
     .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        color: #888;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: #888;
     }
 
     .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #3a3a3a;
-        border-top-color: #ffffff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+    width: 50px;
+    height: 50px;
+    border: 4px solid #3a3a3a;
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
     }
 
     @@keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
+    to {
+    transform: rotate(360deg);
+    }
     }
 
     /* Empty State */
     .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #888;
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
     }
 
     .empty-state-icon {
-        font-size: 64px;
-        margin-bottom: 20px;
+    font-size: 64px;
+    margin-bottom: 20px;
     }
 
     /* Scrollbar Styling */
     .main-content::-webkit-scrollbar {
-        width: 8px;
+    width: 8px;
     }
 
     .main-content::-webkit-scrollbar-track {
-        background: #1a1a1a;
+    background: #1a1a1a;
     }
 
     .main-content::-webkit-scrollbar-thumb {
-        background: #3a3a3a;
-        border-radius: 4px;
+    background: #3a3a3a;
+    border-radius: 4px;
     }
 
-        .main-content::-webkit-scrollbar-thumb:hover {
-            background: #4a4a4a;
-        }
+    .main-content::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+    }
 
     /* Search Loading */
     .search-loading {
-        text-align: center;
-        padding: 40px 20px;
-        color: #888;
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
     }
 
-        .search-loading .spinner {
-            margin: 0 auto 20px;
-        }
+    .search-loading .spinner {
+    margin: 0 auto 20px;
+    }
 </style>
 
 @if (isLoading)
@@ -326,11 +332,11 @@ else
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
                     <input type="text"
-                           class="search-input"
-                           placeholder="Search for music on Jamendo..."
-                           @bind="searchQuery"
-                           @bind:event="oninput"
-                           @onkeyup="HandleSearchKeyUp" />
+                    class="search-input"
+                    placeholder="Search for music on Jamendo..."
+                    @bind="searchQuery"
+                    @bind:event="oninput"
+                    @onkeyup="HandleSearchKeyUp" />
                     @if (!string.IsNullOrEmpty(searchQuery))
                     {
                         <button class="search-clear" @onclick="ClearSearch">✕</button>
@@ -338,18 +344,49 @@ else
                 </div>
                 <div class="search-tabs">
                     <button class="search-tab @(activeTab == "all" ? "active" : "")"
-                            @onclick='() => SetActiveTab("all")'>
+                    @onclick='() => SetActiveTab("all")'>
                         All Results
                     </button>
                     <button class="search-tab @(activeTab == "library" ? "active" : "")"
-                            @onclick='() => SetActiveTab("library")'>
+                    @onclick='() => SetActiveTab("library")'>
                         Your Library
                     </button>
                     <button class="search-tab @(activeTab == "jamendo" ? "active" : "")"
-                            @onclick='() => SetActiveTab("jamendo")'>
+                    @onclick='() => SetActiveTab("jamendo")'>
                         Jamendo
                     </button>
                 </div>
+            </div>
+            <!-- Genre Filter -->
+            <div class="filter-section">
+                <label style="color: #888; font-size: 12px; margin-right: 10px;">Filter by Genre:</label>
+                <select @bind="selectedGenre" @bind:after="ApplyGenreFilter"
+                        style="background-color: #2a2a2a;
+                   color: #ffffff;
+                   border: 2px solid #3a3a3a;
+                   border-radius: 8px;
+                   padding: 8px 12px;
+                   font-size: 14px;
+                   cursor: pointer;">
+                    <option value="">All Genres</option>
+                    @foreach (var genre in availableGenres.OrderBy(g => g))
+                    {
+                        <option value="@genre">@genre</option>
+                    }
+                </select>
+
+                @if (!string.IsNullOrEmpty(selectedGenre))
+                {
+                    <button @onclick="ClearGenreFilter"
+                            style="background: none;
+                       border: none;
+                       color: #FFD335;
+                       cursor: pointer;
+                       font-size: 14px;
+                       margin-left: 10px;">
+                        Clear Filter
+                    </button>
+                }
             </div>
 
             @if (isSearching)
@@ -374,10 +411,11 @@ else
                                 @foreach (var track in filteredLocalTracks)
                                 {
                                     <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
-                                         @onclick="() => PlayTrack(track)">
+                                    @onclick="() => PlayTrack(track)">
                                         @if (track.Genre != null)
                                         {
-                                            <div class="track-genre-badge">@track.Genre.Name</div>
+                                            string color = track.Genre.Color;
+                                            <div class="track-genre-badge" style="background-color: @color">@track.Genre.Name</div>
                                         }
                                         <div class="track-art">
                                             @if (!string.IsNullOrEmpty(track.CoverImageUrl))
@@ -412,14 +450,23 @@ else
                     {
                         <div class="content-section">
                             <div class="section-header">
-                                <h2 class="section-title">Jamendo (@jamendoResults.Count)</h2>
+                                <h2 class="section-title">Jamendo (@filteredJamendoResults.Count)</h2>
                             </div>
                             <div class="track-grid">
-                                @foreach (var track in jamendoResults)
+                                @foreach (var track in filteredJamendoResults)
                                 {
                                     <div class="track-card @(PlayerService.CurrentTrack?.Id == $"jamendo-{track.Id}" ? "playing" : "")"
                                          @onclick="() => PlayJamendoTrack(track)">
                                         <div class="track-source-badge">JAMENDO</div>
+
+                                        @* Add genre badge if available *@
+                                        @if (track.MusicInfo?.Tags?.Genres?.Any() ?? false)
+                                        {
+                                            <div class="track-genre-badge" style="top: 10px; left: 80px;">
+                                                @track.MusicInfo.Tags.Genres.First()
+                                            </div>
+                                        }
+
                                         <div class="track-art">
                                             @if (!string.IsNullOrEmpty(track.AlbumImage))
                                             {
@@ -468,13 +515,14 @@ else
                             <span class="see-all">See all ›</span>
                         </div>
                         <div class="track-grid">
-                            @foreach (var track in tracks)
+                            @foreach (var track in filteredTracks)
                             {
                                 <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
                                      @onclick="() => PlayTrack(track)">
                                     @if (track.Genre != null)
                                     {
-                                        <div class="track-genre-badge">@track.Genre.Name</div>
+                                        string color = track.Genre.Color;
+                                        <div class="track-genre-badge" style="background-color: @color">@track.Genre.Name</div>
                                     }
                                     <div class="track-art">
                                         @if (!string.IsNullOrEmpty(track.CoverImageUrl))
@@ -493,40 +541,7 @@ else
                         </div>
                     </div>
 
-                    <!-- Genres Section -->
-                    @if (genreGroups.Any())
-                    {
-                        @foreach (var genreGroup in genreGroups.Take(3))
-                        {
-                            <div class="content-section">
-                                <div class="section-header">
-                                    <h2 class="section-title">@genreGroup.Key</h2>
-                                    <span class="see-all">See all ›</span>
-                                </div>
-                                <div class="track-grid">
-                                    @foreach (var track in genreGroup.Take(6))
-                                    {
-                                        <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
-                                             @onclick="() => PlayTrack(track)">
-                                            <div class="track-genre-badge">@track.Genre?.Name</div>
-                                            <div class="track-art">
-                                                @if (!string.IsNullOrEmpty(track.CoverImageUrl))
-                                                {
-                                                    <img src="@track.CoverImageUrl" alt="@track.Title" />
-                                                }
-                                                else
-                                                {
-                                                    <span>🎵</span>
-                                                }
-                                            </div>
-                                            <div class="track-title">@track.Title</div>
-                                            <div class="track-artist">@track.ArtistName</div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    }
+                    
                 }
                 else
                 {
@@ -545,7 +560,7 @@ else
 @code {
     private List<Track> tracks = new();
     private bool isLoading = true;
-    private IEnumerable<IGrouping<string, Track>> genreGroups = Enumerable.Empty<IGrouping<string, Track>>();
+    
     private HashSet<int> favoriteTrackIds = new();
     private HashSet<string> favoriteJamendoIds = new();
 
@@ -557,6 +572,12 @@ else
     private System.Threading.Timer? searchDebounceTimer;
     private string? currentUserId;
     private List<Track> filteredLocalTracks = new();
+
+    private string selectedGenre = "";
+    private List<string> availableGenres = new();
+    private List<Track> filteredTracks = new();
+    private List<JamendoTrack> filteredJamendoResults = new();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -586,11 +607,15 @@ else
                 .OrderBy(t => t.Title)
                 .ToListAsync();
 
-            // Group tracks by genre
-            genreGroups = tracks
-                .Where(t => t.Genre != null)
-                .GroupBy(t => t.Genre!.Name)
-                .OrderByDescending(g => g.Count());
+            availableGenres = tracks
+            .Where(t => t.Genre != null)
+            .Select(t => t.Genre!.Name)
+            .Distinct()
+            .ToList();
+
+            filteredTracks = tracks;
+
+            
 
             // Load playable tracks with favorite status and set in PlayerService
             var playableTracks = tracks.Select(t =>
@@ -659,10 +684,23 @@ else
 
                     // Search Jamendo
                     await SearchJamendo();
+
+                    // Add Jamendo genres to available genres
+                    var jamendoGenres = jamendoResults
+                        .Where(t => t.MusicInfo?.Tags?.Genres != null)
+                        .SelectMany(t => t.MusicInfo!.Tags!.Genres)
+                        .Distinct();
+
+                    availableGenres = availableGenres
+                        .Union(jamendoGenres)
+                        .Distinct()
+                        .OrderBy(g => g)
+                        .ToList();
+
+                    ApplyGenreFilter(); // Apply filter after search
                 }
                 else
                 {
-                    // Clear search results
                     filteredLocalTracks.Clear();
                     jamendoResults.Clear();
                     StateHasChanged();
@@ -686,7 +724,8 @@ else
             StateHasChanged();
 
             var clientId = Configuration["Jamendo:ClientId"];
-            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=20&search={Uri.EscapeDataString(searchQuery)}&include=musicinfo&audioformat=mp32";
+            // Add tags to the request
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=200&search={Uri.EscapeDataString(searchQuery)}&include=musicinfo&tags=*&audioformat=mp32";
 
             var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
 
@@ -736,6 +775,38 @@ else
         searchDebounceTimer?.Dispose();
     }
 
+    private void ApplyGenreFilter()
+    {
+        if (string.IsNullOrEmpty(selectedGenre))
+        {
+            // Show all tracks
+            filteredTracks = tracks;
+            filteredJamendoResults = jamendoResults;
+        }
+        else
+        {
+            // Filter local tracks
+            filteredTracks = tracks
+                .Where(t => t.Genre?.Name == selectedGenre)
+                .ToList();
+
+            // Filter Jamendo tracks
+            filteredJamendoResults = jamendoResults
+                .Where(t => t.MusicInfo?.Tags?.Genres?.Any(g =>
+                    g.Equals(selectedGenre, StringComparison.OrdinalIgnoreCase)) ?? false)
+                .ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    private void ClearGenreFilter()
+    {
+        selectedGenre = "";
+        ApplyGenreFilter();
+    }
+
+
     // Jamendo API Models
     public class JamendoResponse
     {
@@ -765,5 +836,27 @@ else
 
         [System.Text.Json.Serialization.JsonPropertyName("duration")]
         public int Duration { get; set; }
+
+        // Add tags/genres
+        [System.Text.Json.Serialization.JsonPropertyName("musicinfo")]
+        public MusicInfo? MusicInfo { get; set; }
+    }
+
+    public class MusicInfo
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        public Tags? Tags { get; set; }
+    }
+
+    public class Tags
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("genres")]
+        public List<string> Genres { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("instruments")]
+        public List<string> Instruments { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("vartags")]
+        public List<string> VarTags { get; set; } = new();
     }
 }
