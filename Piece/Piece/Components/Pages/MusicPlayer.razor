@@ -352,17 +352,17 @@ else
                     </button>
                 </div>
 
-                <!-- Genre Filter -->
+                <!-- Genre Filter (shown for both tabs) -->
                 <div class="filter-section">
                     <label style="color: #888; font-size: 12px; margin-right: 10px;">Filter by Genre:</label>
-                    <select @bind="selectedGenre" @bind:after="ApplyGenreFilter"
+                    <select @bind="selectedGenre" @bind:after="ApplyFilters"
                             style="background-color: #2a2a2a;
-                                   color: #ffffff;
-                                   border: 2px solid #3a3a3a;
-                                   border-radius: 8px;
-                                   padding: 8px 12px;
-                                   font-size: 14px;
-                                   cursor: pointer;">
+                   color: #ffffff;
+                   border: 2px solid #3a3a3a;
+                   border-radius: 8px;
+                   padding: 8px 12px;
+                   font-size: 14px;
+                   cursor: pointer;">
                         <option value="">All Genres</option>
                         @foreach (var genre in availableGenres.OrderBy(g => g))
                         {
@@ -374,14 +374,72 @@ else
                     {
                         <button @onclick="ClearGenreFilter"
                                 style="background: none;
-                                       border: none;
-                                       color: #FFD335;
-                                       cursor: pointer;
-                                       font-size: 14px;
-                                       margin-left: 10px;">
+                       border: none;
+                       color: #FFD335;
+                       cursor: pointer;
+                       font-size: 14px;
+                       margin-left: 10px;">
                             Clear Filter
                         </button>
                     }
+                </div>
+
+                <!-- Advanced Filters - Different for each tab -->
+                <div class="filter-section" style="margin-top: 10px;">
+                    <div style="display: flex; gap: 15px; align-items: end;">
+                        <!-- Artist Filter (shown for both) -->
+                        <div class="form-group" style="flex: 1;">
+                            <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">Search by Artist:</label>
+                            <input type="text"
+                                   @bind="searchArtist"
+                                   @bind:event="oninput"
+                                   @onkeyup="ApplyFilters"
+                                   placeholder="Artist name..."
+                                   style="width: 100%;
+                          padding: 8px 12px;
+                          background-color: #2a2a2a;
+                          color: #ffffff;
+                          border: 2px solid #3a3a3a;
+                          border-radius: 8px;
+                          font-size: 14px;" />
+                        </div>
+
+                        <!-- Year Filter (only for library tab) -->
+                        @if (activeTab == "library")
+                        {
+                            <div class="form-group" style="flex: 1;">
+                                <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">Year:</label>
+                                <input type="number"
+                                       @bind="searchYear"
+                                       @bind:event="oninput"
+                                       @onkeyup="ApplyFilters"
+                                       placeholder="e.g., 2024"
+                                       min="1900"
+                                       max="2100"
+                                       style="width: 100%;
+                              padding: 8px 12px;
+                              background-color: #2a2a2a;
+                              color: #ffffff;
+                              border: 2px solid #3a3a3a;
+                              border-radius: 8px;
+                              font-size: 14px;" />
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(searchArtist) || searchYear.HasValue)
+                        {
+                            <button @onclick="ClearAdvancedFilters"
+                                    style="background: none;
+                           border: none;
+                           color: #FFD335;
+                           cursor: pointer;
+                           font-size: 14px;
+                           padding: 8px 16px;
+                           white-space: nowrap;">
+                                Clear Filters
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
 
@@ -524,6 +582,9 @@ else
     private List<Track> filteredTracks = new();
     private List<JamendoTrack> filteredJamendoResults = new();
 
+    private string searchArtist = "";
+    private int? searchYear = null;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -607,15 +668,12 @@ else
                 {
                     if (activeTab == "library")
                     {
-                        // Just filter local tracks
-                        await ApplyGenreFilter();
+                        await ApplyFilters();
                     }
                     else if (activeTab == "jamendo")
                     {
-                        // Search Jamendo
                         await SearchJamendo();
 
-                        // Add Jamendo genres to available genres
                         var jamendoGenres = jamendoResults
                             .Where(t => t.MusicInfo?.Tags?.Genres != null)
                             .SelectMany(t => t.MusicInfo!.Tags!.Genres)
@@ -629,20 +687,20 @@ else
                             .OrderBy(g => g)
                             .ToList();
 
-                        await ApplyGenreFilter();
+                        await ApplyFilters();
                     }
                 }
                 else
                 {
-                    await ApplyGenreFilter();
+                    await ApplyFilters();
                 }
             });
         }, null, 500, Timeout.Infinite);
     }
 
-    private async Task SearchJamendo()
+    private async Task SearchJamendo(string? artistFilter = null)
     {
-        if (string.IsNullOrWhiteSpace(searchQuery))
+        if (string.IsNullOrWhiteSpace(searchQuery) && string.IsNullOrWhiteSpace(artistFilter))
         {
             jamendoResults.Clear();
             return;
@@ -654,7 +712,19 @@ else
             StateHasChanged();
 
             var clientId = Configuration["Jamendo:ClientId"];
-            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=200&search={Uri.EscapeDataString(searchQuery)}&include=musicinfo&tags=*&audioformat=mp32";
+
+            
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=200&include=musicinfo&tags=*&audioformat=mp32";
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                url += $"&search={Uri.EscapeDataString(searchQuery)}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(artistFilter))
+            {
+                url += $"&artist_name={Uri.EscapeDataString(artistFilter)}";
+            }
 
             var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
 
@@ -724,7 +794,7 @@ else
 
         if (tab == "jamendo")
         {
-            // If a genre is selected but no results, fetch by genre
+            
             if (!string.IsNullOrEmpty(selectedGenre) && !jamendoResults.Any())
             {
                 await SearchJamendoByGenre(selectedGenre);
@@ -732,12 +802,12 @@ else
             else if (!string.IsNullOrEmpty(searchQuery))
             {
                 await SearchJamendo();
-                await ApplyGenreFilter();
+                await ApplyFilters();
             }
         }
         else
         {
-            await ApplyGenreFilter();
+            await ApplyFilters();
         }
 
         StateHasChanged();
@@ -746,63 +816,118 @@ else
     private async void ClearSearch()
     {
         searchQuery = "";
-        await ApplyGenreFilter();
+        await ApplyFilters();
         StateHasChanged();
     }
 
-    private async Task ApplyGenreFilter()
+    private async Task ApplyFilters()
     {
-        if (string.IsNullOrEmpty(selectedGenre))
-        {
-            // Show all tracks based on search
-            if (string.IsNullOrEmpty(searchQuery))
-            {
-                filteredTracks = tracks;
-                filteredJamendoResults = jamendoResults;
-            }
-            else
-            {
-                // Filter by search query
-                filteredTracks = tracks.Where(t =>
-                    t.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    t.ArtistName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
-                ).ToList();
+        
+        var query = tracks.AsEnumerable();
 
-                filteredJamendoResults = jamendoResults;
-            }
+        if (!string.IsNullOrEmpty(selectedGenre))
+        {
+            query = query.Where(t => t.Genre?.Name == selectedGenre);
         }
-        else
-        {
-            // Filter by genre
-            filteredTracks = tracks
-                .Where(t => t.Genre?.Name == selectedGenre &&
-                    (string.IsNullOrEmpty(searchQuery) ||
-                     t.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                     t.ArtistName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
 
-            // For Jamendo - if no results yet, fetch by genre
-            if (activeTab == "jamendo" && !jamendoResults.Any())
+        if (!string.IsNullOrEmpty(searchArtist))
+        {
+            query = query.Where(t => t.ArtistName.Contains(searchArtist, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (searchYear.HasValue)
+        {
+            query = query.Where(t => t.CreatedAt.Year == searchYear.Value);
+        }
+
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            query = query.Where(t =>
+                t.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                t.ArtistName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            );
+        }
+
+        filteredTracks = query.ToList();
+
+        if (activeTab == "jamendo")
+        {
+            if (!string.IsNullOrEmpty(searchArtist))
+            {
+                await SearchJamendoByArtist(searchArtist);
+            }
+            else if (!string.IsNullOrEmpty(selectedGenre) && !jamendoResults.Any())
             {
                 await SearchJamendoByGenre(selectedGenre);
             }
-            else
+            else if (!string.IsNullOrEmpty(selectedGenre))
             {
                 filteredJamendoResults = jamendoResults
                     .Where(t => t.MusicInfo?.Tags?.Genres?.Any(g =>
                         g.Equals(selectedGenre, StringComparison.OrdinalIgnoreCase)) ?? false)
                     .ToList();
             }
+            else
+            {
+                filteredJamendoResults = jamendoResults;
+            }
         }
 
         StateHasChanged();
+    }
+    private async Task SearchJamendoByArtist(string artistName)
+    {
+        try
+        {
+            isSearching = true;
+            StateHasChanged();
+
+            var clientId = Configuration["Jamendo:ClientId"];
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=200&artist_name={Uri.EscapeDataString(artistName)}&include=musicinfo&audioformat=mp32";
+
+            Console.WriteLine($"[SearchJamendoByArtist] Fetching tracks for artist: {artistName}");
+
+            var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
+
+            if (response?.Results != null)
+            {
+                jamendoResults = response.Results;
+                filteredJamendoResults = response.Results;
+                Console.WriteLine($"[SearchJamendoByArtist] Found {jamendoResults.Count} tracks");
+            }
+            else
+            {
+                jamendoResults.Clear();
+                filteredJamendoResults.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error searching Jamendo by artist: {ex.Message}");
+            jamendoResults.Clear();
+            filteredJamendoResults.Clear();
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearAdvancedFilters()
+    {
+        searchArtist = "";
+        searchYear = null;
+        _ = ApplyFilters();
     }
 
     private void ClearGenreFilter()
     {
         selectedGenre = "";
-        _ = ApplyGenreFilter();
+        _ = ApplyFilters();
     }
+
+    
 
     public void Dispose()
     {

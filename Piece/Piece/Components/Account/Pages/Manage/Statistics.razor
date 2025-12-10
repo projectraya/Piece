@@ -1,6 +1,9 @@
 ﻿@page "/Account/Manage/Statistics"
 @rendermode InteractiveServer
+@using Piece.DTOs
 @using Piece.Services
+@inject ApplicationDbContext DbContext
+@inject PlayerService PlayerService
 @inject IListeningHistoryService ListeningHistoryService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -108,6 +111,94 @@
         color: #888;
         margin: 0;
     }
+
+    .track-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .stat-track-card {
+        background: #1a1a1a;
+        border-radius: 12px;
+        padding: 16px;
+        display: grid;
+        grid-template-columns: 60px 60px 1fr auto;
+        align-items: center;
+        gap: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .stat-track-card:hover {
+            background: #3a3a3a;
+            transform: translateX(5px);
+        }
+
+    .track-rank {
+        font-size: 24px;
+        font-weight: 700;
+        color: #FFD335;
+        text-align: center;
+    }
+
+    .track-time {
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+    }
+
+    .track-art-small {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        overflow: hidden;
+    }
+
+        .track-art-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .track-details {
+        min-width: 0;
+    }
+
+    .track-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .track-artist {
+        font-size: 14px;
+        color: #888;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .track-play-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .track-duration {
+        font-size: 14px;
+        color: #888;
+    }
 </style>
 
 <div class="stats-container">
@@ -170,6 +261,84 @@
                 }
             </div>
         </div>
+        <!-- Most Played Tracks -->
+        <div class="stats-section">
+            <h2 class="section-title">Most Played Tracks (All Time)</h2>
+            @if (mostPlayedTracks.Any())
+            {
+                <div class="track-list">
+                    @foreach (var (track, index) in mostPlayedTracks.Select((t, i) => (t, i + 1)))
+                    {
+                        <div class="stat-track-card" @onclick="() => PlayTrack(track)">
+                            <div class="track-rank">#@index</div>
+                            <div class="track-art-small">
+                                @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                {
+                                    <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                }
+                                else
+                                {
+                                    <span>🎵</span>
+                                }
+                            </div>
+                            <div class="track-details">
+                                <div class="track-name">@track.Title</div>
+                                <div class="track-artist">@track.ArtistName</div>
+                            </div>
+                            <div class="track-play-count">
+                                <span style="font-size: 18px; font-weight: 700; color: #FFD335;">@track.PlayCount</span>
+                                <span style="font-size: 12px; color: #666;">plays</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    <p>No play history yet</p>
+                </div>
+            }
+        </div>
+
+        <!-- Recently Played -->
+        <div class="stats-section">
+            <h2 class="section-title">Recently Played</h2>
+            @if (recentlyPlayed.Any())
+            {
+                <div class="track-list">
+                    @foreach (var history in recentlyPlayed)
+                    {
+                        <div class="stat-track-card" @onclick="() => PlayTrack(history.Track)">
+                            <div class="track-time">@GetTimeAgo(history.PlayedAt)</div>
+                            <div class="track-art-small">
+                                @if (!string.IsNullOrEmpty(history.Track.CoverImageUrl))
+                                {
+                                    <img src="@history.Track.CoverImageUrl" alt="@history.Track.Title" />
+                                }
+                                else
+                                {
+                                    <span>🎵</span>
+                                }
+                            </div>
+                            <div class="track-details">
+                                <div class="track-name">@history.Track.Title</div>
+                                <div class="track-artist">@history.Track.ArtistName</div>
+                            </div>
+                            <div class="track-duration">
+                                @TimeSpan.FromSeconds(history.DurationListened).ToString(@"mm\:ss")
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    <p>No recent plays</p>
+                </div>
+            }
+        </div>
     }
 </div>
 
@@ -177,6 +346,8 @@
     private bool isLoading = true;
     private string? currentUserId;
     private Dictionary<DateTime, List<(string Color, int Count)>> genreHistory = new();
+    private List<Track> mostPlayedTracks = new();
+    private List<ListeningHistory> recentlyPlayed = new();
 
     private class DayData
     {
@@ -214,9 +385,26 @@
         genreHistory = await ListeningHistoryService.GetGenreHistoryAsync(currentUserId!, startDate, endDate);
         Console.WriteLine($"[Statistics] Loaded {genreHistory.Count} days with data");
 
-        // Load top genres - now with colors from database!
+        // Load top genres
         topGenres = await ListeningHistoryService.GetTopGenresAsync(currentUserId!, 30);
         Console.WriteLine($"[Statistics] Loaded {topGenres.Count} top genres");
+
+        // Load most played tracks
+        mostPlayedTracks = await DbContext.Tracks
+            .Include(t => t.Genre)
+            .Where(t => t.Source == TrackSource.Local)
+            .OrderByDescending(t => t.PlayCount)
+            .Take(10)
+            .ToListAsync();
+
+        // Load recently played
+        recentlyPlayed = await DbContext.ListeningHistory
+            .Include(h => h.Track)
+                .ThenInclude(t => t.Genre)
+            .Where(h => h.UserId == currentUserId && h.Track.Source == TrackSource.Local)
+            .OrderByDescending(h => h.PlayedAt)
+            .Take(20)
+            .ToListAsync();
     }
 
    
@@ -247,6 +435,29 @@
         }
 
         return monthsData;
+    }
+    private void PlayTrack(Track track)
+    {
+        var playableTrack = PlayableTrack.FromLocalTrack(track, false);
+        PlayerService.PlayTrack(playableTrack);
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+        if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)}w ago";
+
+        return dateTime.ToString("MMM dd");
     }
 
     private string GetDayColor(List<(string Color, int Count)> colorCounts)
