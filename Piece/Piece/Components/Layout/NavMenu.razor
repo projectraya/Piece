@@ -1,160 +1,86 @@
-﻿@*  @implements IDisposable
-
-@inject NavigationManager NavigationManager
-
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Piece</a>
-    </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="player">
-                <span class="bi bi-music-note-beamed-icon" aria-hidden="true"></span> Music Player
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="playlists">
-                <span class="bi bi-music-note-beamed-icon" aria-hidden="true"></span> Playlists
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="liked-songs">
-                <span class="bi bi-heart-fill" aria-hidden="true"></span> Liked Songs
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
-
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
-
-@code {
-    private string? currentUrl;
-
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-}
-
-  *@
-
-    @using Microsoft.AspNetCore.Components.Authorization
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
-<div class="nav-menu">
+<div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
         <div class="app-logo">
             <span class="logo-icon">🎵</span>
-            <span class="logo-text">Piece</span>
+            @if (!isCollapsed)
+            {
+                <span class="logo-text">Piece</span>
+            }
         </div>
+        <button class="toggle-btn" @onclick="ToggleSidebar" type="button" title="Toggle Sidebar">
+            @(isCollapsed ? "→" : "←")
+        </button>
     </div>
 
     <nav class="nav-items">
         <div class="nav-section">
-            <div class="section-label">DISCOVER</div>
+            @if (!isCollapsed)
+            {
+                <div class="section-label">DISCOVER</div>
+            }
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
                 <span class="nav-icon">🏠</span>
-                <span class="nav-text">Home</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Home</span>
+                }
             </NavLink>
             <NavLink class="nav-link" href="player">
                 <span class="nav-icon">▶️</span>
-                <span class="nav-text">Player</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Player</span>
+                }
             </NavLink>
             <NavLink class="nav-link" href="map">
-                <span class="nav-icon"></span>
-                <span class="nav-text">Map</span>
+                <span class="nav-icon">🗺️</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Map</span>
+                }
             </NavLink>
         </div>
 
         <div class="nav-section">
-            <div class="section-label">YOURS</div>
+            @if (!isCollapsed)
+            {
+                <div class="section-label">YOURS</div>
+            }
             <NavLink class="nav-link" href="playlists">
                 <span class="nav-icon">📚</span>
-                <span class="nav-text">Library</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Library</span>
+                }
             </NavLink>
             <NavLink class="nav-link" href="liked-songs">
                 <span class="nav-icon">❤️</span>
-                <span class="nav-text">Favorites</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Favorites</span>
+                }
             </NavLink>
         </div>
 
         <AuthorizeView>
             <Authorized>
                 <div class="nav-section">
-                    <div class="section-label">ACCOUNT</div>
-                    
+                    @if (!isCollapsed)
+                    {
+                        <div class="section-label">ACCOUNT</div>
+                    }
                     <NavLink class="nav-link" href="Account/Manage/Statistics">
                         <span class="nav-icon">📊</span>
-                        <span class="nav-text">Weekly Colors</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">Weekly Colors</span>
+                        }
                     </NavLink>
                 </div>
             </Authorized>
@@ -162,11 +88,17 @@
                 <div class="nav-section">
                     <NavLink class="nav-link" href="Account/Login">
                         <span class="nav-icon">🔐</span>
-                        <span class="nav-text">Login</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">Login</span>
+                        }
                     </NavLink>
                     <NavLink class="nav-link" href="Account/Register">
                         <span class="nav-icon">✨</span>
-                        <span class="nav-text">Sign Up</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">Sign Up</span>
+                        }
                     </NavLink>
                 </div>
             </NotAuthorized>
@@ -180,11 +112,17 @@
                     <AntiforgeryToken />
                     <NavLink class="nav-link" href="Account/Manage">
                         <span class="nav-icon">👤</span>
-                        <span class="nav-text">Profile</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">Profile</span>
+                        }
                     </NavLink>
                     <button type="submit" class="logout-btn">
                         <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">Logout</span>
+                        }
                     </button>
                 </form>
             </Authorized>
@@ -205,7 +143,13 @@
         left: 0;
         top: 0;
         overflow-y: auto;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
     }
+
+        .nav-menu.collapsed {
+            width: 80px;
+        }
 
         /* Custom Scrollbar */
         .nav-menu::-webkit-scrollbar {
@@ -229,17 +173,31 @@
     .nav-header {
         padding: 30px 20px 20px;
         border-bottom: 1px solid rgba(255, 211, 53, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
     }
 
     .app-logo {
         display: flex;
         align-items: center;
         gap: 12px;
+        flex: 1;
+        min-width: 0;
     }
 
     .logo-icon {
         font-size: 32px;
         filter: drop-shadow(0 0 10px rgba(255, 211, 53, 0.5));
+        flex-shrink: 0;
+        transition: opacity 0.2s;
+    }
+
+    .nav-menu.collapsed .logo-icon {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
     }
 
     .logo-text {
@@ -247,7 +205,36 @@
         font-weight: 700;
         color: #FFD335;
         letter-spacing: -0.5px;
+        white-space: nowrap;
     }
+
+    .toggle-btn {
+        background: rgba(255, 211, 53, 0.1);
+        border: 1px solid rgba(255, 211, 53, 0.3);
+        color: #FFD335;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.3s;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 10;
+    }
+
+        .toggle-btn:hover {
+            background: rgba(255, 211, 53, 0.2);
+            border-color: #FFD335;
+            transform: scale(1.05);
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.95);
+        }
 
     /* Navigation Items */
     .nav-items {
@@ -279,32 +266,39 @@
         border-left: 3px solid transparent;
     }
 
-        .nav-link:hover {
-            background: rgba(255, 211, 53, 0.1);
-            color: #FFD335;
-            border-left-color: rgba(255, 211, 53, 0.3);
-        }
+    .nav-menu.collapsed .nav-link {
+        justify-content: center;
+        padding: 12px 0;
+    }
 
-        .nav-link.active {
-            background: rgba(255, 211, 53, 0.15);
-            color: #FFD335;
-            border-left-color: #FFD335;
-            font-weight: 600;
-        }
+    .nav-link:hover {
+        background: rgba(255, 211, 53, 0.1);
+        color: #FFD335;
+        border-left-color: rgba(255, 211, 53, 0.3);
+    }
 
-            .nav-link.active .nav-icon {
-                filter: drop-shadow(0 0 8px rgba(255, 211, 53, 0.6));
-            }
+    .nav-link.active {
+        background: rgba(255, 211, 53, 0.15);
+        color: #FFD335;
+        border-left-color: #FFD335;
+        font-weight: 600;
+    }
+
+        .nav-link.active .nav-icon {
+            filter: drop-shadow(0 0 8px rgba(255, 211, 53, 0.6));
+        }
 
     .nav-icon {
         font-size: 20px;
         width: 24px;
         text-align: center;
+        flex-shrink: 0;
     }
 
     .nav-text {
         font-size: 14px;
         font-weight: 500;
+        white-space: nowrap;
     }
 
     /* Footer */
@@ -333,21 +327,30 @@
         transition: all 0.3s ease;
     }
 
-        .logout-btn:hover {
-            background: rgba(255, 211, 53, 0.2);
-            border-color: #FFD335;
-            transform: translateY(-2px);
-        }
+    .nav-menu.collapsed .logout-btn {
+        justify-content: center;
+        padding: 12px;
+    }
 
-        .logout-btn:active {
-            transform: translateY(0);
-        }
+    .logout-btn:hover {
+        background: rgba(255, 211, 53, 0.2);
+        border-color: #FFD335;
+        transform: translateY(-2px);
+    }
+
+    .logout-btn:active {
+        transform: translateY(0);
+    }
 
     /* Responsive */
     @@media (max-width: 768px) {
         .nav-menu {
             width: 70px;
         }
+
+            .nav-menu.collapsed {
+                width: 70px;
+            }
 
         .logo-text,
         .nav-text,
@@ -358,5 +361,78 @@
         .nav-link {
             justify-content: center;
         }
+
+        .toggle-btn {
+            display: none;
+        }
     }
 </style>
+
+@code {
+    private bool isCollapsed = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var savedState = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "sidebarCollapsed");
+                if (savedState == "true")
+                {
+                    isCollapsed = true;
+                    StateHasChanged();
+                }
+
+                // Immediately apply the class
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    (function() {
+                        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                        const sidebar = document.querySelector('.sidebar');
+                        if (sidebar && isCollapsed) {
+                            sidebar.classList.add('collapsed');
+                        }
+
+                        // Then start monitoring with faster interval
+                        setInterval(function() {
+                            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                            const sidebar = document.querySelector('.sidebar');
+                            if (sidebar) {
+                                if (isCollapsed && !sidebar.classList.contains('collapsed')) {
+                                    sidebar.classList.add('collapsed');
+                                } else if (!isCollapsed && sidebar.classList.contains('collapsed')) {
+                                    sidebar.classList.remove('collapsed');
+                                }
+                            }
+                        }, 10);
+                    })();
+                ");
+            }
+            catch { }
+        }
+    }
+
+    private async Task ToggleSidebar()
+    {
+        isCollapsed = !isCollapsed;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "sidebarCollapsed", isCollapsed.ToString().ToLower());
+
+            if (isCollapsed)
+            {
+                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.sidebar')?.classList.add('collapsed')");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.sidebar')?.classList.remove('collapsed')");
+            }
+        }
+        catch { }
+
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync() { }
+}

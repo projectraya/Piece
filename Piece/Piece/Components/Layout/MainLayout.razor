@@ -1,10 +1,9 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
+<div class="page" id="app-container">
     <div class="sidebar">
         <NavMenu />
     </div>
-
     <main>
         <article class="content px-4">
             @Body
@@ -19,27 +18,3 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
-
-<style>
-    .app-layout {
-        display: flex;
-        min-height: 100vh;
-        background-color: #0a0a0a;
-    }
-
-    .main-content-area {
-        flex: 1;
-        margin-left: 250px; /* Width of sidebar */
-        padding-bottom: 100px; /* Height of global player */
-    }
-
-    main {
-        width: 100%;
-    }
-
-    @@media (max-width: 768px) {
-        .main-content-area {
-            margin-left: 70px;
-        }
-    }
-</style>
