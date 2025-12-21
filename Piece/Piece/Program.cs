@@ -58,7 +58,7 @@ namespace Piece
 			{
 				var services = scope.ServiceProvider;
 				var seeder = services.GetRequiredService<DatabaseSeeder>();
-				await seeder.SeedGenresAsync(); // Make sure this method is public!
+				await seeder.SeedAllAsync(); // Make sure this method is public!
 			}
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())

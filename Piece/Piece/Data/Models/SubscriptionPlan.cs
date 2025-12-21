@@ -20,10 +20,7 @@ namespace Piece.Data.Models
 		public int DurationDays { get; set; } = 30;
 
 		// Features
-		public bool CanSkipAds { get; set; } = false;
-		public bool CanDownload { get; set; } = false;
-		public bool HighQualityAudio { get; set; } = false;
-		public int MaxDevices { get; set; } = 1;
+		public bool CanUseMap { get; set; } = false;
 
 		public bool IsActive { get; set; } = true;
 

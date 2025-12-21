@@ -1,0 +1,928 @@
+﻿@page "/Account/Manage/PaymentHistory"
+@rendermode InteractiveServer
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@using Microsoft.EntityFrameworkCore
+@using Piece.Data
+@using Piece.Data.Models
+@using Piece.Data.Enums
+
+<PageTitle>Payment History</PageTitle>
+
+<div class="payment-history-page">
+    <h1 class="page-title">Subscription & Payments</h1>
+
+    @if (isLoading)
+    {
+        <div class="loading">Loading...</div>
+    }
+    else if (string.IsNullOrEmpty(currentUserId))
+    {
+        <div class="not-logged-in">
+            <p>Please log in to view your subscription and payment history.</p>
+            <button class="login-btn" @onclick='() => Navigation.NavigateTo("/Account/Login")'>Log In</button>
+        </div>
+    }
+    else
+    {
+        <!-- Current Subscription Card -->
+        <div class="current-subscription-card">
+            <h2>Current Subscription</h2>
+
+            @if (currentSubscription != null)
+            {
+                <div class="subscription-details">
+                    <div class="plan-badge @(currentSubscription.SubscriptionPlan.Name.ToLower())">
+                        @currentSubscription.SubscriptionPlan.Name
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value status-@currentSubscription.Status.ToString().ToLower()">
+                            @currentSubscription.Status
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(currentSubscription.PaymentMethod))
+                    {
+                        <div class="detail-row">
+                            <span class="label">Payment Method:</span>
+                            <span class="value">@currentSubscription.PaymentMethod</span>
+                        </div>
+                    }
+
+                    <div class="detail-row">
+                        <span class="label">Started:</span>
+                        <span class="value">@currentSubscription.StartDate.ToString("MMM dd, yyyy")</span>
+                    </div>
+
+                    @if (currentSubscription.SubscriptionPlan.Price > 0)
+                    {
+                        <div class="detail-row">
+                            <span class="label">Valid Until:</span>
+                            <span class="value expires">@currentSubscription.EndDate.ToString("MMM dd, yyyy")</span>
+                        </div>
+
+                        @if (currentSubscription.Status == SubscriptionStatus.Active)
+                        {
+                            var daysLeft = (currentSubscription.EndDate - DateTime.UtcNow).Days;
+                            <div class="days-remaining">
+                                <span class="days-number">@daysLeft</span>
+                                <span class="days-label">days remaining</span>
+                            </div>
+                        }
+                    }
+
+                    <div class="subscription-actions">
+                        @if (currentSubscription.SubscriptionPlan.Price > 0)
+                        {
+                            <button class="downgrade-btn" @onclick="OpenDowngradeModal">
+                                Downgrade to Free
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="upgrade-btn" @onclick='() => Navigation.NavigateTo("/subscriptions")'>
+                                Upgrade to Premium
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="no-subscription">
+                    <p>You don't have an active subscription.</p>
+                    <button class="get-started-btn" @onclick='() => Navigation.NavigateTo("/subscriptions")'>
+                        Get Started
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Payment History -->
+        <div class="payment-history-section">
+            <h2>Payment History</h2>
+
+            @if (payments.Any())
+            {
+                <div class="payments-list">
+                    @foreach (var payment in payments)
+                    {
+                        <div class="payment-item">
+                            <div class="payment-icon">
+                                @if (payment.Status == PaymentStatus.Completed)
+                                {
+                                    <span class="icon success">✓</span>
+                                }
+                                else if (payment.Status == PaymentStatus.Failed)
+                                {
+                                    <span class="icon failed">✕</span>
+                                }
+                                else if (payment.Status == PaymentStatus.Refunded)
+                                {
+                                    <span class="icon refunded">↺</span>
+                                }
+                                else
+                                {
+                                    <span class="icon pending">⋯</span>
+                                }
+                            </div>
+
+                            <div class="payment-details">
+                                <div class="payment-title">
+                                    @if (payment.UserSubscription != null)
+                                    {
+                                        <span>@payment.UserSubscription.SubscriptionPlan.Name Subscription</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Payment</span>
+                                    }
+                                </div>
+                                <div class="payment-meta">
+                                    <span>@payment.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                    <span class="separator">•</span>
+                                    <span>@payment.PaymentMethod</span>
+                                    @if (!string.IsNullOrEmpty(payment.TransactionId))
+                                    {
+                                        <span class="separator">•</span>
+                                        <span class="transaction-id">ID: @payment.TransactionId.Substring(0, 8)...</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="payment-amount">
+                                <span class="amount">$@payment.Amount.ToString("0.00")</span>
+                                <span class="status status-@payment.Status.ToString().ToLower()">
+                                    @payment.Status
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-payments">
+                    <p>No payment history yet.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Subscription History -->
+        <div class="subscription-history-section">
+            <h2>Subscription History</h2>
+
+            @if (subscriptionHistory.Any())
+            {
+                <div class="subscription-timeline">
+                    @foreach (var sub in subscriptionHistory)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <span class="plan-name">@sub.SubscriptionPlan.Name</span>
+                                    <span class="timeline-date">@sub.StartDate.ToString("MMM dd, yyyy")</span>
+                                </div>
+                                <div class="timeline-details">
+                                    <span class="status-badge status-@sub.Status.ToString().ToLower()">
+                                        @sub.Status
+                                    </span>
+                                    @if (sub.Status == SubscriptionStatus.Cancelled && sub != currentSubscription)
+                                    {
+                                        <span class="action-text">Downgraded</span>
+                                    }
+                                    else if (sub == currentSubscription)
+                                    {
+                                        <span class="action-text">Current</span>
+                                    }
+                                    else if (sub.Status == SubscriptionStatus.Active)
+                                    {
+                                        <span class="action-text">Upgraded</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-history">
+                    <p>No subscription history.</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Downgrade Confirmation Modal -->
+    @if (showDowngradeModal)
+    {
+        <div class="modal-overlay" @onclick="CloseDowngradeModal">
+            <div class="confirm-modal" @onclick:stopPropagation="true">
+                <div class="modal-icon warning">⚠️</div>
+                <h2>Downgrade to Free?</h2>
+                <p>
+                    You'll still have access to Premium features until
+                    <strong>@currentSubscription?.EndDate.ToString("MMMM dd, yyyy")</strong>.
+                </p>
+                <p>After that date, you'll lose access to:</p>
+                <ul class="features-lost">
+                    <li>🗺️ Interactive World Map</li>
+                    <li>🎵 High Quality Audio</li>
+                    <li>📥 Music Downloads</li>
+                    <li>🚫 Ad-Free Experience</li>
+                </ul>
+
+                <div class="modal-actions">
+                    <button class="cancel-modal-btn" @onclick="CloseDowngradeModal">
+                        Keep Premium
+                    </button>
+                    <button class="confirm-downgrade-btn" @onclick="ConfirmDowngrade">
+                        Confirm Downgrade
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+
+    /* Light theme for payment history */
+    .payment-history-page {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+        .payment-history-page * {
+            color: #000000 !important;
+        }
+
+    .page-title {
+        color: #000000 !important;
+    }
+
+    .current-subscription-card,
+    .payment-history-section,
+    .subscription-history-section {
+        background: #f5f5f5 !important;
+        border: 1px solid #e0e0e0 !important;
+    }
+
+    .payment-item,
+    .timeline-content {
+        background: #ffffff !important;
+        border: 1px solid #e0e0e0 !important;
+    }
+
+    .label,
+    .payment-meta,
+    .timeline-date {
+        color: #666666 !important;
+    }
+
+    .value,
+    .payment-title,
+    .plan-name {
+        color: #000000 !important;
+    }
+
+    .current-subscription-card h2,
+    .payment-history-section h2,
+    .subscription-history-section h2 {
+        color: #000000 !important;
+    }
+    .payment-history-page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .page-title {
+        font-size: 36px;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 40px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 60px 20px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 18px;
+    }
+
+    .not-logged-in {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .not-logged-in p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+
+    .login-btn {
+        padding: 12px 32px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+        }
+
+    /* Current Subscription Card */
+    .current-subscription-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 40px;
+    }
+
+        .current-subscription-card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+    .plan-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+        .plan-badge.free {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .plan-badge.premium {
+            background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+            color: #000;
+        }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+        .detail-row:last-of-type {
+            border-bottom: none;
+        }
+
+    .label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+    }
+
+    .value {
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+        .value.expires {
+            color: #FFD335;
+        }
+
+    .status-active {
+        color: #4caf50;
+    }
+
+    .status-cancelled, .status-expired {
+        color: #f44336;
+    }
+
+    .days-remaining {
+        background: rgba(255, 211, 53, 0.1);
+        border: 1px solid rgba(255, 211, 53, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .days-number {
+        display: block;
+        font-size: 48px;
+        font-weight: 700;
+        color: #FFD335;
+        line-height: 1;
+    }
+
+    .days-label {
+        display: block;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 8px;
+    }
+
+    .subscription-actions {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+    }
+
+    .upgrade-btn, .downgrade-btn {
+        flex: 1;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .upgrade-btn {
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
+    }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+        }
+
+    .downgrade-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+        .downgrade-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+    .no-subscription {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+        .no-subscription p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+        }
+
+    .get-started-btn {
+        padding: 14px 32px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .get-started-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+        }
+
+    /* Payment History */
+    .payment-history-section, .subscription-history-section {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 40px;
+    }
+
+        .payment-history-section h2, .subscription-history-section h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+    .payments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .payment-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+
+        .payment-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 211, 53, 0.2);
+        }
+
+    .payment-icon .icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .icon.success {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+
+    .icon.failed {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+
+    .icon.refunded {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+    }
+
+    .icon.pending {
+        background: rgba(158, 158, 158, 0.2);
+        color: #9e9e9e;
+    }
+
+    .payment-details {
+        flex: 1;
+    }
+
+    .payment-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+
+    .payment-meta {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .separator {
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .transaction-id {
+        font-family: monospace;
+    }
+
+    .payment-amount {
+        text-align: right;
+    }
+
+        .payment-amount .amount {
+            display: block;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFD335;
+            margin-bottom: 4px;
+        }
+
+        .payment-amount .status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+    .status-completed {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+
+    .status-failed {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+
+    .status-refunded {
+        background: rgba(255, 152, 0, 0.2);
+        color: #ff9800;
+    }
+
+    .status-pending {
+        background: rgba(158, 158, 158, 0.2);
+        color: #9e9e9e;
+    }
+
+    .no-payments, .no-history {
+        text-align: center;
+        padding: 40px 20px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Subscription Timeline */
+    .subscription-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+        .subscription-timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 211, 53, 0.2);
+        }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 24px;
+    }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .timeline-dot {
+        position: absolute;
+        left: -26px;
+        top: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #FFD335;
+        border: 3px solid #0a0a0a;
+    }
+
+    .timeline-content {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .plan-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .timeline-date {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .timeline-details {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .status-badge {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .action-text {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Downgrade Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 20px;
+    }
+
+    .confirm-modal {
+        background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        border: 1px solid rgba(255, 211, 53, 0.2);
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .modal-icon.warning {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    .confirm-modal h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 16px;
+    }
+
+    .confirm-modal p {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.6;
+        margin-bottom: 16px;
+    }
+
+    .confirm-modal strong {
+        color: #FFD335;
+        font-weight: 600;
+    }
+
+    .features-lost {
+        text-align: left;
+        margin: 24px 0;
+        padding: 20px;
+        background: rgba(244, 67, 54, 0.1);
+        border: 1px solid rgba(244, 67, 54, 0.2);
+        border-radius: 12px;
+        list-style: none;
+    }
+
+        .features-lost li {
+            padding: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .cancel-modal-btn, .confirm-downgrade-btn {
+        flex: 1;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .cancel-modal-btn {
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
+        border: none;
+    }
+
+        .cancel-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+        }
+
+    .confirm-downgrade-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+        .confirm-downgrade-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+    @@media (max-width: 768px) {
+        .payment-item
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .payment-amount {
+        text-align: left;
+        width: 100%;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    }
+</style>
+
+@code {
+    private string? currentUserId;
+    private bool isLoading = true;
+    private UserSubscription? currentSubscription;
+    private List<Payment> payments = new();
+    private List<UserSubscription> subscriptionHistory = new();
+    private bool showDowngradeModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            await LoadData();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        if (string.IsNullOrEmpty(currentUserId)) return;
+
+        // Load current active subscription
+        currentSubscription = await DbContext.UserSubscriptions
+            .Where(s => s.UserId == currentUserId && s.Status == SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
+            .Include(s => s.SubscriptionPlan)
+            .OrderByDescending(s => s.StartDate)
+            .FirstOrDefaultAsync();
+
+        // Load payment history
+        payments = await DbContext.Payments
+            .Where(p => p.UserId == currentUserId)
+            .Include(p => p.UserSubscription)
+                .ThenInclude(s => s!.SubscriptionPlan)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        // Load subscription history
+        subscriptionHistory = await DbContext.UserSubscriptions
+            .Where(s => s.UserId == currentUserId)
+            .Include(s => s.SubscriptionPlan)
+            .OrderByDescending(s => s.StartDate)
+            .ToListAsync();
+    }
+
+    private void OpenDowngradeModal()
+    {
+        showDowngradeModal = true;
+    }
+
+    private void CloseDowngradeModal()
+    {
+        showDowngradeModal = false;
+    }
+
+    private async Task ConfirmDowngrade()
+    {
+        if (currentSubscription == null || string.IsNullOrEmpty(currentUserId)) return;
+
+        try
+        {
+            // Don't cancel immediately - let them use premium until end date
+            currentSubscription.AutoRenew = false;
+            currentSubscription.Status = SubscriptionStatus.Cancelled;
+
+            await DbContext.SaveChangesAsync();
+
+            // Close modal and reload
+            showDowngradeModal = false;
+            await LoadData();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error downgrading: {ex.Message}");
+        }
+    }
+}

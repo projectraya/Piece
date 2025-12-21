@@ -3,6 +3,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
+@inject NavigationManager Navigation
 
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
@@ -80,6 +81,13 @@
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Weekly Colors</span>
+                        }
+                    </NavLink>
+                    <NavLink class="nav-link" href="subscriptions">
+                        <span class="nav-icon">⭐</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">Subscriptions</span>
                         }
                     </NavLink>
                 </div>
@@ -412,6 +420,10 @@
         }
     }
 
+    private string GetReturnUrl()
+    {
+        return Navigation.ToBaseRelativePath(Navigation.Uri);
+    }
     private async Task ToggleSidebar()
     {
         isCollapsed = !isCollapsed;

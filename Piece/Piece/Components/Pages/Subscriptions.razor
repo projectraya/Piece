@@ -1,0 +1,919 @@
+﻿@page "/subscriptions"
+@rendermode InteractiveServer
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@using Microsoft.EntityFrameworkCore
+@using Piece.Data
+@using Piece.Data.Models
+@using Piece.Data.Enums
+
+<PageTitle>Subscriptions - Piece</PageTitle>
+
+<div class="subscriptions-page">
+    <div class="hero-section">
+        <h1 class="hero-title">Choose Your Plan</h1>
+        <p class="hero-subtitle">Experience Piece at its fullest with Premium!</p>
+    </div>
+
+    <div class="plans-container">
+        @foreach (var plan in plans)
+        {
+            <div class="plan-card @(plan.Name == "Premium" ? "premium" : "")">
+                <div class="plan-header">
+                    <h2 class="plan-name">@plan.Name</h2>
+                    <div class="plan-price">
+                        @if (plan.Price == 0)
+                        {
+                            <span class="price-amount">Without cost</span>
+                        }
+                        else
+                        {
+                            <span class="price-currency">$</span>
+                            <span class="price-amount">@plan.Price.ToString("0.00")</span>
+                            <span class="price-period">/month</span>
+                        }
+                    </div>
+                    <p class="plan-description">@plan.Description</p>
+                </div>
+
+                <div class="plan-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">@(plan.CanUseMap ? "✓" : "—")</span>
+                        <span class="feature-text">Interactive Map Feature</span>
+                    </div>
+                    
+                </div>
+
+                <button class="plan-button @(plan.Name == "Premium" ? "premium-btn" : "")"
+                        @onclick="() => SelectPlan(plan.Id)"
+                        disabled="@(currentPlanId == plan.Id)">
+                    @if (currentPlanId == plan.Id)
+                    {
+                        <span>Current Plan</span>
+                    }
+                    else if (plan.Price == 0)
+                    {
+                        <span>Downgrade</span>
+                    }
+                    else
+                    {
+                        <span>Upgrade</span>
+                    }
+                </button>
+            </div>
+        }
+    </div>
+
+    @if (showCheckout)
+    {
+        <div class="modal-overlay" @onclick="CloseCheckout">
+            <div class="checkout-modal" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h2>Complete Your Purchase</h2>
+                    <button class="close-btn" @onclick="CloseCheckout">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="order-summary">
+                        <h3>Order Summary</h3>
+                        <div class="summary-row">
+                            <span>@selectedPlan?.Name Plan</span>
+                            <span>$@selectedPlan?.Price.ToString("0.00")</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total</span>
+                            <span>$@selectedPlan?.Price.ToString("0.00")</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-form">
+                        <h3>Payment Information</h3>
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" @bind="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" class="form-control" />
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Expiry Date</label>
+                                <input type="text" @bind="expiryDate" placeholder="MM/YY" maxlength="5" class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="text" @bind="cvv" placeholder="123" maxlength="3" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (showSuccessMessage)
+                    {
+                        <div class="success-message">
+                            <span class="success-icon">✓</span>
+                            <span>Payment successful! Redirecting...</span>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="error-message">
+                            <span>@errorMessage</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button class="cancel-btn" @onclick="CloseCheckout">Cancel</button>
+                    <button class="confirm-btn" @onclick="ProcessPayment" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span>Processing...</span>
+                        }
+                        else
+                        {
+                            <span>Pay $@selectedPlan?.Price.ToString("0.00")</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showWelcomeModal)
+    {
+        <div class="modal-overlay" @onclick="CloseWelcomeModal">
+            <div class="welcome-modal" @onclick:stopPropagation="true">
+                <div class="welcome-icon">🎉</div>
+                <h2>Welcome to Premium!</h2>
+                <p>You now have access to exclusive features</p>
+
+                <div class="premium-feature-highlight">
+                    <div class="feature-icon-large">🗺️</div>
+                    <h3>Explore the World Map</h3>
+                    <p>Discover music from every corner of the globe. Click on countries to explore local artists and genres.</p>
+                </div>
+
+                <div class="welcome-actions">
+                    <button class="explore-btn" @onclick="GoToMap">
+                        <span>Explore Map Now</span>
+                        <span class="arrow">→</span>
+                    </button>
+                    <button class="later-btn" @onclick="CloseWelcomeModal">Maybe Later</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+
+    /* Welcome Modal */
+    .welcome-modal {
+        background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        border: 1px solid rgba(255, 211, 53, 0.3);
+        border-radius: 20px;
+        padding: 50px 40px;
+        max-width: 500px;
+        text-align: center;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    @@keyframes slideUp {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .welcome-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: bounce 0.6s ease-in-out;
+    }
+
+    @@keyframes bounce {
+        0%, 100%
+
+    {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+
+    }
+
+    .welcome-modal h2 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #FFD335;
+        margin-bottom: 12px;
+    }
+
+    .welcome-modal > p {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 30px;
+    }
+
+    .premium-feature-highlight {
+        background: rgba(255, 211, 53, 0.1);
+        border: 1px solid rgba(255, 211, 53, 0.2);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+
+    .feature-icon-large {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+
+    .premium-feature-highlight h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 12px;
+    }
+
+    .premium-feature-highlight p {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+    }
+
+    .welcome-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .explore-btn {
+        width: 100%;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+        .explore-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+        }
+
+    .arrow {
+        transition: transform 0.3s;
+    }
+
+    .explore-btn:hover .arrow {
+        transform: translateX(4px);
+    }
+
+    .later-btn {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s;
+    }
+
+        .later-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+    .subscriptions-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 60px 20px;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    }
+
+    .hero-section {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .hero-title {
+        font-size: 56px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 16px;
+        letter-spacing: -1px;
+    }
+
+    .hero-subtitle {
+        font-size: 20px;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 400;
+    }
+
+    .plans-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .plan-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 40px 30px;
+        transition: all 0.3s ease;
+    }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 211, 53, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .plan-card.premium {
+            background: linear-gradient(135deg, rgba(255, 211, 53, 0.1) 0%, rgba(255, 211, 53, 0.05) 100%);
+            border-color: rgba(255, 211, 53, 0.3);
+        }
+
+    .plan-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .plan-name {
+        font-size: 24px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 16px;
+    }
+
+    .plan-price {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    .price-currency {
+        font-size: 24px;
+        color: #FFD335;
+        font-weight: 600;
+    }
+
+    .price-amount {
+        font-size: 56px;
+        font-weight: 700;
+        color: #FFD335;
+        line-height: 1;
+    }
+
+    .price-period {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-left: 8px;
+    }
+
+    .plan-description {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.5;
+    }
+
+    .plan-features {
+        margin-bottom: 30px;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+    }
+
+    .feature-icon {
+        font-size: 18px;
+        color: #FFD335;
+        font-weight: 600;
+        width: 24px;
+        text-align: center;
+    }
+
+    .feature-text {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .plan-button {
+        width: 100%;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+        .plan-button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        .plan-button.premium-btn {
+            background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+            color: #000;
+        }
+
+            .plan-button.premium-btn:hover:not(:disabled) {
+                box-shadow: 0 8px 24px rgba(255, 211, 53, 0.4);
+            }
+
+        .plan-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 20px;
+    }
+
+    .checkout-modal {
+        background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        border: 1px solid rgba(255, 211, 53, 0.2);
+        border-radius: 20px;
+        max-width: 500px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 30px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+        }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .order-summary {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+
+        .order-summary h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 15px;
+    }
+
+        .summary-row.total {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 8px;
+            padding-top: 16px;
+            font-weight: 600;
+            color: #FFD335;
+            font-size: 18px;
+        }
+
+    .payment-form h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .form-group .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+            .form-group .form-control:focus {
+                outline: none;
+                border-color: #FFD335;
+                background: rgba(255, 255, 255, 0.08);
+            }
+
+            .form-group .form-control::placeholder {
+                color: rgba(255, 255, 255, 0.4);
+            }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .success-message {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.5);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+        color: #4caf50;
+        font-weight: 500;
+    }
+
+    .success-icon {
+        width: 24px;
+        height: 24px;
+        background: #4caf50;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .error-message {
+        background: rgba(244, 67, 54, 0.2);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 20px;
+        color: #f44336;
+    }
+
+    .modal-footer {
+        padding: 20px 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        gap: 12px;
+    }
+
+    .cancel-btn {
+        flex: 1;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: transparent;
+        color: #fff;
+    }
+
+        .cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+    .confirm-btn {
+        flex: 1;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
+    }
+
+        .confirm-btn:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .confirm-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    @@media (max-width: 768px) {
+        .hero-title {
+            font-size: 36px;
+        }
+
+        .plans-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    private List<SubscriptionPlan> plans = new();
+    private int? currentPlanId = null;
+    private bool showCheckout = false;
+    private SubscriptionPlan? selectedPlan;
+    private bool isProcessing = false;
+    private bool showSuccessMessage = false;
+    private string errorMessage = "";
+
+    // Form fields
+    private string cardNumber = "";
+    private string expiryDate = "";
+    private string cvv = "";
+    private string? currentUserId;
+    private bool showWelcomeModal = false;
+
+    private void CloseWelcomeModal()
+    {
+        showWelcomeModal = false;
+        StateHasChanged();
+    }
+
+    private void GoToMap()
+    {
+        Navigation.NavigateTo("/map");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        await LoadPlans();
+        await LoadCurrentSubscription();
+    }
+
+    private async Task LoadPlans()
+    {
+        plans = await DbContext.SubscriptionPlans
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.Price)
+            .ToListAsync();
+    }
+
+    private async Task LoadCurrentSubscription()
+    {
+        if (string.IsNullOrEmpty(currentUserId)) return;
+
+        var currentSub = await DbContext.UserSubscriptions
+            .Where(s => s.UserId == currentUserId && s.Status == SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
+            .Include(s => s.SubscriptionPlan)
+            .FirstOrDefaultAsync();
+
+        if (currentSub != null)
+        {
+            currentPlanId = currentSub.SubscriptionPlanId;
+        }
+    }
+
+    private void SelectPlan(int planId)
+    {
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            Navigation.NavigateTo("/Account/Login");
+            return;
+        }
+
+        selectedPlan = plans.FirstOrDefault(p => p.Id == planId);
+        if (selectedPlan != null)
+        {
+            if (selectedPlan.Price == 0)
+            {
+                // Free plan - activate immediately
+                _ = ActivateFreePlan();
+            }
+            else
+            {
+                // Paid plan - show checkout
+                showCheckout = true;
+            }
+        }
+    }
+
+    private async Task ActivateFreePlan()
+    {
+        if (string.IsNullOrEmpty(currentUserId) || selectedPlan == null) return;
+
+        try
+        {
+            // Deactivate any existing subscriptions
+            var existingSubs = await DbContext.UserSubscriptions
+                .Where(s => s.UserId == currentUserId)
+                .ToListAsync();
+
+            foreach (var sub in existingSubs)
+            {
+                sub.Status = SubscriptionStatus.Cancelled;
+            }
+
+            // Create new free subscription
+            var newSub = new UserSubscription
+                {
+                    UserId = currentUserId,
+                    SubscriptionPlanId = selectedPlan.Id,
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddYears(100), // Free forever
+                    Status = SubscriptionStatus.Active,
+                    AutoRenew = false
+                };
+
+            DbContext.UserSubscriptions.Add(newSub);
+            await DbContext.SaveChangesAsync();
+
+            currentPlanId = selectedPlan.Id;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error activating free plan: {ex.Message}");
+        }
+    }
+
+    private void CloseCheckout()
+    {
+        showCheckout = false;
+        showSuccessMessage = false;
+        errorMessage = "";
+        cardNumber = "";
+        expiryDate = "";
+        cvv = "";
+    }
+
+    private async Task ProcessPayment()
+    {
+        if (string.IsNullOrEmpty(currentUserId) || selectedPlan == null) return;
+
+        // Basic validation
+        if (string.IsNullOrWhiteSpace(cardNumber) || string.IsNullOrWhiteSpace(expiryDate) || string.IsNullOrWhiteSpace(cvv))
+        {
+            errorMessage = "Please fill in all payment fields";
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            // Simulate payment processing delay
+            await Task.Delay(2000);
+
+            // Deactivate any existing subscriptions
+            var existingSubs = await DbContext.UserSubscriptions
+                .Where(s => s.UserId == currentUserId)
+                .ToListAsync();
+
+            foreach (var sub in existingSubs)
+            {
+                sub.Status = SubscriptionStatus.Cancelled;
+            }
+
+            // Create new subscription
+            var newSub = new UserSubscription
+                {
+                    UserId = currentUserId,
+                    SubscriptionPlanId = selectedPlan.Id,
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddDays(selectedPlan.DurationDays),
+                    Status = SubscriptionStatus.Active,
+                    AutoRenew = true,
+                    PaymentMethod = "Card ending in " + cardNumber.Substring(Math.Max(0, cardNumber.Length - 4)),
+                    TransactionId = Guid.NewGuid().ToString()
+                };
+
+            DbContext.UserSubscriptions.Add(newSub);
+
+            // SAVE HERE to get the UserSubscription.Id
+            await DbContext.SaveChangesAsync();
+
+            // NOW create payment record with the saved subscription ID
+            var payment = new Payment
+                {
+                    UserId = currentUserId,
+                    UserSubscriptionId = newSub.Id, // Now this has a valid ID
+                    Amount = selectedPlan.Price,
+                    Currency = "USD",
+                    Status = PaymentStatus.Completed,
+                    PaymentMethod = "Credit Card",
+                    TransactionId = newSub.TransactionId,
+                    CompletedAt = DateTime.UtcNow
+                };
+
+            DbContext.Payments.Add(payment);
+            await DbContext.SaveChangesAsync(); // Save again for the payment
+
+            // Show success message
+            showSuccessMessage = true;
+            StateHasChanged();
+
+            // Wait a bit, then close checkout and show welcome modal
+            await Task.Delay(1500);
+            showCheckout = false;
+            showWelcomeModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Payment failed. Please try again.";
+            Console.WriteLine($"Payment error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -14,16 +14,20 @@ public class DatabaseSeeder
 
 	public async Task SeedAllAsync()
 	{
-		// Check if already seeded
-		if (await _context.Genres.AnyAsync())
+		// Always seed genres (it has its own check inside)
+		await SeedGenresAsync();
+
+		// Seed subscription plans (check if they exist first)
+		if (!await _context.SubscriptionPlans.AnyAsync())
 		{
-			return; // Database already has data
+			await SeedSubscriptionPlansAsync();
 		}
 
-		// Seed in order (respecting foreign key dependencies)
-		await SeedGenresAsync();
-		await SeedSubscriptionPlansAsync();
-		await SeedLocalTracksAsync();
+		// Seed tracks (check if they exist first)
+		if (!await _context.Tracks.AnyAsync())
+		{
+			await SeedLocalTracksAsync();
+		}
 
 		await _context.SaveChangesAsync();
 	}
@@ -73,25 +77,19 @@ public class DatabaseSeeder
 				new SubscriptionPlan
 				{
 					Name = "Free",
-					Description = "Basic access with ads",
+					Description = "Access to most features.",
 					Price = 0.00m,
-					DurationDays = 365, // Free forever
-                    CanSkipAds = false,
-					CanDownload = false,
-					HighQualityAudio = false,
-					MaxDevices = 1,
+					DurationDays = 365, 
+                    CanUseMap = false,
 					IsActive = true
 				},
 				new SubscriptionPlan
 				{
 					Name = "Premium",
-					Description = "Ad-free listening with high quality audio",
-					Price = 9.99m,
+					Description = "Have fun with the world map and learn about music culture around the world!",
+					Price = 4m,
 					DurationDays = 30,
-					CanSkipAds = true,
-					CanDownload = true,
-					HighQualityAudio = true,
-					MaxDevices = 3,
+					CanUseMap = true,
 					IsActive = true
 				}
 			};
