@@ -1,0 +1,33 @@
+﻿@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<canvas id="miniVisualizerCanvas" width="200" height="40" style="border-radius: 8px;"></canvas>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await Task.Delay(1500);
+                var success = await JSRuntime.InvokeAsync<bool>(
+                    "canvasVisualizer.initialize",
+                    "miniVisualizerCanvas",
+                    "globalAudioPlayer"
+                );
+
+                Console.WriteLine($"[Canvas Visualizer] Initialized: {success}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Canvas Visualizer] Error: {ex.Message}");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        
+    }
+}

@@ -39,8 +39,8 @@
                 @if (!string.IsNullOrEmpty(PlayerService.CurrentTrack.AlbumImage))
                 {
                     <img src="@PlayerService.CurrentTrack.AlbumImage"
-                    alt="@PlayerService.CurrentTrack.Title"
-                    style="width: 100%; height: 100%; object-fit: cover;" />
+                         alt="@PlayerService.CurrentTrack.Title"
+                         style="width: 100%; height: 100%; object-fit: cover;" />
                 }
                 else
                 {
@@ -58,6 +58,9 @@
                         <span style="color: #FFD335; margin-left: 8px;">• Jamendo</span>
                     }
                 </p>
+            </div>
+            <div style="margin-left: 20px;">
+                <MiniVisualizer />
             </div>
         </div>
 
@@ -104,7 +107,6 @@
                    autoplay
                    @ref="audioElement"
                    @onended="OnTrackEnded"
-                  
                    style="display: none;">
                 <source src="@PlayerService.CurrentTrack.AudioUrl" type="audio/mpeg" />
             </audio>
@@ -246,7 +248,7 @@
                 progressPercent = (currentPosition / duration) * 100;
                 currentTime = FormatTime(currentPosition);
                 totalTime = FormatTime(duration);
-                
+
                 StateHasChanged();
             }
         }
