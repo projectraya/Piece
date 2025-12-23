@@ -59,9 +59,7 @@
                     }
                 </p>
             </div>
-            <div style="margin-left: 20px;">
-                <MiniVisualizer />
-            </div>
+            
         </div>
 
         <!-- Center: Player Controls & Audio -->
@@ -113,7 +111,11 @@
         </div>
 
         <!-- Right: Extra Controls -->
+        
         <div style="display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
+            <div style="margin-right: 20px;">
+                <MiniVisualizer />
+            </div>
             <button @onclick="ToggleFavorite"
                     style="background: none;
                    border: none;
