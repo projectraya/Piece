@@ -10,6 +10,7 @@
     }
 
     async initialize(canvasId, audioElementId) {
+        console.log('[Canvas Visualizer] Initialize called with:', canvasId, audioElementId);
         try {
             this.canvas = document.getElementById(canvasId);
             if (!this.canvas) {
@@ -44,22 +45,24 @@
     }
 
     startAudioMonitoring(audioElementId) {
-       
         setInterval(() => {
             const audioElement = document.getElementById(audioElementId);
 
+            if (audioElement) {
+                console.log('[Canvas] Audio element found, paused:', audioElement.paused, 'src:', audioElement.src);
+            }
+
             if (audioElement && audioElement !== this.currentAudioElement) {
                 try {
-                    console.log('New audio element detected, connecting...');
-
+                    console.log('[Canvas] New audio element detected, connecting...');
                     const stream = audioElement.captureStream();
                     const source = this.audioContext.createMediaStreamSource(stream);
                     source.connect(this.analyser);
-                    
+
                     this.currentAudioElement = audioElement;
                     console.log('✓ Connected to new audio element');
                 } catch (e) {
-                    console.error('Connection error:', e);
+                    console.error('[Canvas] Connection error:', e);
                 }
             }
         }, 500);
