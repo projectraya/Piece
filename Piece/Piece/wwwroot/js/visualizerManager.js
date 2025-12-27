@@ -241,28 +241,42 @@
     }
 
     drawWaveform() {
-        this.fullCtx.strokeStyle = '#00ffff';
-        this.fullCtx.lineWidth = 3;
+        const centerY = this.fullCanvas.height / 2;
+
+       
+        const gradient = this.fullCtx.createLinearGradient(0, 0, this.fullCanvas.width, 0);
+        gradient.addColorStop(0, '#0066ff');
+        gradient.addColorStop(0.5, '#9966ff');
+        gradient.addColorStop(1, '#ff00ff');
+
+        this.fullCtx.strokeStyle = gradient;
+        this.fullCtx.lineWidth = 4;
+        this.fullCtx.lineCap = 'round';
         this.fullCtx.beginPath();
 
-        const sliceWidth = this.fullCanvas.width / this.dataArray.length;
-        let x = 0;
+        const pointCount = Math.floor(this.fullCanvas.width / 5);
+        const usableDataLength = Math.floor(this.dataArray.length * 0.8);
 
-        for (let i = 0; i < this.dataArray.length; i++) {
-            const value = this.dataArray[i] / 255;
-            const y = value * this.fullCanvas.height;
+        for (let i = 0; i <= pointCount; i++) {
+            const dataIndex = Math.floor((i / pointCount) * usableDataLength);
+            const value = this.dataArray[dataIndex] || 0;
+
+            const amplitude = (value / 255) * (this.fullCanvas.height * 0.4);
+
+            const x = (i / pointCount) * this.fullCanvas.width;
+
+            const wavePosition = (i / pointCount) * Math.PI * 2;
+            const y = centerY + (Math.sin(wavePosition) * amplitude);
 
             if (i === 0) {
                 this.fullCtx.moveTo(x, y);
             } else {
                 this.fullCtx.lineTo(x, y);
             }
-
-            x += sliceWidth;
         }
 
-        this.fullCtx.shadowBlur = 20;
-        this.fullCtx.shadowColor = '#00ffff';
+        this.fullCtx.shadowBlur = 25;
+        this.fullCtx.shadowColor = '#9966ff';
         this.fullCtx.stroke();
         this.fullCtx.shadowBlur = 0;
     }
