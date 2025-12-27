@@ -173,31 +173,118 @@
             case 'waveform':
                 this.drawWaveform();
                 break;
+            case 'particles':
+                this.drawParticleFountain();
+                break;
+            case 'dna':
+                this.drawDNAHelix();
+                break;
         }
     }
 
-    drawBars() {
-        const barCount = 128;
-        const barWidth = this.fullCanvas.width / barCount;
+    //drawBars() {
+    //    const barCount = 128;
+    //    const barWidth = this.fullCanvas.width / barCount;
 
-        const gradient = this.fullCtx.createLinearGradient(0, 0, this.fullCanvas.width, 0);
-        gradient.addColorStop(0, '#0066ff');
-        gradient.addColorStop(0.25, '#00aaff');
-        gradient.addColorStop(0.5, '#9966ff');
-        gradient.addColorStop(0.75, '#ff00ff');
-        gradient.addColorStop(1, '#ffff00');
+    //    const gradient = this.fullCtx.createLinearGradient(0, 0, this.fullCanvas.width, 0);
+    //    gradient.addColorStop(0, '#0066ff');
+    //    gradient.addColorStop(0.25, '#00aaff');
+    //    gradient.addColorStop(0.5, '#9966ff');
+    //    gradient.addColorStop(0.75, '#ff00ff');
+    //    gradient.addColorStop(1, '#ffff00');
+
+    //    for (let i = 0; i < barCount; i++) {
+    //        const logIndex = Math.pow(i / barCount, 1.5);
+    //        const dataIndex = Math.floor(logIndex * this.dataArray.length);
+    //        const value = this.dataArray[dataIndex] || 0;
+
+    //        const height = (value / 255) * this.fullCanvas.height * 0.8;
+    //        const x = i * barWidth;
+    //        const y = this.fullCanvas.height - height;
+
+    //        this.fullCtx.fillStyle = gradient;
+    //        this.fullCtx.fillRect(x, y, barWidth - 2, height);
+    //    }
+    //}
+    drawBars() {
+        const barCount = 64;
+        const barWidth = (this.fullCanvas.width / barCount) * 0.8;
+        const spacing = this.fullCanvas.width / barCount;
 
         for (let i = 0; i < barCount; i++) {
             const logIndex = Math.pow(i / barCount, 1.5);
             const dataIndex = Math.floor(logIndex * this.dataArray.length);
             const value = this.dataArray[dataIndex] || 0;
 
-            const height = (value / 255) * this.fullCanvas.height * 0.8;
-            const x = i * barWidth;
+            const height = (value / 255) * this.fullCanvas.height * 0.85;
+            const x = i * spacing + (spacing - barWidth) / 2;
             const y = this.fullCanvas.height - height;
 
+            const time = Date.now() / 300;
+            const wave1 = Math.sin(time + i * 0.2) * 15;
+            const wave2 = Math.cos(time * 1.3 + i * 0.15) * 10;
+            const waveHeight = wave1 + wave2;
+
+            const t = i / barCount;
+            const hue = 240 + (t * 60);
+            const saturation = 70 + (t * 30);
+            const lightness = 50 + (value / 255) * 30;
+
+            this.fullCtx.beginPath();
+            this.fullCtx.moveTo(x, this.fullCanvas.height);
+
+            this.fullCtx.quadraticCurveTo(
+                x - 5,
+                this.fullCanvas.height - height / 2,
+                x,
+                y + 20
+            );
+
+            this.fullCtx.bezierCurveTo(
+                x + barWidth * 0.25, y + waveHeight - 10,
+                x + barWidth * 0.75, y - waveHeight - 10,
+                x + barWidth, y + 20
+            );
+
+            this.fullCtx.quadraticCurveTo(
+                x + barWidth + 5,
+                this.fullCanvas.height - height / 2,
+                x + barWidth,
+                this.fullCanvas.height
+            );
+
+            this.fullCtx.closePath();
+
+            const gradient = this.fullCtx.createLinearGradient(0, y, 0, this.fullCanvas.height);
+            gradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.9)`);
+            gradient.addColorStop(1, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+
             this.fullCtx.fillStyle = gradient;
-            this.fullCtx.fillRect(x, y, barWidth - 2, height);
+            this.fullCtx.fill();
+
+            this.fullCtx.shadowBlur = 25;
+            this.fullCtx.shadowColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            this.fullCtx.fill();
+            this.fullCtx.shadowBlur = 0;
+
+            this.fullCtx.strokeStyle = `rgba(255, 255, 255, ${0.4 + (value / 255) * 0.4})`;
+            this.fullCtx.lineWidth = 3;
+            this.fullCtx.lineCap = 'round';
+            this.fullCtx.beginPath();
+            this.fullCtx.bezierCurveTo(
+                x + barWidth * 0.25, y + waveHeight - 10,
+                x + barWidth * 0.75, y - waveHeight - 10,
+                x + barWidth, y + 20
+            );
+            this.fullCtx.stroke();
+
+            if (value > 180) {
+                const dripY = y + 30 + Math.sin(time * 2 + i) * 5;
+                this.fullCtx.beginPath();
+                this.fullCtx.arc(x + barWidth / 2, dripY, 3, 0, Math.PI * 2);
+                this.fullCtx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.6)`;
+                this.fullCtx.fill();
+            }
         }
     }
 
@@ -279,6 +366,183 @@
         this.fullCtx.shadowColor = '#9966ff';
         this.fullCtx.stroke();
         this.fullCtx.shadowBlur = 0;
+    }
+
+    drawParticleFountain() {
+        if (!this.particles) {
+            this.particles = [];
+        }
+
+        this.fullCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        this.fullCtx.fillRect(0, 0, this.fullCanvas.width, this.fullCanvas.height);
+
+        const baseY = this.fullCanvas.height;
+
+        const streamCount = 48; 
+        for (let i = 0; i < streamCount; i++) {
+            const dataIndex = Math.floor((i / streamCount) * this.dataArray.length * 0.6);
+            const value = this.dataArray[dataIndex] || 0;
+
+            const spawnChance = (value / 255) * 0.8; 
+            if (Math.random() < spawnChance && value > 20) {
+               
+                const xPos = (i / streamCount) * this.fullCanvas.width;
+
+                const maxVelocity = Math.sqrt(2 * 0.4 * this.fullCanvas.height);
+                const velocity = 8 + (value / 255) * (maxVelocity - 8);
+                const t = i / streamCount;
+                const hue = 240 + (t * 60);
+
+                this.particles.push({
+                    x: xPos,
+                    y: baseY,
+                    vx: (Math.random() - 0.5) * 3, 
+                    vy: -velocity,
+                    life: 1,
+                    hue: hue,
+                    size: 2 + (value / 255) * 5,
+                    brightness: 50 + (value / 255) * 30
+                });
+            }
+        }
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+
+            p.vy += 0.4;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.008; 
+
+            if (p.life <= 0 || p.y > this.fullCanvas.height + 100) {
+                this.particles.splice(i, 1);
+                continue;
+            }
+
+            const alpha = p.life;
+
+            this.fullCtx.beginPath();
+            this.fullCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.fullCtx.fillStyle = `hsla(${p.hue}, 80%, ${p.brightness}%, ${alpha})`;
+            this.fullCtx.shadowBlur = 20;
+            this.fullCtx.shadowColor = `hsla(${p.hue}, 80%, ${p.brightness}%, ${alpha})`;
+            this.fullCtx.fill();
+            this.fullCtx.shadowBlur = 0;
+
+            this.fullCtx.beginPath();
+            this.fullCtx.arc(p.x, p.y, p.size * 0.4, 0, Math.PI * 2);
+            this.fullCtx.fillStyle = `hsla(${p.hue}, 100%, 90%, ${alpha * 0.8})`;
+            this.fullCtx.fill();
+        }
+
+        if (this.particles.length > 3000) {
+            this.particles = this.particles.slice(-3000);
+        }
+    }
+
+    drawDNAHelix() {
+        this.fullCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        this.fullCtx.fillRect(0, 0, this.fullCanvas.width, this.fullCanvas.height);
+
+        const centerY = this.fullCanvas.height / 2;
+        const time = Date.now() / 1000;
+        const pointCount = 200;
+
+        const colorShift = Math.sin(time * 0.3) * 30;
+
+        const rotationAngle = time * 0.8;
+
+        for (let helix = 0; helix < 2; helix++) {
+            this.fullCtx.beginPath();
+
+            const points = [];
+
+            for (let i = 0; i < pointCount; i++) {
+                const t = i / pointCount;
+                const x = t * this.fullCanvas.width;
+
+                const dataIndex = Math.floor(t * this.dataArray.length * 0.7);
+                const value = this.dataArray[dataIndex] || 0;
+                const amplitude = (value / 255) * 100 + 50;
+
+                const offset = helix * Math.PI;
+                const helixAngle = t * Math.PI * 4 + offset;
+
+                const yBase = Math.sin(helixAngle) * amplitude;
+                const zBase = Math.cos(helixAngle) * amplitude; 
+                const yRotated = yBase * Math.cos(rotationAngle) - zBase * Math.sin(rotationAngle);
+                const zRotated = yBase * Math.sin(rotationAngle) + zBase * Math.cos(rotationAngle);
+
+                const y = centerY + yRotated;
+
+                points.push({ x, y, z: zRotated, value });
+            }
+
+            for (let i = 1; i < points.length; i++) {
+                const p1 = points[i - 1];
+                const p2 = points[i];
+
+                const maxAmplitude = 150; 
+                const avgZ = (p1.z + p2.z) / 2;
+                const depthFactor = (avgZ + maxAmplitude) / (maxAmplitude * 2); // 0 to 1
+                const opacity = 0.3 + depthFactor * 0.7; // Min 30%, max 100%
+
+                // Line thickness varies with depth (closer = thicker)
+                const lineWidth = 2 + depthFactor * 4;
+
+                const baseHue = helix === 0 ? 240 : 280;
+                const hue = baseHue + colorShift;
+                const saturation = 70;
+                const lightness = 55 + Math.sin(time * 0.5) * 10;
+
+                this.fullCtx.beginPath();
+                this.fullCtx.moveTo(p1.x, p1.y);
+                this.fullCtx.lineTo(p2.x, p2.y);
+                this.fullCtx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
+                this.fullCtx.lineWidth = lineWidth;
+                this.fullCtx.lineCap = 'round';
+                this.fullCtx.shadowBlur = 15 * depthFactor;
+                this.fullCtx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
+                this.fullCtx.stroke();
+                this.fullCtx.shadowBlur = 0;
+            }
+        }
+
+        for (let i = 0; i < pointCount; i += 8) {
+            const t = i / pointCount;
+            const x = t * this.fullCanvas.width;
+
+            const dataIndex = Math.floor(t * this.dataArray.length * 0.7);
+            const value = this.dataArray[dataIndex] || 0;
+            const amplitude = (value / 255) * 100 + 50;
+
+            const angle1 = t * Math.PI * 4;
+            const angle2 = t * Math.PI * 4 + Math.PI;
+
+            const y1Base = Math.sin(angle1) * amplitude;
+            const z1Base = Math.cos(angle1) * amplitude;
+            const y2Base = Math.sin(angle2) * amplitude;
+            const z2Base = Math.cos(angle2) * amplitude;
+
+            const y1 = centerY + (y1Base * Math.cos(rotationAngle) - z1Base * Math.sin(rotationAngle));
+            const y2 = centerY + (y2Base * Math.cos(rotationAngle) - z2Base * Math.sin(rotationAngle));
+            const z1 = y1Base * Math.sin(rotationAngle) + z1Base * Math.cos(rotationAngle);
+            const z2 = y2Base * Math.sin(rotationAngle) + z2Base * Math.cos(rotationAngle);
+
+            const maxAmplitude = 150;
+            const avgZ = (z1 + z2) / 2;
+            const depthFactor = (avgZ + maxAmplitude) / (maxAmplitude * 2);
+            const opacity = 0.2 + depthFactor * 0.5;
+
+            const rungHue = 260 + colorShift;
+
+            this.fullCtx.beginPath();
+            this.fullCtx.moveTo(x, y1);
+            this.fullCtx.lineTo(x, y2);
+            this.fullCtx.strokeStyle = `hsla(${rungHue}, 60%, 70%, ${opacity})`;
+            this.fullCtx.lineWidth = 2;
+            this.fullCtx.stroke();
+        }
     }
 }
 

@@ -21,7 +21,7 @@
                 <div class="mode-selector" style="margin-top: 30px;">
                     <button class="mode-btn @(currentMode == "bars" ? "active" : "")"
                             @onclick='() => SwitchMode("bars")'>
-                        Bars
+                        Liquid Bars
                     </button>
                     <button class="mode-btn @(currentMode == "circle" ? "active" : "")"
                             @onclick='() => SwitchMode("circle")'>
@@ -30,6 +30,14 @@
                     <button class="mode-btn @(currentMode == "waveform" ? "active" : "")"
                             @onclick='() => SwitchMode("waveform")'>
                         Wave
+                    </button>
+                    <button class="mode-btn @(currentMode == "particles" ? "active" : "")"
+                            @onclick='() => SwitchMode("particles")'>
+                        Particles
+                    </button>
+                    <button class="mode-btn @(currentMode == "dna" ? "active" : "")"
+                            @onclick='() => SwitchMode("dna")'>
+                        DNA
                     </button>
                 </div>
             </div>
