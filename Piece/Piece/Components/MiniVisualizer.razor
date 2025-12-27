@@ -1,8 +1,30 @@
 ﻿@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 @implements IDisposable
 
-<canvas id="miniVisualizerCanvas" width="300" height="40" style="border-radius: 8px;"></canvas>
+<canvas id="miniVisualizerCanvas" width="200" height="40" style="border-radius: 8px;"></canvas>
+
 @code {
+    private bool isOnVisualizerPage = false;
+
+    protected override void OnInitialized()
+    {
+        CheckIfOnVisualizerPage();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void CheckIfOnVisualizerPage()
+    {
+        isOnVisualizerPage = Navigation.Uri.Contains("/visualizer");
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        CheckIfOnVisualizerPage();
+
+        await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", !isOnVisualizerPage);
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -10,23 +32,23 @@
             try
             {
                 await Task.Delay(1500);
-                var success = await JSRuntime.InvokeAsync<bool>(
-                    "canvasVisualizer.initialize",
-                    "miniVisualizerCanvas",
-                    "globalAudioPlayer"
-                );
+                await JSRuntime.InvokeVoidAsync("visualizerManager.initialize", "globalAudioPlayer");
 
-                Console.WriteLine($"[Canvas Visualizer] Initialized: {success}");
+                await JSRuntime.InvokeVoidAsync("visualizerManager.registerMiniCanvas", "miniVisualizerCanvas");
+
+                await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", !isOnVisualizerPage);
+
+                Console.WriteLine("[MiniVisualizer] Registered with manager");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Canvas Visualizer] Error: {ex.Message}");
+                Console.WriteLine($"[MiniVisualizer] Error: {ex.Message}");
             }
         }
     }
 
     public void Dispose()
     {
-        
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 }

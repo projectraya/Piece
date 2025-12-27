@@ -8,7 +8,7 @@
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
         <div class="app-logo">
-            <span class="logo-icon">🎵</span>
+            <span class="logo-icon">꩜</span>
             @if (!isCollapsed)
             {
                 <span class="logo-text">Piece</span>
@@ -18,7 +18,7 @@
             @(isCollapsed ? "→" : "←")
         </button>
     </div>
-
+        
     <nav class="nav-items">
         <div class="nav-section">
             @if (!isCollapsed)
@@ -26,31 +26,34 @@
                 <div class="section-label">DISCOVER</div>
             }
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                <span class="nav-icon">🏠</span>
+                <span class="nav-icon">🏠︎</span>
                 @if (!isCollapsed)
                 {
                     <span class="nav-text">Home</span>
                 }
             </NavLink>
             <NavLink class="nav-link" href="player">
-                <span class="nav-icon">▶️</span>
+                <span class="nav-icon">▶︎</span>
                 @if (!isCollapsed)
                 {
                     <span class="nav-text">Player</span>
                 }
             </NavLink>
             <NavLink class="nav-link" href="map">
-                <span class="nav-icon">🗺️</span>
+                <span class="nav-icon">🗺</span>
                 @if (!isCollapsed)
                 {
                     <span class="nav-text">Map</span>
                 }
             </NavLink>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="visualizer">
-                    <span class="bi bi-eye-fill" aria-hidden="true"></span> Visualizer
-                </NavLink>
-            </div>
+            <NavLink class="nav-link" href="visualizer">
+                <span class="nav-icon">👁</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Visualizer</span>
+                }
+                
+            </NavLink>
         </div>
 
         <div class="nav-section">
@@ -59,14 +62,14 @@
                 <div class="section-label">YOURS</div>
             }
             <NavLink class="nav-link" href="playlists">
-                <span class="nav-icon">📚</span>
+                <span class="nav-icon">🕮</span>
                 @if (!isCollapsed)
                 {
                     <span class="nav-text">Library</span>
                 }
             </NavLink>
             <NavLink class="nav-link" href="liked-songs">
-                <span class="nav-icon">❤️</span>
+                <span class="nav-icon">♡︎</span>
                 @if (!isCollapsed)
                 {
                     <span class="nav-text">Favorites</span>
@@ -82,14 +85,14 @@
                         <div class="section-label">ACCOUNT</div>
                     }
                     <NavLink class="nav-link" href="Account/Manage/Statistics">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon">🎢</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Weekly Colors</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="subscriptions">
-                        <span class="nav-icon">⭐</span>
+                        <span class="nav-icon">🕭</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Subscriptions</span>
@@ -100,14 +103,14 @@
             <NotAuthorized>
                 <div class="nav-section">
                     <NavLink class="nav-link" href="Account/Login">
-                        <span class="nav-icon">🔐</span>
+                        <span class="nav-icon">🗝</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Login</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="nav-icon">✨</span>
+                        <span class="nav-icon">ᝰ𓂃🖊</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Sign Up</span>
@@ -124,14 +127,14 @@
                 <form action="Account/Logout" method="post" class="logout-form">
                     <AntiforgeryToken />
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon">𓀡</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Profile</span>
                         }
                     </NavLink>
                     <button type="submit" class="logout-btn">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon">✌︎</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Logout</span>
@@ -202,7 +205,7 @@
 
     .logo-icon {
         font-size: 32px;
-        filter: drop-shadow(0 0 10px rgba(255, 211, 53, 0.5));
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1));
         flex-shrink: 0;
         transition: opacity 0.2s;
     }
@@ -216,7 +219,7 @@
     .logo-text {
         font-size: 24px;
         font-weight: 700;
-        color: #FFD335;
+        color: #FFF;
         letter-spacing: -0.5px;
         white-space: nowrap;
     }

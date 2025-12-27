@@ -3,6 +3,7 @@
 @inject IJSRuntime JSRuntime
 @inject PlayerService PlayerService
 @implements IDisposable
+@inject NavigationManager Navigation
 @using Piece.Services
 
 <PageTitle>Visualizer - Piece</PageTitle>
@@ -10,16 +11,13 @@
 <div class="visualizer-container">
     @if (PlayerService.CurrentTrack != null)
     {
-        <!-- Full-screen canvas -->
         <canvas id="fullVisualizer" @ref="canvasRef"></canvas>
 
-        <!-- Overlay info -->
         <div class="visualizer-overlay">
             <div class="track-info">
                 <h1>@PlayerService.CurrentTrack.Title</h1>
                 <p>@PlayerService.CurrentTrack.ArtistName</p>
 
-                <!-- Move mode selector here, right under track info -->
                 <div class="mode-selector" style="margin-top: 30px;">
                     <button class="mode-btn @(currentMode == "bars" ? "active" : "")"
                             @onclick='() => SwitchMode("bars")'>
@@ -35,6 +33,12 @@
                     </button>
                 </div>
             </div>
+            <div class="top-controls">
+                <!-- back button -->
+                <button class="control-btn" @onclick="GoBack">
+                    <span>← Back</span>
+                </button>
+            </div>
         </div>
     }
     else
@@ -47,6 +51,31 @@
 </div>
 
 <style>
+    .top-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        gap: 15px;
+        pointer-events: auto;
+    }
+    .control-btn {
+        padding: 12px 24px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+    }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
     .visualizer-container {
         position: fixed;
         top: 0;
@@ -145,6 +174,7 @@
 @code {
     private ElementReference canvasRef;
     private string currentMode = "bars";
+    private bool isFullscreen = false;
 
     protected override void OnInitialized()
     {
@@ -165,39 +195,38 @@
 
             if (PlayerService.CurrentTrack != null)
             {
-                await Task.Delay(1000); // Give it more time
-                await InitializeVisualizer();
-            }
-        }
-    }
+                await Task.Delay(500);
 
-    private async Task InitializeVisualizer()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("initFullVisualizer", "fullVisualizer", "globalAudioPlayer", currentMode);
-            Console.WriteLine("[Full Visualizer] Initialized");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Full Visualizer] Error: {ex.Message}");
+                await JSRuntime.InvokeVoidAsync("visualizerManager.registerFullCanvas", "fullVisualizer");
+
+                await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawFull", true);
+                await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", false);
+
+                await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", currentMode);
+
+                Console.WriteLine("[Full Visualizer] Registered with manager");
+            }
         }
     }
 
     private async Task SwitchMode(string mode)
     {
         currentMode = mode;
-        Console.WriteLine($"[Visualizer] Switching to mode: {mode}");
+        await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", mode);
+    }
 
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("switchVisualizerMode", mode);
-            Console.WriteLine($"[Visualizer] Mode switched successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Visualizer] Error switching mode: {ex.Message}");
-        }
+    private void ToggleFullscreen()
+    {
+        isFullscreen = !isFullscreen;
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        _ = JSRuntime.InvokeVoidAsync("visualizerManager.setDrawFull", false);
+        _ = JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", true);
+
+        Navigation.NavigateTo("/");
     }
 
     public void Dispose()
