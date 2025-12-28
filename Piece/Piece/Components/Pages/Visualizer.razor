@@ -11,16 +11,27 @@
 <div class="visualizer-container">
     @if (PlayerService.CurrentTrack != null)
     {
-        <canvas id="fullVisualizer" @ref="canvasRef"></canvas>
+        @if (currentMode == "sphere")
+        {
+            <!-- 3D Sphere canvas -->
+            <canvas id="threeSphereCanvas"></canvas>
+        }
+        else
+        {
+            <!-- Full-screen canvas for 2D modes -->
+            <canvas id="fullVisualizer" @ref="canvasRef"></canvas>
+        }
 
+        <!-- Overlay with track info and controls - ALWAYS VISIBLE -->
         <div class="visualizer-overlay">
             <div class="track-info">
                 <h1>@PlayerService.CurrentTrack.Title</h1>
                 <p>@PlayerService.CurrentTrack.ArtistName</p>
 
+                <!-- Mode selector -->
                 <div class="mode-selector" style="margin-top: 30px;">
-                    <button class="mode-btn @(currentMode == "bars" ? "active" : "")"
-                            @onclick='() => SwitchMode("bars")'>
+                    <button class="mode-btn @(currentMode == "liquidbars" ? "active" : "")"
+                            @onclick='() => SwitchMode("liquidbars")'>
                         Liquid Bars
                     </button>
                     <button class="mode-btn @(currentMode == "circle" ? "active" : "")"
@@ -39,10 +50,15 @@
                             @onclick='() => SwitchMode("dna")'>
                         DNA
                     </button>
+                    <button class="mode-btn @(currentMode == "sphere" ? "active" : "")"
+                            @onclick='() => SwitchMode("sphere")'>
+                        3D Sphere
+                    </button>
                 </div>
             </div>
+
+            <!-- Top right controls -->
             <div class="top-controls">
-                <!-- back button -->
                 <button class="control-btn" @onclick="GoBack">
                     <span>← Back</span>
                 </button>
@@ -177,6 +193,12 @@
         font-size: 24px;
         opacity: 0.6;
     }
+
+    #threeSphereCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
 </style>
 
 @code {
@@ -220,7 +242,17 @@
     private async Task SwitchMode(string mode)
     {
         currentMode = mode;
-        await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", mode);
+
+        if (mode == "sphere")
+        {
+            await Task.Delay(100); 
+            await JSRuntime.InvokeVoidAsync("visualizerManager.initThreeSphere", "threeSphereCanvas");
+        }
+        else
+        {
+            // Regular 2D modes
+            await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", mode);
+        }
     }
 
     private void ToggleFullscreen()

@@ -544,6 +544,16 @@
             this.fullCtx.stroke();
         }
     }
+
+    initThreeSphere(canvasId) {
+        if (!this.analyser || !this.dataArray) {
+            console.error('[VisualizerManager] Audio not initialized yet');
+            return false;
+        }
+
+        window.threeSphere.initialize(canvasId, this.analyser, this.dataArray);
+        console.log('[VisualizerManager] ThreeSphere initialized');
+    }
 }
 
 window.visualizerManager = new VisualizerManager();
