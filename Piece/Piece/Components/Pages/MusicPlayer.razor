@@ -501,7 +501,28 @@ else
                 {
                     <div class="content-section">
                         <div class="section-header">
-                            <h2 class="section-title">Jamendo</h2>
+                            @if (!string.IsNullOrEmpty(searchQuery) || !string.IsNullOrEmpty(selectedGenre) || !string.IsNullOrEmpty(searchArtist))
+                            {
+                                <h2 class="section-title">
+                                    Search results for
+                                    @if (!string.IsNullOrEmpty(searchQuery))
+                                    {
+                                        <span>"@searchQuery"</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(selectedGenre))
+                                    {
+                                        <span>genre: @selectedGenre</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(searchArtist))
+                                    {
+                                        <span>artist: @searchArtist</span>
+                                    }
+                                </h2>
+                            }
+                            else
+                            {
+                                <h2 class="section-title">Recommended tracks</h2>
+                            }
                             <span style="color: #888; font-size: 14px;">@filteredJamendoResults.Count tracks</span>
                         </div>
                         <div class="track-grid">
@@ -624,12 +645,57 @@ else
             ).ToList();
             PlayerService.SetAvailableTracks(playableTracks);
 
+            // NEW: Load random Jamendo tracks for recommendations
+            await LoadRandomJamendoTracks();
+
             isLoading = false;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading tracks: {ex.Message}");
             isLoading = false;
+        }
+    }
+
+    private async Task LoadRandomJamendoTracks()
+    {
+        try
+        {
+            var clientId = Configuration["Jamendo:ClientId"];
+
+            var random = new Random();
+            var randomOffset = random.Next(0, 1000);
+
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=20&offset={randomOffset}&include=musicinfo&audioformat=mp32&order=popularity_total";
+
+            Console.WriteLine($"[LoadRandomJamendoTracks] Fetching 20 random tracks...");
+
+            var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
+
+            if (response?.Results != null && response.Results.Any())
+            {
+                jamendoResults = response.Results;
+                filteredJamendoResults = response.Results;
+
+                var jamendoGenres = jamendoResults
+                    .Where(t => t.MusicInfo?.Tags?.Genres != null)
+                    .SelectMany(t => t.MusicInfo!.Tags!.Genres)
+                    .Distinct();
+
+                availableGenres = tracks
+                    .Where(t => t.Genre != null)
+                    .Select(t => t.Genre!.Name)
+                    .Union(jamendoGenres)
+                    .Distinct()
+                    .OrderBy(g => g)
+                    .ToList();
+
+                Console.WriteLine($"[LoadRandomJamendoTracks] Loaded {jamendoResults.Count} random tracks");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading random Jamendo tracks: {ex.Message}");
         }
     }
 
