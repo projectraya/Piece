@@ -1,0 +1,168 @@
+﻿@page "/Account/Manage/Username"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using Piece.Data
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Change Username</PageTitle>
+
+<h3>Change Username</h3>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert @(isSuccess ? "alert-success" : "alert-danger")" role="alert">
+        @message
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="form-floating mb-3">
+                <input value="@Input.CurrentUsername" class="form-control" placeholder="Current username" disabled />
+                <label for="current-username" class="form-label">Current Username</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.NewUsername" class="form-control" autocomplete="username" aria-required="true" placeholder="New username" />
+                <label for="new-username" class="form-label">New Username</label>
+                <ValidationMessage For="() => Input.NewUsername" class="text-danger" />
+            </div>
+
+            <button type="submit" class="w-100 btn btn-lg btn-primary" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span>Updating...</span>
+                }
+                else
+                {
+                    <span>Update Username</span>
+                }
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private string? message;
+    private bool isSuccess;
+    private bool isLoading;
+    private ApplicationUser user = default!;
+
+    private InputModel Input { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var authUser = authState.User;
+
+            if (authUser.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/Account/Login");
+                return;
+            }
+
+            var userId = authUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                Navigation.NavigateTo("/Account/Login");
+                return;
+            }
+
+            user = await UserManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                Navigation.NavigateTo("/Account/Login");
+                return;
+            }
+
+            Input.CurrentUsername = user.UserName ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user: {ex.Message}");
+            message = "Error loading user information.";
+            isSuccess = false;
+        }
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (user == null)
+        {
+            message = "Error: User not found.";
+            isSuccess = false;
+            return;
+        }
+
+        if (Input.NewUsername == Input.CurrentUsername)
+        {
+            message = "Your username is unchanged.";
+            isSuccess = false;
+            return;
+        }
+
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var existingUser = await UserManager.FindByNameAsync(Input.NewUsername!);
+            if (existingUser != null)
+            {
+                message = "Error: Username is already taken.";
+                isSuccess = false;
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
+            var setUsernameResult = await UserManager.SetUserNameAsync(user, Input.NewUsername);
+            if (!setUsernameResult.Succeeded)
+            {
+                message = $"Error: {string.Join(", ", setUsernameResult.Errors.Select(error => error.Description))}";
+                isSuccess = false;
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
+            await SignInManager.RefreshSignInAsync(user);
+            message = "Your username has been changed successfully!";
+            isSuccess = true;
+            Input.CurrentUsername = Input.NewUsername!;
+        }
+        catch (Exception ex)
+        {
+            message = $"Error: {ex.Message}";
+            isSuccess = false;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private sealed class InputModel
+    {
+        public string CurrentUsername { get; set; } = "";
+
+        [Required]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters.")]
+        [RegularExpression(@"^[a-zA-Z0-9_-]+$", ErrorMessage = "Username can only contain letters, numbers, underscores, and hyphens.")]
+        public string? NewUsername { get; set; }
+    }
+}

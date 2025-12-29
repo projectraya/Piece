@@ -15,8 +15,12 @@ namespace Piece.Data
 
 		[MaxLength(500)]
 		public string? AvatarUrl { get; set; }
+		public bool IsProfilePublic { get; set; } = true;
+		public bool ShowListeningHistory { get; set; } = true;
+		public bool ShowPlaylists { get; set; } = true;
 
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+		public DateTime? LastActiveAt { get; set; }
 
 		public bool IsAdmin { get; set; } = false;
 

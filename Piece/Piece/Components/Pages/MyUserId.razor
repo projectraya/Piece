@@ -1,0 +1,32 @@
+﻿@page "/my-user-id"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Piece.Data
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
+
+<h3>Your Profile Info:</h3>
+@if (!string.IsNullOrEmpty(userId))
+{
+    <p><strong>User ID:</strong> @userId</p>
+    <p><strong>Username:</strong> @username</p>
+    <a href="/profile/@username" class="btn btn-primary">View Your Profile</a>
+}
+
+@code {
+    private string? userId;
+    private string? username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var appUser = await UserManager.FindByIdAsync(userId);
+            username = appUser?.UserName;
+        }
+    }
+}

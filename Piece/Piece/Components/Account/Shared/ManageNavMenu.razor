@@ -4,11 +4,17 @@
 @inject SignInManager<ApplicationUser> SignInManager
 
 <ul class="nav nav-pills flex-column">
+    
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
+        <NavLink class="nav-link" href="Account/Manage/Username">
+            <span aria-hidden="true"></span> Username
+        </NavLink>
     </li>
     <li class="nav-item">
         <NavLink class="nav-link" href="Account/Manage/Statistics">Statistics</NavLink>
+    </li>
+    <li class="nav-item">
+        <NavLink class="nav-link" href="/my-user-id">User Id</NavLink>
     </li>
     <li class="nav-item">
         <NavLink class="nav-link" href="Account/Manage/PaymentHistory">Payment History</NavLink>
@@ -26,12 +32,7 @@
             <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
         </li>
     }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
-    </li>
+    
 </ul>
 
 @code {

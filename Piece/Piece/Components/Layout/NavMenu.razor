@@ -4,6 +4,10 @@
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
 @inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Identity
+@using Piece.Data
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
@@ -84,6 +88,16 @@
                     {
                         <div class="section-label">ACCOUNT</div>
                     }
+                    @if (!string.IsNullOrEmpty(currentUsername))
+                    {
+                        <NavLink class="nav-link" href="@($"profile/{currentUsername}")">
+                            <span class="nav-icon">𓀡</span>
+                            @if (!isCollapsed)
+                            {
+                                <span class="nav-text">Profile</span>
+                            }
+                        </NavLink>
+                    }
                     <NavLink class="nav-link" href="Account/Manage/Statistics">
                         <span class="nav-icon">🎢</span>
                         @if (!isCollapsed)
@@ -99,7 +113,6 @@
                         }
                     </NavLink>
 
-                    <!-- Admin Only - Upload Music -->
                     <AuthorizeView Roles="Admin" Context="adminContext">
                         <NavLink class="nav-link" href="admin/upload">
                             <span class="nav-icon">📤</span>
@@ -139,10 +152,10 @@
                     <AntiforgeryToken />
                     <input type="hidden" name="returnUrl" value="" />
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="nav-icon">𓀡</span>
+                        <span class="nav-icon">⚙</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Profile</span>
+                            <span class="nav-text">Settings</span>
                         }
                     </NavLink>
                     <button type="submit" class="logout-btn">
@@ -159,7 +172,6 @@
 </div>
 
 <style>
-    /* Apple Music Inspired Sidebar */
     .nav-menu
     {
         width: 250px;
@@ -401,6 +413,7 @@
 
 @code {
     private bool isCollapsed = false;
+    private string? currentUsername;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -408,6 +421,20 @@
         {
             try
             {
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        var appUser = await UserManager.FindByIdAsync(userId);
+                        currentUsername = appUser?.UserName;
+                        StateHasChanged();
+                    }
+                }
+
                 var savedState = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "sidebarCollapsed");
                 if (savedState == "true")
                 {
@@ -415,7 +442,6 @@
                     StateHasChanged();
                 }
 
-                // Immediately apply the class
                 await JSRuntime.InvokeVoidAsync("eval", @"
                     (function() {
                         const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
@@ -424,7 +450,6 @@
                             sidebar.classList.add('collapsed');
                         }
 
-                        // Then start monitoring with faster interval
                         setInterval(function() {
                             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
                             const sidebar = document.querySelector('.sidebar');
@@ -447,6 +472,7 @@
     {
         return Navigation.ToBaseRelativePath(Navigation.Uri);
     }
+
     private async Task ToggleSidebar()
     {
         isCollapsed = !isCollapsed;

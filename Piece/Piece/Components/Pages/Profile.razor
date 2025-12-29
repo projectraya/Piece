@@ -1,0 +1,393 @@
+﻿@page "/profile/{Username}"
+@rendermode InteractiveServer
+@using Piece.Data
+@using Piece.Data.Models
+@using Piece.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IProfileService ProfileService
+@inject IListeningHistoryService ListeningHistoryService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>@(user?.DisplayName ?? user?.Email ?? "User Profile") - Piece</PageTitle>
+
+<style>
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 40px;
+        padding: 40px;
+        background: linear-gradient(135deg, rgba(255, 211, 53, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 211, 53, 0.2);
+    }
+
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD335 0%, #8a2be2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 60px;
+        font-weight: bold;
+        color: #1a1a1a;
+        flex-shrink: 0;
+    }
+
+    .profile-info {
+        flex: 1;
+    }
+
+    .profile-name {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #FFD335;
+    }
+
+    .profile-email {
+        font-size: 16px;
+        color: #888;
+        margin-bottom: 15px;
+    }
+
+    .profile-bio {
+        font-size: 16px;
+        line-height: 1.6;
+        color: #ccc;
+        max-width: 600px;
+    }
+
+    .profile-stats {
+        display: flex;
+        gap: 30px;
+        margin-top: 20px;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FFD335;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .profile-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn-edit {
+        padding: 12px 24px;
+        background: #FFD335;
+        border: none;
+        border-radius: 8px;
+        color: #1a1a1a;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-edit:hover {
+            background: #ffd000;
+            transform: translateY(-2px);
+        }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .playlists-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .playlist-card {
+        background: #2a2a2a;
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .playlist-card:hover {
+            background: #3a3a3a;
+            transform: translateY(-5px);
+        }
+
+    .playlist-cover {
+        width: 100%;
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+    }
+
+    .playlist-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 5px;
+    }
+
+    .playlist-tracks {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .colors-section {
+        background: #2a2a2a;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 40px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+
+    .private-message {
+        background: rgba(255, 211, 53, 0.1);
+        border: 2px solid rgba(255, 211, 53, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        color: #FFD335;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="profile-container">
+        <div style="text-align: center; padding: 100px 0;">
+            <div class="spinner"></div>
+            <p style="color: #888; margin-top: 20px;">Loading profile...</p>
+        </div>
+    </div>
+}
+else if (user == null)
+{
+    <div class="profile-container">
+        <div class="empty-state">
+            <h2>User Not Found</h2>
+            <p>This user doesn't exist or their profile is private.</p>
+        </div>
+    </div>
+}
+else if (!user.IsProfilePublic && !isOwnProfile)
+{
+    <div class="profile-container">
+        <div class="private-message">
+            <h2>🔒 Private Profile</h2>
+            <p>This user's profile is set to private.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                @GetInitials(user.DisplayName ?? user.Email ?? "U")
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name">@(user.DisplayName ?? "Piece User")</h1>
+                <div class="profile-email">@@@user.UserName</div>
+                @if (!string.IsNullOrEmpty(user.Bio))
+                {
+                    <p class="profile-bio">@user.Bio</p>
+                }
+
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">@publicPlaylists.Count</span>
+                        <span class="stat-label">Playlists</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@totalTracks</span>
+                        <span class="stat-label">Tracks</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@topGenres.Count</span>
+                        <span class="stat-label">Genres</span>
+                    </div>
+                </div>
+
+                @if (isOwnProfile)
+                {
+                    <div class="profile-actions">
+                        <button class="btn-edit" @onclick="EditProfile">✏️ Edit Profile</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Listening Colors -->
+        @if (user.ShowListeningHistory && topGenres.Any())
+        {
+            <div class="colors-section">
+                <h2 class="section-title">🎨 Top Genres</h2>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    @foreach (var genre in topGenres.Take(5))
+                    {
+                        <div style="padding: 15px 25px; background: @genre.Value.Color; border-radius: 20px;
+                                    color: #fff; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                            <span>@genre.Key</span>
+                            <span style="opacity: 0.8;">(@genre.Value.Count plays)</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Public Playlists -->
+        @if (user.ShowPlaylists && publicPlaylists.Any())
+        {
+            <div>
+                <h2 class="section-title">🎵 Public Playlists</h2>
+                <div class="playlists-grid">
+                    @foreach (var playlist in publicPlaylists)
+                    {
+                        <div class="playlist-card" @onclick="() => ViewPlaylist(playlist.Id)">
+                            <div class="playlist-cover">🎵</div>
+                            <div class="playlist-name">@playlist.Name</div>
+                            <div class="playlist-tracks">@playlist.PlaylistTracks.Count tracks</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (user.ShowPlaylists)
+        {
+            <div class="empty-state">
+                <p>No public playlists yet</p>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Username { get; set; } = "";
+
+    private ApplicationUser? user;
+    private List<Playlist> publicPlaylists = new();
+    private Dictionary<string, (int Count, string Color)> topGenres = new();
+    private int totalTracks = 0;
+    private bool isLoading = true;
+    private bool isOwnProfile = false;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authUser = authState.User;
+
+        if (authUser.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = authUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        await LoadProfile();
+    }
+
+    private async Task LoadProfile()
+    {
+        isLoading = true;
+        try
+        {
+            user = await ProfileService.GetUserProfileByUsernameAsync(Username);
+
+            if (user == null)
+            {
+                Console.WriteLine("[Profile] User not found");
+                isLoading = false;
+                return;
+            }
+
+            Console.WriteLine($"[Profile] User found: {user.Email}");
+            Console.WriteLine($"[Profile] IsProfilePublic: {user.IsProfilePublic}");
+            Console.WriteLine($"[Profile] ShowPlaylists: {user.ShowPlaylists}");
+
+            isOwnProfile = currentUserId == user.Id;
+            Console.WriteLine($"[Profile] IsOwnProfile: {isOwnProfile}");
+
+            if (user.IsProfilePublic || isOwnProfile)
+            {
+                publicPlaylists = await ProfileService.GetUserPublicPlaylistsAsync(user.Id); 
+                Console.WriteLine($"[Profile] Public playlists loaded: {publicPlaylists.Count}");
+
+                totalTracks = publicPlaylists.Sum(p => p.PlaylistTracks.Count);
+
+                if (user.ShowListeningHistory || isOwnProfile)
+                {
+                    topGenres = await ListeningHistoryService.GetTopGenresAsync(user.Id, 30); 
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading profile: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+
+        return name[0].ToString().ToUpper();
+    }
+
+    private void EditProfile()
+    {
+        Navigation.NavigateTo("/Account/Manage/Username");
+    }
+
+    private void ViewPlaylist(int playlistId)
+    {
+        Navigation.NavigateTo($"/playlist/{playlistId}");
+    }
+}

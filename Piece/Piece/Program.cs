@@ -31,6 +31,7 @@ namespace Piece
             builder.Services.AddScoped<PlayerService>();
             builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 			builder.Services.AddScoped<IListeningHistoryService, ListeningHistoryService>();
+            builder.Services.AddScoped<IProfileService, ProfileService>();
 
 			builder.Services.AddAuthentication(options =>
                 {
