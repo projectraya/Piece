@@ -9,6 +9,7 @@
 @using Piece.Services
 @inject ApplicationDbContext DbContext
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Upload Music - Admin</PageTitle>
@@ -191,49 +192,88 @@
             return;
         }
 
+        // Get current user ID
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            uploadMessage = "✗ Authentication error. Please log in again.";
+            uploadSuccess = false;
+            return;
+        }
+
+        // SECURITY: Check rate limiting
+        if (!UploadRateLimiter.CanUpload(userId))
+        {
+            uploadMessage = "✗ Rate limit exceeded. You can upload up to 50 files per hour. Please try again later.";
+            uploadSuccess = false;
+            SecurityLogger.LogRateLimitExceeded(userId);
+            return;
+        }
+
+        // SECURITY: Check for too many failed attempts
+        if (UploadRateLimiter.HasTooManyFailedAttempts(userId))
+        {
+            uploadMessage = "✗ Too many failed upload attempts. Please wait before trying again.";
+            uploadSuccess = false;
+            return;
+        }
+
         isUploading = true;
         uploadMessage = null;
         StateHasChanged();
 
+        string? filePath = null;
+        string? imageFilePath = null;
+
         try
         {
-            // Validate audio file
-            using (var stream = selectedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024))
+            // SECURITY: Validate file extension first
+            if (!FileValidator.IsValidAudioExtension(selectedFile.Name))
             {
-                if (!FileValidator.IsValidAudioFile(selectedFile.Name, stream))
-                {
-                    uploadMessage = "Invalid audio file. Only MP3, WAV, FLAC, and M4A files are allowed.";
-                    uploadSuccess = false;
-                    isUploading = false;
-                    StateHasChanged();
-                    return;
-                }
+                uploadMessage = "Invalid audio file. Only MP3, WAV, FLAC, and M4A files are allowed.";
+                uploadSuccess = false;
+                SecurityLogger.LogUploadAttempt(userId, selectedFile.Name, false, "Invalid extension");
+                UploadRateLimiter.RecordUploadAttempt(userId);
+                isUploading = false;
+                StateHasChanged();
+                return;
             }
 
-            // Validate image if provided
-            if (selectedImage != null)
+            // SECURITY: Validate image extension if provided
+            if (selectedImage != null && !FileValidator.IsValidImageExtension(selectedImage.Name))
             {
-                using (var stream = selectedImage.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024))
-                {
-                    if (!FileValidator.IsValidImageFile(selectedImage.Name, stream))
-                    {
-                        uploadMessage = "Invalid image file. Only JPG, PNG, and WEBP files are allowed.";
-                        uploadSuccess = false;
-                        isUploading = false;
-                        StateHasChanged();
-                        return;
-                    }
-                }
+                uploadMessage = "Invalid image file. Only JPG, PNG, and WEBP files are allowed.";
+                uploadSuccess = false;
+                SecurityLogger.LogUploadAttempt(userId, selectedImage.Name, false, "Invalid image extension");
+                UploadRateLimiter.RecordUploadAttempt(userId);
+                isUploading = false;
+                StateHasChanged();
+                return;
             }
 
-            // Create music directory
+            // SECURITY: Check disk space
             var musicPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "music");
             Directory.CreateDirectory(musicPath);
 
-            // Sanitize and generate safe filename
+            if (!FileValidator.HasSufficientDiskSpace(musicPath))
+            {
+                uploadMessage = "✗ Server storage is low. Cannot upload at this time.";
+                uploadSuccess = false;
+                SecurityLogger.LogSuspiciousActivity(userId, "Low disk space", "Upload blocked");
+                isUploading = false;
+                StateHasChanged();
+                return;
+            }
+
+            
+
+            // SECURITY: Sanitize and generate safe filename
             var sanitizedName = FileValidator.SanitizeFileName(selectedFile.Name);
             var fileName = $"{Guid.NewGuid()}_{sanitizedName}";
-            var filePath = Path.Combine(musicPath, fileName);
+            filePath = Path.Combine(musicPath, fileName);
 
             // Save audio file
             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -241,15 +281,60 @@
                 await selectedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024).CopyToAsync(stream);
             }
 
-            // Extract duration from MP3 file 
-            await Task.Delay(200); 
+            // SECURITY: Calculate file hash to detect duplicates
+            string fileHash = FileValidator.CalculateFileHash(filePath);
+            if (string.IsNullOrEmpty(fileHash))
+            {
+                File.Delete(filePath);
+                uploadMessage = "✗ Error processing file. Please try again.";
+                uploadSuccess = false;
+                SecurityLogger.LogUploadAttempt(userId, selectedFile.Name, false, "Hash calculation failed");
+                UploadRateLimiter.RecordUploadAttempt(userId);
+                isUploading = false;
+                StateHasChanged();
+                return;
+            }
+
+            // SECURITY: Check if this exact file already exists
+            var (isDuplicate, existingTitle) = await FileValidator.IsDuplicateFile(DbContext, fileHash);
+            if (isDuplicate)
+            {
+                File.Delete(filePath);
+                uploadMessage = $"✗ This audio file already exists in the library as '{existingTitle}'. Duplicate files are not allowed.";
+                uploadSuccess = false;
+                SecurityLogger.LogUploadAttempt(userId, uploadModel.Title, false, $"Duplicate file hash - matches: {existingTitle}");
+                UploadRateLimiter.RecordUploadAttempt(userId);
+                isUploading = false;
+                StateHasChanged();
+                return;
+            }
+
+            Console.WriteLine($"[Upload] File hash: {fileHash}");
+
+            // SECURITY: Validate magic bytes after file is saved
+            if (!FileValidator.ValidateAudioFileMagicBytes(filePath))
+            {
+                File.Delete(filePath);
+                uploadMessage = "✗ Invalid or corrupted audio file. File type verification failed.";
+                uploadSuccess = false;
+                SecurityLogger.LogSuspiciousActivity(userId, "Failed magic bytes check", selectedFile.Name);
+                UploadRateLimiter.RecordUploadAttempt(userId);
+                isUploading = false;
+                StateHasChanged();
+                return;
+            }
+
+            // SECURITY: Extract duration (also validates file is playable)
+            await Task.Delay(200);
             int durationSeconds = AudioMetadataReader.GetDurationSeconds(filePath);
 
             if (durationSeconds == 0)
             {
                 File.Delete(filePath);
-                uploadMessage = "✗ Could not read duration from MP3 file. File may be corrupted or in an unsupported format.";
+                uploadMessage = "✗ Could not read audio file. File may be corrupted or in an unsupported format.";
                 uploadSuccess = false;
+                SecurityLogger.LogUploadAttempt(userId, selectedFile.Name, false, "Could not extract duration");
+                UploadRateLimiter.RecordUploadAttempt(userId);
                 isUploading = false;
                 StateHasChanged();
                 return;
@@ -266,38 +351,54 @@
 
                 var sanitizedImageName = FileValidator.SanitizeFileName(selectedImage.Name);
                 var imageName = $"{Guid.NewGuid()}_{sanitizedImageName}";
-                var imageFilePath = Path.Combine(imagesPath, imageName);
+                imageFilePath = Path.Combine(imagesPath, imageName);
 
                 using (var stream = new FileStream(imageFilePath, FileMode.Create))
                 {
                     await selectedImage.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).CopyToAsync(stream);
                 }
 
-                coverImagePath = $"/images/{imageName}";
+                // SECURITY: Validate image magic bytes
+                if (!FileValidator.ValidateImageFileMagicBytes(imageFilePath))
+                {
+                    File.Delete(imageFilePath);
+                    imageFilePath = null;
+                    Console.WriteLine("[Upload] Invalid image file, using default cover");
+                }
+                else
+                {
+                    coverImagePath = $"/images/{imageName}";
+                }
             }
 
             // Create Track record
             var track = new Track
                 {
-                    Title = uploadModel.Title,
-                    ArtistName = uploadModel.ArtistName,
-                    AlbumName = uploadModel.AlbumName ?? string.Empty,
+                    Title = uploadModel.Title.Trim(),
+                    ArtistName = uploadModel.ArtistName.Trim(),
+                    AlbumName = uploadModel.AlbumName?.Trim() ?? string.Empty,
                     GenreId = uploadModel.GenreId,
                     YearPublished = uploadModel.YearPublished,
-                    DurationSeconds = durationSeconds, 
+                    DurationSeconds = durationSeconds,
                     Source = TrackSource.Local,
                     LocalFilePath = $"/music/{fileName}",
                     CoverImageUrl = coverImagePath ?? "/images/default-album-cover.png",
                     IsActive = true,
+                    FileHash = fileHash,
                     CreatedAt = DateTime.UtcNow
                 };
 
             DbContext.Tracks.Add(track);
             await DbContext.SaveChangesAsync();
 
+            // SECURITY: Log successful upload
+            SecurityLogger.LogUploadAttempt(userId, uploadModel.Title, true);
+            UploadRateLimiter.RecordUploadAttempt(userId);
+
             uploadMessage = $"✓ Successfully uploaded '{uploadModel.Title}'! (Duration: {durationSeconds}s)";
             uploadSuccess = true;
 
+            // Reset form
             await Task.Delay(2000);
             uploadModel = new();
             selectedFile = null;
@@ -308,8 +409,18 @@
         }
         catch (Exception ex)
         {
+            // SECURITY: Clean up files on error
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                File.Delete(filePath);
+            if (!string.IsNullOrEmpty(imageFilePath) && File.Exists(imageFilePath))
+                File.Delete(imageFilePath);
+
             uploadMessage = $"✗ Error: {ex.Message}";
             uploadSuccess = false;
+
+            SecurityLogger.LogUploadAttempt(userId ?? "unknown", selectedFile?.Name ?? "unknown", false, ex.Message);
+            UploadRateLimiter.RecordUploadAttempt(userId ?? "unknown");
+
             Console.WriteLine($"[Upload Error] {ex.Message}");
             Console.WriteLine($"[Upload Error] {ex.StackTrace}");
         }
@@ -328,16 +439,23 @@
     public class UploadModel
     {
         [Required]
+        [StringLength(100, MinimumLength = 1, ErrorMessage = "Title must be between 1 and 100 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9\s\-_',\.!&\(\)]+$", ErrorMessage = "Title contains invalid characters")]
         public string Title { get; set; } = "";
 
         [Required]
+        [StringLength(100, MinimumLength = 1, ErrorMessage = "Artist name must be between 1 and 100 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9\s\-_',\.!&\(\)]+$", ErrorMessage = "Artist name contains invalid characters")]
         public string ArtistName { get; set; } = "";
 
+        [StringLength(100, ErrorMessage = "Album name must be less than 100 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9\s\-_',\.!&\(\)]*$", ErrorMessage = "Album name contains invalid characters")]
         public string? AlbumName { get; set; }
 
         [Required]
         public int? GenreId { get; set; }
 
+        [Range(1900, 2026, ErrorMessage = "Year must be between 1900 and 2026")]
         public int? YearPublished { get; set; }
     }
 }

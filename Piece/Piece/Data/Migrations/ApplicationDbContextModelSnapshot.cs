@@ -706,6 +706,10 @@ namespace Piece.Migrations
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("int");
 
+                    b.Property<string>("FileHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<int?>("GenreId")
                         .HasColumnType("int");
 

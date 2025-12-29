@@ -2,6 +2,7 @@
 using Piece.Data.Models;
 using Piece.Data;
 using Microsoft.EntityFrameworkCore;
+using Piece.Services;
 
 public class DatabaseSeeder
 {
@@ -263,8 +264,27 @@ public class DatabaseSeeder
 			
 
 		};
-		
+
+		// Calculate hash for each track
+		var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+		foreach (var track in tracks)
+		{
+			var fullPath = Path.Combine(wwwrootPath, track.LocalFilePath.TrimStart('/'));
+
+			if (File.Exists(fullPath))
+			{
+				track.FileHash = FileValidator.CalculateFileHash(fullPath);
+				Console.WriteLine($"[Seeder] Calculated hash for '{track.Title}': {track.FileHash}");
+			}
+			else
+			{
+				Console.WriteLine($"[Seeder] WARNING: File not found: {fullPath}");
+			}
+		}
+
 		await _context.Tracks.AddRangeAsync(tracks);
 		await _context.SaveChangesAsync();
+
+		Console.WriteLine($"[Seeder] Seeded {tracks.Count} tracks with file hashes!");
 	}
 }

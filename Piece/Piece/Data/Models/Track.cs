@@ -32,6 +32,9 @@ namespace Piece.Data.Models
 		[MaxLength(500)]
 		public string? CoverImageUrl { get; set; }
 
+		[MaxLength(64)]
+		public string? FileHash { get; set; }
+
 		// Hybrid system: Local files OR Jamendo streaming
 		public TrackSource Source { get; set; }
 
@@ -46,6 +49,7 @@ namespace Piece.Data.Models
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 		public bool IsActive { get; set; } = true;
+
 
 		// Navigation properties
 		public ICollection<PlaylistTrack> PlaylistTracks { get; set; } = new List<PlaylistTrack>();
