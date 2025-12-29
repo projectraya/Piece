@@ -98,6 +98,17 @@
                             <span class="nav-text">Subscriptions</span>
                         }
                     </NavLink>
+
+                    <!-- Admin Only - Upload Music -->
+                    <AuthorizeView Roles="Admin" Context="adminContext">
+                        <NavLink class="nav-link" href="admin/upload">
+                            <span class="nav-icon">📤</span>
+                            @if (!isCollapsed)
+                            {
+                                <span class="nav-text">Upload Music</span>
+                            }
+                        </NavLink>
+                    </AuthorizeView>
                 </div>
             </Authorized>
             <NotAuthorized>
@@ -126,6 +137,7 @@
             <Authorized>
                 <form action="Account/Logout" method="post" class="logout-form">
                     <AntiforgeryToken />
+                    <input type="hidden" name="returnUrl" value="" />
                     <NavLink class="nav-link" href="Account/Manage">
                         <span class="nav-icon">𓀡</span>
                         @if (!isCollapsed)

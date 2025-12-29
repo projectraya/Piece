@@ -292,7 +292,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("SpotifyId");
 
-                    b.ToTable("Artists", (string)null);
+                    b.ToTable("Artists");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.ArtistTrack", b =>
@@ -344,7 +344,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("ArtistId");
 
-                    b.ToTable("ArtistTracks", (string)null);
+                    b.ToTable("ArtistTracks");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.Country", b =>
@@ -384,7 +384,7 @@ namespace Piece.Migrations
                     b.HasIndex("CountryCode")
                         .IsUnique();
 
-                    b.ToTable("Countries", (string)null);
+                    b.ToTable("Countries");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.ExternalFavorite", b =>
@@ -428,7 +428,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ExternalFavorites", (string)null);
+                    b.ToTable("ExternalFavorites");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.Genre", b =>
@@ -454,7 +454,7 @@ namespace Piece.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Genres", (string)null);
+                    b.ToTable("Genres");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.ListeningHistory", b =>
@@ -484,7 +484,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ListeningHistory", (string)null);
+                    b.ToTable("ListeningHistory");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.Payment", b =>
@@ -538,7 +538,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("UserSubscriptionId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.PlayHistory", b =>
@@ -571,7 +571,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PlayHistories", (string)null);
+                    b.ToTable("PlayHistories");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.Playlist", b =>
@@ -612,7 +612,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Playlists", (string)null);
+                    b.ToTable("Playlists");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.PlaylistTrack", b =>
@@ -641,7 +641,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("TrackId");
 
-                    b.ToTable("PlaylistTracks", (string)null);
+                    b.ToTable("PlaylistTracks");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.SubscriptionPlan", b =>
@@ -675,7 +675,7 @@ namespace Piece.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPlans", (string)null);
+                    b.ToTable("SubscriptionPlans");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.Track", b =>
@@ -742,7 +742,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("Source");
 
-                    b.ToTable("Tracks", (string)null);
+                    b.ToTable("Tracks");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.UserFavorites", b =>
@@ -770,7 +770,7 @@ namespace Piece.Migrations
                     b.HasIndex("UserId", "TrackId")
                         .IsUnique();
 
-                    b.ToTable("UserTrackLikes", (string)null);
+                    b.ToTable("UserTrackLikes");
                 });
 
             modelBuilder.Entity("Piece.Data.Models.UserSubscription", b =>
@@ -814,7 +814,7 @@ namespace Piece.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSubscriptions", (string)null);
+                    b.ToTable("UserSubscriptions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

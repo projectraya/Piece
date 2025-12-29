@@ -45,6 +45,7 @@ namespace Piece
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
@@ -58,7 +59,14 @@ namespace Piece
 			{
 				var services = scope.ServiceProvider;
 				var seeder = services.GetRequiredService<DatabaseSeeder>();
-				await seeder.SeedAllAsync(); // Make sure this method is public!
+				await seeder.SeedAllAsync(); 
+			}
+
+			using (var scope = app.Services.CreateScope())
+			{
+				var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+				var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+				await AdminSeeder.SeedAdminRoleAndUser(roleManager, userManager);
 			}
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
