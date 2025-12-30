@@ -26,6 +26,11 @@ namespace Piece.Data
 
 		public bool IsPremium { get; set; } = false;
 
+		public bool IsBanned { get; set; } = false;
+		public DateTime? BannedAt { get; set; }
+		public string? BanReason { get; set; }
+		public bool ShowUnbanNotification { get; set; } = false;
+
 		// Navigation properties
 		public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
 		public ICollection<UserFavorites> LikedTracks { get; set; } = new List<UserFavorites>();

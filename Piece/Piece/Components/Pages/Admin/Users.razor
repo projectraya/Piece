@@ -301,6 +301,24 @@
         font-size: 14px;
     }
 
+    .modal-textarea {
+        width: 100%;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        min-height: 100px;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+        .modal-textarea:focus {
+            outline: none;
+            border-color: #FFD335;
+        }
+
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -510,22 +528,47 @@ else
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="status-badge status-active">
-                                        <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50%;"></span>
-                                        Active
-                                    </span>
+                                    @if (user.IsBanned)
+                                    {
+                                        <span class="status-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                                            <span style="width: 6px; height: 6px; background: #ef4444; border-radius: 50%;"></span>
+                                            Banned
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-active">
+                                            <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50%;"></span>
+                                            Active
+                                        </span>
+                                    }
                                 </td>
                                 <td style="color: #888; font-size: 13px;">
                                     @user.CreatedAt.ToString("MMM dd, yyyy")
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn-action" @onclick="() => OpenEditModal(user)">
-                                            Edit Roles
-                                        </button>
-                                        <button class="btn-action" @onclick="() => ViewUserProfile(user.UserName!)">
-                                            View Profile
-                                        </button>
+                                        @if (!user.IsBanned)
+                                        {
+                                            <button class="btn-action" @onclick="() => OpenEditModal(user)">
+                                                Edit Roles
+                                            </button>
+                                            <button class="btn-action" @onclick="() => ViewUserProfile(user.UserName!)">
+                                                View Profile
+                                            </button>
+                                            <button class="btn-action btn-danger" @onclick="() => OpenBanModal(user)">
+                                                Ban User
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn-action btn-success" @onclick="() => UnbanUser(user)">
+                                                Unban
+                                            </button>
+                                            <button class="btn-action" @onclick="() => ViewUserProfile(user.UserName!)">
+                                                View Profile
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -599,6 +642,57 @@ else
             </div>
         </div>
     }
+    <!-- Ban User Modal -->
+    @if (showBanModal && userToBan != null)
+    {
+        <div class="modal-overlay" @onclick="CloseBanModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">Ban User</div>
+                    <div class="modal-subtitle">@userToBan.Email</div>
+                </div>
+
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+                        border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                    <div style="color: #ef4444; font-size: 13px; font-weight: 600; margin-bottom: 4px;">
+                        ⚠️ Warning
+                    </div>
+                    <div style="color: #ccc; font-size: 12px; line-height: 1.5;">
+                        This user will be immediately logged out and unable to access their account. They will see the ban reason you provide.
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 8px; color: #ccc; font-size: 14px; font-weight: 600;">
+                        Reason for Ban
+                    </label>
+                    <textarea class="modal-textarea"
+                              placeholder="Explain why this user is being banned..."
+                              @bind="banReason"
+                              maxlength="500"></textarea>
+                    <div style="text-align: right; font-size: 12px; color: #888; margin-top: 5px;">
+                        @(banReason?.Length ?? 0) / 500
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-delete" @onclick="ConfirmBan" disabled="@isBanning">
+                        @if (isBanning)
+                        {
+                            <span>Banning...</span>
+                        }
+                        else
+                        {
+                            <span>Ban User</span>
+                        }
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CloseBanModal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -623,6 +717,12 @@ else
     private bool editIsAdmin = false;
     private bool editIsPremium = false;
     private bool isSaving = false;
+
+    // Ban Modal
+    private bool showBanModal = false;
+    private ApplicationUser? userToBan = null;
+    private string banReason = "";
+    private bool isBanning = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -840,5 +940,126 @@ else
             return $"{parts[0][0]}{parts[1][0]}".ToUpper();
 
         return name[0].ToString().ToUpper();
+    }
+
+
+    private void OpenBanModal(ApplicationUser user)
+    {
+        userToBan = user;
+        banReason = "";
+        showBanModal = true;
+    }
+
+    private void CloseBanModal()
+    {
+        showBanModal = false;
+        userToBan = null;
+        banReason = "";
+    }
+
+    private async Task ConfirmBan()
+    {
+        if (userToBan == null) return;
+
+        isBanning = true;
+        try
+        {
+            // Ban the user using raw SQL
+            var updated = await DbContext.Database.ExecuteSqlRawAsync(
+                "UPDATE AspNetUsers SET IsBanned = {0}, BannedAt = {1}, BanReason = {2} WHERE Id = {3}",
+                true, DateTime.UtcNow, string.IsNullOrWhiteSpace(banReason) ? "Violation of terms of service" : banReason, userToBan.Id);
+
+            Console.WriteLine($"[UserManagement] Ban SQL update: {updated} rows affected");
+
+            // LOG THE BAN
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+            await ActivityLogger.LogAsync(
+                "UserBan",
+                $"Banned user {userToBan.Email}",
+                currentUserEmail,
+                userToBan.Email,
+                $"Reason: {banReason}",
+                "Warning"
+            );
+
+            // Update in-memory object
+            userToBan.IsBanned = true;
+            userToBan.BannedAt = DateTime.UtcNow;
+            userToBan.BanReason = string.IsNullOrWhiteSpace(banReason) ? "Violation of terms of service" : banReason;
+
+            var userInList = allUsers.FirstOrDefault(u => u.Id == userToBan.Id);
+            if (userInList != null)
+            {
+                userInList.IsBanned = true;
+                userInList.BannedAt = DateTime.UtcNow;
+                userInList.BanReason = banReason;
+            }
+
+            Console.WriteLine($"[UserManagement] Banned user: {userToBan.Email}");
+
+            CloseBanModal();
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserManagement] ERROR banning user: {ex.Message}");
+        }
+        finally
+        {
+            isBanning = false;
+        }
+    }
+
+    private async Task UnbanUser(ApplicationUser user)
+    {
+        try
+        {
+            var updated = await DbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE AspNetUsers
+              SET IsBanned = 0,
+                  BannedAt = NULL,
+                  BanReason = NULL,
+                  ShowUnbanNotification = 1
+              WHERE Id = {0}",
+                user.Id);
+
+            Console.WriteLine($"[UserManagement] Unban SQL update: {updated} rows affected");
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+            await ActivityLogger.LogAsync(
+                "UserUnban",
+                $"Unbanned user {user.Email}",
+                currentUserEmail,
+                user.Email,
+                "User account restored",
+                "Success"
+            );
+
+            user.IsBanned = false;
+            user.BannedAt = null;
+            user.BanReason = null;
+            user.ShowUnbanNotification = true;
+
+            var userInList = allUsers.FirstOrDefault(u => u.Id == user.Id);
+            if (userInList != null)
+            {
+                userInList.IsBanned = false;
+                userInList.BannedAt = null;
+                userInList.BanReason = null;
+                userInList.ShowUnbanNotification = true;
+            }
+
+            Console.WriteLine($"[UserManagement] Unbanned user: {user.Email}");
+
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserManagement] ERROR unbanning user: {ex.Message}");
+        }
     }
 }

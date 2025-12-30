@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Piece.Client.Pages;
@@ -10,49 +10,49 @@ using Piece.Services;
 
 namespace Piece
 {
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+	public class Program
+	{
+		public static async Task Main(string[] args)
+		{
+			var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents()
-                .AddInteractiveWebAssemblyComponents();
+			// Add services to the container.
+			builder.Services.AddRazorComponents()
+				.AddInteractiveServerComponents()
+				.AddInteractiveWebAssemblyComponents();
 
 			builder.Services.AddScoped<DatabaseSeeder>();
 			builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 
 			builder.Services.AddCascadingAuthenticationState();
-            builder.Services.AddScoped<IdentityUserAccessor>();
-            builder.Services.AddScoped<IdentityRedirectManager>();
-            builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
-            builder.Services.AddScoped<PlayerService>();
-            builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+			builder.Services.AddScoped<IdentityUserAccessor>();
+			builder.Services.AddScoped<IdentityRedirectManager>();
+			builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
+			builder.Services.AddScoped<PlayerService>();
+			builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 			builder.Services.AddScoped<IListeningHistoryService, ListeningHistoryService>();
-            builder.Services.AddScoped<IProfileService, ProfileService>();
-            builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
+			builder.Services.AddScoped<IProfileService, ProfileService>();
+			builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 
 			builder.Services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-                })
-                .AddIdentityCookies();
+			{
+				options.DefaultScheme = IdentityConstants.ApplicationScheme;
+				options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+			})
+				.AddIdentityCookies();
 
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+			var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+			builder.Services.AddDbContext<ApplicationDbContext>(options =>
+				options.UseSqlServer(connectionString));
+			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddRoles<IdentityRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddSignInManager()
-                .AddDefaultTokenProviders();
+			builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+				.AddRoles<IdentityRole>()
+				.AddEntityFrameworkStores<ApplicationDbContext>()
+				.AddSignInManager()
+				.AddDefaultTokenProviders();
 
-            builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+			builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 			builder.Services.AddHttpClient<JamendoService>();
 
 			var app = builder.Build();
@@ -61,7 +61,7 @@ namespace Piece
 			{
 				var services = scope.ServiceProvider;
 				var seeder = services.GetRequiredService<DatabaseSeeder>();
-				await seeder.SeedAllAsync(); 
+				await seeder.SeedAllAsync();
 			}
 
 			using (var scope = app.Services.CreateScope())
@@ -70,40 +70,37 @@ namespace Piece
 				var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 				await AdminSeeder.SeedAdminRoleAndUser(roleManager, userManager);
 			}
+
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
-            {
-                app.UseWebAssemblyDebugging();
-                app.UseMigrationsEndPoint();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+			{
+				app.UseWebAssemblyDebugging();
+				app.UseMigrationsEndPoint();
+			}
+			else
+			{
+				app.UseExceptionHandler("/Error");
+				app.UseHsts();
+			}
 
-            app.UseHttpsRedirection();
+			app.UseHttpsRedirection();
 
-            app.UseStaticFiles();
-            app.UseAntiforgery();
 
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode()
-                .AddInteractiveWebAssemblyRenderMode()
-                .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
+			app.UseStaticFiles();
+			app.UseRouting();
+			app.UseAuthentication();
+			app.UseAuthorization();
+			app.UseMiddleware<Piece.Middleware.BanCheckMiddleware>(); // ← Move it HERE, before Antiforgery
+			app.UseAntiforgery();
 
-            // Add additional endpoints required by the Identity /Account Razor components.
-            app.MapAdditionalIdentityEndpoints();
+			app.MapRazorComponents<App>()
+				.AddInteractiveServerRenderMode()
+				.AddInteractiveWebAssemblyRenderMode()
+				.AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
 
-            //// Seed database on startup
-            using (var scope = app.Services.CreateScope())
-            {
-                var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-                await seeder.SeedAllAsync();
-            }
+			app.MapAdditionalIdentityEndpoints();
 
-            app.Run();
-        }
-    }
+			app.Run();
+		}
+	}
 }

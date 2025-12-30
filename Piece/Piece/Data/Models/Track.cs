@@ -49,6 +49,7 @@ namespace Piece.Data.Models
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 		public bool IsActive { get; set; } = true;
+		public DateTime? ArchivedAt { get; set; }
 
 
 		// Navigation properties

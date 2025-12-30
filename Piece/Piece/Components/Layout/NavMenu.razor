@@ -37,7 +37,7 @@
                 }
             </NavLink>
             <NavLink class="nav-link" href="search/users">
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon">+</span>
                 @if (!isCollapsed)
                 {
                     <span class="nav-text">Socialize</span>
@@ -147,6 +147,10 @@
             </Authorized>
             <NotAuthorized>
                 <div class="nav-section">
+                    @if (!isCollapsed)
+                    {
+                        <div class="section-label">WELCOME</div>
+                    }
                     <NavLink class="nav-link" href="Account/Login">
                         <span class="nav-icon">🗝</span>
                         @if (!isCollapsed)
@@ -155,7 +159,7 @@
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="nav-icon">ᝰ𓂃🖊</span>
+                        <span class="nav-icon">✎</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">Sign Up</span>
