@@ -1,0 +1,844 @@
+﻿@page "/admin/users"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Piece.Data
+@using Piece.Data.Models
+@using Microsoft.EntityFrameworkCore
+@using Piece.Services
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@inject IActivityLogger ActivityLogger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>User Management - Piece</PageTitle>
+
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 211, 53, 0.2);
+    }
+
+    .admin-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .admin-subtitle {
+        font-size: 14px;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #FFD335;
+        }
+
+    .filter-select {
+        padding: 12px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        min-width: 150px;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #FFD335;
+        }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FFD335;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table th {
+            text-align: left;
+            padding: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .data-table td {
+            padding: 16px;
+            font-size: 14px;
+            color: #ccc;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .data-table tbody tr:hover {
+            background: #1a1a1a;
+        }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD335 0%, #8a2be2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        flex-shrink: 0;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .user-email {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-admin {
+        background: #FFD335;
+        color: #1a1a1a;
+    }
+
+    .badge-premium {
+        background: #8a2be2;
+        color: #fff;
+    }
+
+    .badge-user {
+        background: #3a3a3a;
+        color: #aaa;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: rgba(74, 222, 128, 0.1);
+        color: #4ade80;
+    }
+
+    .status-inactive {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        background: #1a1a1a;
+        color: #ccc;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+        .btn-action:hover {
+            background: #2a2a2a;
+            border-color: #FFD335;
+            color: #FFD335;
+        }
+
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .btn-danger {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    .page-btn {
+        padding: 8px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        color: #ccc;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .page-btn:hover:not(:disabled) {
+            background: #3a3a3a;
+            border-color: #FFD335;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+    .page-info {
+        color: #888;
+        font-size: 14px;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: #2a2a2a;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 500px;
+        width: 100%;
+        border: 1px solid #3a3a3a;
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 8px;
+    }
+
+    .modal-subtitle {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #FFD335;
+        color: #1a1a1a;
+    }
+
+        .btn-primary:hover {
+            background: #ffd000;
+        }
+
+    .btn-secondary {
+        background: #3a3a3a;
+        color: #fff;
+    }
+
+        .btn-secondary:hover {
+            background: #4a4a4a;
+        }
+
+    .role-checkboxes {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin: 20px 0;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        background: #1a1a1a;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+        .checkbox-item:hover {
+            background: #252525;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+    .checkbox-label {
+        font-size: 14px;
+        color: #ccc;
+        cursor: pointer;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="admin-container">
+        <div style="text-align: center; padding: 100px 0;">
+            <div class="spinner"></div>
+            <p style="color: #888; margin-top: 20px;">Loading users...</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">User Management</h1>
+                <p class="admin-subtitle">Manage user accounts and permissions</p>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-value">@totalUsers</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@adminCount</div>
+                <div class="stat-label">Admins</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@premiumCount</div>
+                <div class="stat-label">Premium Users</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@filteredUsers.Count</div>
+                <div class="stat-label">Showing</div>
+            </div>
+        </div>
+
+        <!-- Search & Filters -->
+        <div class="search-bar">
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search by email or display name..."
+                   @bind="searchQuery"
+                   @bind:event="oninput"
+                   @onkeyup="ApplyFilters" />
+            <select class="filter-select" @bind="roleFilter" @bind:after="ApplyFilters">
+                <option value="">All Roles</option>
+                <option value="admin">Admins Only</option>
+                <option value="premium">Premium Only</option>
+                <option value="regular">Regular Users</option>
+            </select>
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-container">
+            @if (filteredUsers.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in paginatedUsers)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar">
+                                            @GetInitials(user.DisplayName ?? user.Email ?? "U")
+                                        </div>
+                                        <div class="user-details">
+                                            <div class="user-name">@(user.DisplayName ?? "User")</div>
+                                            <div class="user-email">@user.Email</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 6px;">
+                                        @if (user.IsAdmin)
+                                        {
+                                            <span class="badge badge-admin">Admin</span>
+                                        }
+                                        @if (user.IsPremium)
+                                        {
+                                            <span class="badge badge-premium">Premium</span>
+                                        }
+                                        @if (!user.IsAdmin && !user.IsPremium)
+                                        {
+                                            <span class="badge badge-user">User</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-active">
+                                        <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50%;"></span>
+                                        Active
+                                    </span>
+                                </td>
+                                <td style="color: #888; font-size: 13px;">
+                                    @user.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-action" @onclick="() => OpenEditModal(user)">
+                                            Edit Roles
+                                        </button>
+                                        <button class="btn-action" @onclick="() => ViewUserProfile(user.UserName!)">
+                                            View Profile
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <div class="pagination">
+                        <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                            ← Previous
+                        </button>
+                        <span class="page-info">Page @currentPage of @totalPages</span>
+                        <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)">
+                            Next →
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No users found matching your criteria</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Edit Roles Modal -->
+    @if (showEditModal && selectedUser != null)
+    {
+        <div class="modal-overlay" @onclick="CloseEditModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">Edit User Roles</div>
+                    <div class="modal-subtitle">@selectedUser.Email</div>
+                </div>
+
+                <div class="role-checkboxes">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="admin-check" @bind="editIsAdmin" />
+                        <label for="admin-check" class="checkbox-label">
+                            <strong>Admin</strong> - Full platform access
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="premium-check" @bind="editIsPremium" />
+                        <label for="premium-check" class="checkbox-label">
+                            <strong>Premium</strong> - Enhanced features
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-primary" @onclick="SaveUserRoles" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save Changes</span>
+                        }
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CloseEditModal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private List<ApplicationUser> allUsers = new();
+    private List<ApplicationUser> filteredUsers = new();
+    private List<ApplicationUser> paginatedUsers = new();
+
+    private int totalUsers = 0;
+    private int adminCount = 0;
+    private int premiumCount = 0;
+
+    private string searchQuery = "";
+    private string roleFilter = "";
+
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages = 1;
+
+    private bool showEditModal = false;
+    private ApplicationUser? selectedUser = null;
+    private bool editIsAdmin = false;
+    private bool editIsPremium = false;
+    private bool isSaving = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadUsers();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        try
+        {
+            allUsers = await DbContext.Users
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
+            foreach (var user in allUsers)
+            {
+                var roles = await UserManager.GetRolesAsync(user);
+                var isActuallyAdmin = roles.Contains("Admin");
+
+                if (user.IsAdmin != isActuallyAdmin)
+                {
+                    user.IsAdmin = isActuallyAdmin;
+                    Console.WriteLine($"[UserManagement] Synced IsAdmin for {user.Email}: {isActuallyAdmin}");
+                }
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            totalUsers = allUsers.Count;
+            adminCount = allUsers.Count(u => u.IsAdmin);
+            premiumCount = allUsers.Count(u => u.IsPremium);
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading users: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allUsers.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var search = searchQuery.ToLower();
+            query = query.Where(u =>
+                (u.Email?.ToLower().Contains(search) ?? false) ||
+                (u.DisplayName?.ToLower().Contains(search) ?? false) ||
+                (u.UserName?.ToLower().Contains(search) ?? false)
+            );
+        }
+
+        if (!string.IsNullOrEmpty(roleFilter))
+        {
+            query = roleFilter switch
+            {
+                "admin" => query.Where(u => u.IsAdmin),
+                "premium" => query.Where(u => u.IsPremium),
+                "regular" => query.Where(u => !u.IsAdmin && !u.IsPremium),
+                _ => query
+            };
+        }
+
+        filteredUsers = query.ToList();
+
+        currentPage = 1;
+        UpdatePagination();
+    }
+
+    private void UpdatePagination()
+    {
+        totalPages = (int)Math.Ceiling(filteredUsers.Count / (double)pageSize);
+        var skip = (currentPage - 1) * pageSize;
+        paginatedUsers = filteredUsers.Skip(skip).Take(pageSize).ToList();
+        StateHasChanged();
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdatePagination();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdatePagination();
+        }
+    }
+
+    private void OpenEditModal(ApplicationUser user)
+    {
+        selectedUser = user;
+        editIsAdmin = user.IsAdmin;
+        editIsPremium = user.IsPremium;
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        selectedUser = null;
+    }
+
+    private async Task SaveUserRoles()
+    {
+        if (selectedUser == null) return;
+
+        isSaving = true;
+        try
+        {
+            Console.WriteLine($"[UserManagement] Starting role update for {selectedUser.Email}");
+            Console.WriteLine($"[UserManagement] editIsAdmin: {editIsAdmin}, editIsPremium: {editIsPremium}");
+
+            var oldIsAdmin = selectedUser.IsAdmin;
+            var oldIsPremium = selectedUser.IsPremium;
+
+            var currentRoles = await UserManager.GetRolesAsync(selectedUser);
+            Console.WriteLine($"[UserManagement] Current Identity roles: {string.Join(", ", currentRoles)}");
+
+            if (editIsAdmin && !currentRoles.Contains("Admin"))
+            {
+                var addResult = await UserManager.AddToRoleAsync(selectedUser, "Admin");
+                Console.WriteLine($"[UserManagement] Add Admin role result: {addResult.Succeeded}");
+            }
+            else if (!editIsAdmin && currentRoles.Contains("Admin"))
+            {
+                var removeResult = await UserManager.RemoveFromRoleAsync(selectedUser, "Admin");
+                Console.WriteLine($"[UserManagement] Remove Admin role result: {removeResult.Succeeded}");
+            }
+
+            var updated = await DbContext.Database.ExecuteSqlRawAsync(
+                "UPDATE AspNetUsers SET IsAdmin = {0}, IsPremium = {1} WHERE Id = {2}",
+                editIsAdmin, editIsPremium, selectedUser.Id);
+
+            Console.WriteLine($"[UserManagement] Direct SQL update: {updated} rows affected");
+
+            var changes = new List<string>();
+            if (editIsAdmin != oldIsAdmin)
+                changes.Add(editIsAdmin ? "Made Admin" : "Removed Admin");
+            if (editIsPremium != oldIsPremium)
+                changes.Add(editIsPremium ? "Made Premium" : "Removed Premium");
+
+            if (changes.Any())
+            {
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+                await ActivityLogger.LogAsync(
+                    "UserRoleChange",
+                    $"Changed roles for {selectedUser.Email}: {string.Join(", ", changes)}",
+                    currentUserEmail,
+                    selectedUser.Email,
+                    $"Admin: {editIsAdmin}, Premium: {editIsPremium}",
+                    "Info"
+                );
+            }
+
+            selectedUser.IsAdmin = editIsAdmin;
+            selectedUser.IsPremium = editIsPremium;
+
+            var userInList = allUsers.FirstOrDefault(u => u.Id == selectedUser.Id);
+            if (userInList != null)
+            {
+                userInList.IsAdmin = editIsAdmin;
+                userInList.IsPremium = editIsPremium;
+            }
+
+            adminCount = allUsers.Count(u => u.IsAdmin);
+            premiumCount = allUsers.Count(u => u.IsPremium);
+
+            Console.WriteLine($"[UserManagement] Role update complete. Admin count: {adminCount}");
+
+            CloseEditModal();
+            ApplyFilters();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserManagement] ERROR: {ex.Message}");
+            Console.WriteLine($"[UserManagement] Stack trace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ViewUserProfile(string username)
+    {
+        Navigation.NavigateTo($"/profile/{username}");
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+
+        return name[0].ToString().ToUpper();
+    }
+}

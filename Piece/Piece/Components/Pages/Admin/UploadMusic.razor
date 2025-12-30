@@ -10,7 +10,10 @@
 @inject ApplicationDbContext DbContext
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IActivityLogger ActivityLogger
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Roles = "Admin")]
+
 
 <PageTitle>Upload Music - Admin</PageTitle>
 
@@ -192,7 +195,6 @@
             return;
         }
 
-        // Get current user ID
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -371,7 +373,6 @@
                 }
             }
 
-            // Create Track record
             var track = new Track
                 {
                     Title = uploadModel.Title.Trim(),
@@ -391,14 +392,19 @@
             DbContext.Tracks.Add(track);
             await DbContext.SaveChangesAsync();
 
-            // SECURITY: Log successful upload
-            SecurityLogger.LogUploadAttempt(userId, uploadModel.Title, true);
-            UploadRateLimiter.RecordUploadAttempt(userId);
+            var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+            await ActivityLogger.LogAsync(
+                "TrackUpload",
+                $"Uploaded track '{uploadModel.Title}' by {uploadModel.ArtistName}",
+                currentUserEmail,
+                uploadModel.Title,
+                $"Genre: {genres.FirstOrDefault(g => g.Id == uploadModel.GenreId)?.Name ?? "Unknown"}, Duration: {durationSeconds}s",
+                "Success"
+            );
 
             uploadMessage = $"✓ Successfully uploaded '{uploadModel.Title}'! (Duration: {durationSeconds}s)";
             uploadSuccess = true;
 
-            // Reset form
             await Task.Delay(2000);
             uploadModel = new();
             selectedFile = null;
@@ -409,7 +415,6 @@
         }
         catch (Exception ex)
         {
-            // SECURITY: Clean up files on error
             if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
                 File.Delete(filePath);
             if (!string.IsNullOrEmpty(imageFilePath) && File.Exists(imageFilePath))

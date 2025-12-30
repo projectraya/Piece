@@ -31,6 +31,9 @@ namespace Piece.Data
 		public DbSet<UserSubscription> UserSubscriptions { get; set; }
 		public DbSet<Payment> Payments { get; set; }
 
+		//Admin
+		public DbSet<ActivityLog> ActivityLogs { get; set; }
+
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
 			base.OnModelCreating(builder);

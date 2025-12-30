@@ -1,0 +1,317 @@
+﻿@page "/search/users"
+@rendermode InteractiveServer
+@using Piece.Data
+@using Piece.Services
+@inject IProfileService ProfileService
+@inject NavigationManager Navigation
+
+<PageTitle>Search Users - Piece</PageTitle>
+
+<style>
+    .search-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .search-header {
+        margin-bottom: 30px;
+    }
+
+    .search-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #FFD335;
+        margin-bottom: 20px;
+    }
+
+    .search-box-wrapper {
+        display: flex;
+        align-items: center;
+        background: #2a2a2a;
+        border-radius: 24px;
+        padding: 12px 20px;
+        gap: 12px;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+        .search-box-wrapper:focus-within {
+            border-color: #FFD335;
+            background: #3a3a3a;
+        }
+
+    .search-icon {
+        font-size: 20px;
+        color: #888;
+    }
+
+    .search-input {
+        flex: 1;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        outline: none;
+    }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+    .search-clear {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0;
+        transition: color 0.3s;
+    }
+
+        .search-clear:hover {
+            color: #fff;
+        }
+
+    .search-results {
+        margin-top: 40px;
+    }
+
+    .results-count {
+        font-size: 16px;
+        color: #888;
+        margin-bottom: 20px;
+    }
+
+    .user-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .user-card {
+        background: #2a2a2a;
+        border-radius: 12px;
+        padding: 25px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+        .user-card:hover {
+            background: #3a3a3a;
+            transform: translateY(-5px);
+        }
+
+    .user-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD335 0%, #8a2be2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: bold;
+        color: #1a1a1a;
+        flex-shrink: 0;
+    }
+
+    .user-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-username {
+        font-size: 14px;
+        color: #888;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-bio {
+        font-size: 13px;
+        color: #aaa;
+        margin-top: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    .loading-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #888;
+    }
+</style>
+
+<div class="search-container">
+    <div class="search-header">
+        <h1 class="search-title">🔍 Search Users</h1>
+        <div class="search-box-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search by username or display name..."
+                   @bind="searchQuery"
+                   @bind:event="oninput"
+                   @onkeyup="HandleSearchKeyUp" />
+            @if (!string.IsNullOrEmpty(searchQuery))
+            {
+                <button class="search-clear" @onclick="ClearSearch">✕</button>
+            }
+        </div>
+    </div>
+
+    <div class="search-results">
+        @if (isSearching)
+        {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p style="margin-top: 20px;">Searching...</p>
+            </div>
+        }
+        else if (users.Any())
+        {
+            <div class="results-count">
+                Found @users.Count @(users.Count == 1 ? "user" : "users")
+            </div>
+            <div class="user-grid">
+                @foreach (var user in users)
+                {
+                    <div class="user-card" @onclick="() => ViewProfile(user.UserName!)">
+                        <div class="user-avatar">
+                            @GetInitials(user.DisplayName ?? user.UserName ?? "U")
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">@(user.DisplayName ?? "Piece User")</div>
+                            <div class="user-username">@@@user.UserName</div>
+                            @if (!string.IsNullOrEmpty(user.Bio))
+                            {
+                                <div class="user-bio">@user.Bio</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(searchQuery))
+        {
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>No users found</h3>
+                <p>Try a different search term</p>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <h3>Find Piece Users</h3>
+                <p>Search for users by their username or display name</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string searchQuery = "";
+    private List<ApplicationUser> users = new();
+    private bool isSearching = false;
+    private System.Threading.Timer? searchDebounceTimer;
+
+    private void HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        searchDebounceTimer?.Dispose();
+        searchDebounceTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await PerformSearch();
+            });
+        }, null, 500, Timeout.Infinite);
+    }
+
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            users.Clear();
+            StateHasChanged();
+            return;
+        }
+
+        isSearching = true;
+        StateHasChanged();
+
+        try
+        {
+            users = await ProfileService.SearchUsersAsync(searchQuery, 20);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error searching users: {ex.Message}");
+            users.Clear();
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = "";
+        users.Clear();
+        StateHasChanged();
+    }
+
+    private void ViewProfile(string username)
+    {
+        Navigation.NavigateTo($"/profile/{username}");
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+
+        return name[0].ToString().ToUpper();
+    }
+
+    public void Dispose()
+    {
+        searchDebounceTimer?.Dispose();
+    }
+}

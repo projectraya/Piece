@@ -1,0 +1,569 @@
+﻿@page "/admin/dashboard"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Piece.Data
+@using Piece.Data.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Admin Dashboard - Piece</PageTitle>
+
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 211, 53, 0.2);
+    }
+
+    .admin-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #FFD335;
+    }
+
+    .admin-subtitle {
+        font-size: 14px;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        background: #2a2a2a;
+        border-radius: 8px;
+        padding: 24px;
+        border: 1px solid #3a3a3a;
+        transition: all 0.2s;
+    }
+
+        .stat-card:hover {
+            border-color: #4a4a4a;
+        }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .stat-icon {
+        font-size: 24px;
+        opacity: 0.8;
+    }
+
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .stat-change {
+        font-size: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #3a3a3a;
+        color: #aaa;
+    }
+
+    .section {
+        background: #2a2a2a;
+        border-radius: 8px;
+        padding: 30px;
+        margin-bottom: 24px;
+        border: 1px solid #3a3a3a;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .btn-link {
+        color: #FFD335;
+        text-decoration: none;
+        font-size: 13px;
+        transition: opacity 0.2s;
+        font-weight: 500;
+    }
+
+        .btn-link:hover {
+            opacity: 0.7;
+        }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+    }
+
+    .action-btn {
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 20px 16px;
+        color: #fff;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .action-btn:hover {
+            background: #2a2a2a;
+            border-color: #FFD335;
+        }
+
+    .action-icon {
+        font-size: 28px;
+        margin-bottom: 12px;
+        display: block;
+        opacity: 0.9;
+    }
+
+    .action-label {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .data-table td {
+            padding: 16px 12px;
+            font-size: 14px;
+            color: #ccc;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .data-table tr:hover {
+            background: #1a1a1a;
+        }
+
+    .track-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .track-title {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .track-meta {
+        font-size: 13px;
+        color: #888;
+    }
+
+    .user-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #3a3a3a;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #ccc;
+    }
+
+    .time-badge {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+
+    .play-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #FFD335;
+        color: #1a1a1a;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="admin-container">
+        <div style="text-align: center; padding: 100px 0;">
+            <div class="spinner"></div>
+            <p style="color: #888; margin-top: 20px;">Loading dashboard...</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">Admin Dashboard</h1>
+                <p class="admin-subtitle">Platform overview and management</p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">@totalUsers</div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-change">
+                    +@newUsersThisWeek new this week
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value">@uploadedTracks</div>
+                <div class="stat-label">Uploaded Tracks</div>
+                <div class="stat-change">
+                    Admin-uploaded content
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value">@totalPlaylists</div>
+                <div class="stat-label">Total Playlists</div>
+                <div class="stat-change">
+                    @publicPlaylists public playlists
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value">@totalPlays</div>
+                <div class="stat-label">Total Plays</div>
+                <div class="stat-change">
+                    Across all tracks
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Quick Actions</h2>
+            </div>
+            <div class="quick-actions">
+                <a href="/admin/upload" class="action-btn">
+                    <span class="action-label">Upload Music</span>
+                </a>
+                <a href="/admin/users" class="action-btn">
+                    <span class="action-label">Manage Users</span>
+                </a>
+                <a href="/admin/tracks" class="action-btn">
+                    <span class="action-label">Manage Tracks</span>
+                </a>
+                <a href="/admin/logs" class="action-btn">
+                    <span class="action-label">Activity Logs</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Most Played Tracks -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Most Played Tracks</h2>
+                <a href="/admin/tracks" class="btn-link">View All →</a>
+            </div>
+            @if (mostPlayedTracks.Any())
+            {
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Track</th>
+                                <th>Artist</th>
+                                <th>Genre</th>
+                                <th>Plays</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var track in mostPlayedTracks)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="track-info">
+                                            <span class="track-title">@track.Title</span>
+                                        </div>
+                                    </td>
+                                    <td>@track.ArtistName</td>
+                                    <td>
+                                        @if (track.Genre != null)
+                                        {
+                                            <span style="color: @track.Genre.Color; font-weight: 500;">@track.Genre.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #666;">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="play-badge">@track.PlayCount plays</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">No play data available</div>
+            }
+        </div>
+
+        <!-- Recent Uploads -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Uploads</h2>
+                <a href="/admin/tracks" class="btn-link">View All →</a>
+            </div>
+            @if (recentUploads.Any())
+            {
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Track</th>
+                                <th>Uploaded By</th>
+                                <th>Genre</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var upload in recentUploads)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="track-info">
+                                            <span class="track-title">@upload.Track.Title</span>
+                                            <span class="track-meta">@upload.Track.ArtistName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="user-badge">@upload.UserEmail</span>
+                                    </td>
+                                    <td>
+                                        @if (upload.Track.Genre != null)
+                                        {
+                                            <span style="color: @upload.Track.Genre.Color; font-weight: 500;">@upload.Track.Genre.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #666;">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="time-badge">@FormatTimeAgo(upload.Track.CreatedAt)</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">No recent uploads</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool dataLoaded = false; 
+
+    private int totalUsers = 0;
+    private int newUsersThisWeek = 0;
+    private int uploadedTracks = 0;
+    private int totalPlaylists = 0;
+    private int publicPlaylists = 0;
+    private int totalPlays = 0;
+
+    private List<Track> mostPlayedTracks = new();
+    private List<RecentUpload> recentUploads = new();
+
+    private DateTime seedingCutoff = DateTime.MinValue;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !dataLoaded)
+        {
+            dataLoaded = true;
+            await LoadDashboardData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoading = true;
+
+        try
+        {
+            totalUsers = await DbContext.Users.CountAsync();
+            Console.WriteLine($"[Dashboard] Total users: {totalUsers}");
+
+            var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+            newUsersThisWeek = await DbContext.Users
+                .Where(u => u.CreatedAt >= oneWeekAgo)
+                .CountAsync();
+            Console.WriteLine($"[Dashboard] New users this week: {newUsersThisWeek}");
+
+            var allLocalTracks = await DbContext.Tracks
+                .Where(t => t.IsActive && t.Source == Data.Enums.TrackSource.Local)
+                .OrderBy(t => t.CreatedAt)
+                .Select(t => new { t.Id, t.Title, t.CreatedAt })
+                .ToListAsync();
+
+            Console.WriteLine($"[Dashboard] All local tracks count: {allLocalTracks.Count}");
+
+            if (allLocalTracks.Any())
+            {
+                var firstTrack = allLocalTracks.First();
+                var lastTrack = allLocalTracks.Last();
+                Console.WriteLine($"[Dashboard] First track: {firstTrack.Title} at {firstTrack.CreatedAt}");
+                Console.WriteLine($"[Dashboard] Last track: {lastTrack.Title} at {lastTrack.CreatedAt}");
+
+                seedingCutoff = firstTrack.CreatedAt.AddMinutes(2);
+
+                var tracksInFirstBatch = allLocalTracks
+                    .Where(t => t.CreatedAt <= seedingCutoff)
+                    .Count();
+
+                Console.WriteLine($"[Dashboard] Tracks in seeding batch: {tracksInFirstBatch}");
+                Console.WriteLine($"[Dashboard] Seeding cutoff: {seedingCutoff}");
+
+                uploadedTracks = allLocalTracks.Count - tracksInFirstBatch;
+            }
+            else
+            {
+                uploadedTracks = 0;
+            }
+
+            Console.WriteLine($"[Dashboard] Uploaded tracks (non-seeded): {uploadedTracks}");
+
+            totalPlaylists = await DbContext.Playlists.CountAsync();
+            publicPlaylists = await DbContext.Playlists.Where(p => p.IsPublic).CountAsync();
+            Console.WriteLine($"[Dashboard] Playlists: {totalPlaylists}, Public: {publicPlaylists}");
+
+            totalPlays = await DbContext.Tracks
+                .Where(t => t.IsActive)
+                .SumAsync(t => t.PlayCount);
+            Console.WriteLine($"[Dashboard] Total plays: {totalPlays}");
+
+            mostPlayedTracks = await DbContext.Tracks
+                .Include(t => t.Genre)
+                .Where(t => t.IsActive && t.PlayCount > 0)
+                .OrderByDescending(t => t.PlayCount)
+                .Take(5)
+                .ToListAsync();
+            Console.WriteLine($"[Dashboard] Most played tracks: {mostPlayedTracks.Count}");
+
+            var recentTracksWithUsers = await DbContext.Tracks
+                .Include(t => t.Genre)
+                .Where(t => t.IsActive &&
+                           t.Source == Data.Enums.TrackSource.Local &&
+                           t.CreatedAt > seedingCutoff)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
+            Console.WriteLine($"[Dashboard] Recent uploads: {recentTracksWithUsers.Count}");
+
+            recentUploads = recentTracksWithUsers.Select(t => new RecentUpload
+                {
+                    Track = t,
+                    UserEmail = "Admin"
+                }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Dashboard] Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string FormatTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+
+        return dateTime.ToString("MMM dd, yyyy");
+    }
+
+    private class RecentUpload
+    {
+        public Track Track { get; set; } = null!;
+        public string UserEmail { get; set; } = "";
+    }
+}

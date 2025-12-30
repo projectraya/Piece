@@ -36,6 +36,13 @@
                     <span class="nav-text">Home</span>
                 }
             </NavLink>
+            <NavLink class="nav-link" href="search/users">
+                <span class="nav-icon">👥</span>
+                @if (!isCollapsed)
+                {
+                    <span class="nav-text">Socialize</span>
+                }
+            </NavLink>
             <NavLink class="nav-link" href="player">
                 <span class="nav-icon">▶︎</span>
                 @if (!isCollapsed)
@@ -113,14 +120,28 @@
                         }
                     </NavLink>
 
+                    <!-- Admin Only -->
                     <AuthorizeView Roles="Admin" Context="adminContext">
-                        <NavLink class="nav-link" href="admin/upload">
-                            <span class="nav-icon">📤</span>
+                        <div class="nav-section">
                             @if (!isCollapsed)
                             {
-                                <span class="nav-text">Upload Music</span>
+                                <div class="section-label">ADMIN</div>
                             }
-                        </NavLink>
+                            <NavLink class="nav-link" href="admin/dashboard">
+                                <span class="nav-icon">🛡️</span>
+                                @if (!isCollapsed)
+                                {
+                                    <span class="nav-text">Dashboard</span>
+                                }
+                            </NavLink>
+                            <NavLink class="nav-link" href="admin/upload">
+                                <span class="nav-icon">📤</span>
+                                @if (!isCollapsed)
+                                {
+                                    <span class="nav-text">Upload Music</span>
+                                }
+                            </NavLink>
+                        </div>
                     </AuthorizeView>
                 </div>
             </Authorized>
@@ -279,7 +300,6 @@
             transform: scale(0.95);
         }
 
-    /* Navigation Items */
     .nav-items {
         flex: 1;
         padding: 20px 0;
@@ -385,7 +405,6 @@
         transform: translateY(0);
     }
 
-    /* Responsive */
     @@media (max-width: 768px) {
         .nav-menu {
             width: 70px;

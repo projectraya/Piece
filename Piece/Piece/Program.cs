@@ -32,6 +32,7 @@ namespace Piece
             builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 			builder.Services.AddScoped<IListeningHistoryService, ListeningHistoryService>();
             builder.Services.AddScoped<IProfileService, ProfileService>();
+            builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 
 			builder.Services.AddAuthentication(options =>
                 {

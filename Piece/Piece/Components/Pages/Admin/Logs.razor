@@ -1,0 +1,563 @@
+﻿@page "/admin/logs"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Piece.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Activity Logs - Piece</PageTitle>
+
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 211, 53, 0.2);
+    }
+
+    .admin-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #FFD335;
+    }
+
+    .admin-subtitle {
+        font-size: 14px;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FFD335;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filters-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .filter-select {
+        padding: 12px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        min-width: 150px;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #FFD335;
+        }
+
+    .logs-container {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .log-entry {
+        background: #1a1a1a;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border-left: 4px solid #3a3a3a;
+        transition: all 0.2s;
+    }
+
+        .log-entry:hover {
+            background: #252525;
+        }
+
+        .log-entry.success {
+            border-left-color: #4ade80;
+        }
+
+        .log-entry.warning {
+            border-left-color: #FFD335;
+        }
+
+        .log-entry.error {
+            border-left-color: #ef4444;
+        }
+
+    .log-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .log-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+        .log-type.success {
+            color: #4ade80;
+        }
+
+        .log-type.warning {
+            color: #FFD335;
+        }
+
+        .log-type.error {
+            color: #ef4444;
+        }
+
+    .log-time {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .log-message {
+        font-size: 14px;
+        color: #ccc;
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    .log-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 12px;
+    }
+
+    .log-detail {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #888;
+    }
+
+    .detail-label {
+        color: #666;
+    }
+
+    .detail-value {
+        color: #aaa;
+        font-weight: 500;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    .page-btn {
+        padding: 8px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        color: #ccc;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .page-btn:hover:not(:disabled) {
+            background: #3a3a3a;
+            border-color: #FFD335;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+    .page-info {
+        color: #888;
+        font-size: 14px;
+    }
+
+    .info-banner {
+        background: rgba(255, 211, 53, 0.1);
+        border: 1px solid rgba(255, 211, 53, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+
+    .info-banner-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .info-banner-content {
+        flex: 1;
+    }
+
+    .info-banner-title {
+        color: #FFD335;
+        font-weight: 600;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    .info-banner-text {
+        color: #ccc;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="admin-container">
+        <div style="text-align: center; padding: 100px 0;">
+            <div class="spinner"></div>
+            <p style="color: #888; margin-top: 20px;">Loading activity logs...</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">Activity Logs</h1>
+                <p class="admin-subtitle">Monitor uploads and security events</p>
+            </div>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="info-banner">
+            <div class="info-banner-icon">ℹ️</div>
+            <div class="info-banner-content">
+                <div class="info-banner-title">Real-time Monitoring</div>
+                <div class="info-banner-text">
+                    Activity logs are displayed in real-time based on database records. Tracks uploaded through the admin panel are automatically logged here.
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-value">@totalLogs</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@successCount</div>
+                <div class="stat-label">Successful Uploads</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@todayCount</div>
+                <div class="stat-label">Today's Activity</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@filteredLogs.Count</div>
+                <div class="stat-label">Showing</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <select class="filter-select" @bind="typeFilter" @bind:after="ApplyFilters">
+                <option value="">All Events</option>
+                <option value="upload">Uploads</option>
+                <option value="security">Security</option>
+            </select>
+            <select class="filter-select" @bind="timeFilter" @bind:after="ApplyFilters">
+                <option value="">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+            </select>
+        </div>
+
+        <!-- Logs Display -->
+        <div class="logs-container">
+            @if (filteredLogs.Any())
+            {
+                @foreach (var log in paginatedLogs)
+                {
+                    <div class="log-entry @log.StatusClass">
+                        <div class="log-header">
+                            <div class="log-type @log.StatusClass">
+                                <span>@log.Icon</span>
+                                <span>@log.EventType</span>
+                            </div>
+                            <div class="log-time">@FormatTimeAgo(log.Timestamp)</div>
+                        </div>
+                        <div class="log-message">@log.Message</div>
+                        <div class="log-details">
+                            @if (!string.IsNullOrEmpty(log.User))
+                            {
+                                <div class="log-detail">
+                                    <span class="detail-label">User:</span>
+                                    <span class="detail-value">@log.User</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(log.AdditionalInfo))
+                            {
+                                <div class="log-detail">
+                                    <span class="detail-label">Info:</span>
+                                    <span class="detail-value">@log.AdditionalInfo</span>
+                                </div>
+                            }
+                            <div class="log-detail">
+                                <span class="detail-label">Time:</span>
+                                <span class="detail-value">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <div class="pagination">
+                        <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                            ← Previous
+                        </button>
+                        <span class="page-info">Page @currentPage of @totalPages</span>
+                        <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)">
+                            Next →
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No activity logs found</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<ActivityLogDisplay> allLogs = new();
+    private List<ActivityLogDisplay> filteredLogs = new();
+    private List<ActivityLogDisplay> paginatedLogs = new();
+
+    private int totalLogs = 0;
+    private int successCount = 0;
+    private int todayCount = 0;
+
+    private string typeFilter = "";
+    private string timeFilter = "";
+
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalPages = 1;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadLogs();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadLogs()
+    {
+        isLoading = true;
+        try
+        {
+            var dbLogs = await DbContext.ActivityLogs
+                .OrderByDescending(l => l.Timestamp)
+                .ToListAsync();
+
+            allLogs = dbLogs.Select(l => new ActivityLogDisplay
+                {
+                    EventType = FormatEventType(l.EventType),
+                    Message = l.Message,
+                    Timestamp = l.Timestamp,
+                    User = l.PerformedBy,
+                    StatusClass = l.Severity.ToLower(),
+                    Icon = GetIconForSeverity(l.Severity),
+                    AdditionalInfo = l.AdditionalInfo
+                }).ToList();
+
+            totalLogs = allLogs.Count;
+            successCount = dbLogs.Count(l => l.Severity == "Success");
+
+            var today = DateTime.UtcNow.Date;
+            todayCount = allLogs.Count(l => l.Timestamp.Date == today);
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading logs: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string FormatEventType(string eventType)
+    {
+        return eventType switch
+        {
+            "TrackUpload" => "Track Upload",
+            "TrackDelete" => "Track Deletion",
+            "UserRoleChange" => "User Role Change",
+            _ => eventType
+        };
+    }
+
+    private string GetIconForSeverity(string severity)
+    {
+        return severity switch
+        {
+            "Success" => "✓",
+            "Warning" => "⚠",
+            "Error" => "✗",
+            _ => "ℹ"
+        };
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allLogs.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(typeFilter))
+        {
+            query = typeFilter switch
+            {
+                "upload" => query.Where(l => l.EventType.Contains("Upload")),
+                "security" => query.Where(l => l.EventType.Contains("Security")),
+                _ => query
+            };
+        }
+
+        if (!string.IsNullOrEmpty(timeFilter))
+        {
+            var now = DateTime.UtcNow;
+            query = timeFilter switch
+            {
+                "today" => query.Where(l => l.Timestamp.Date == now.Date),
+                "week" => query.Where(l => l.Timestamp >= now.AddDays(-7)),
+                "month" => query.Where(l => l.Timestamp >= now.AddDays(-30)),
+                _ => query
+            };
+        }
+
+        filteredLogs = query.ToList();
+
+        currentPage = 1;
+        UpdatePagination();
+    }
+
+    private void UpdatePagination()
+    {
+        totalPages = (int)Math.Ceiling(filteredLogs.Count / (double)pageSize);
+        var skip = (currentPage - 1) * pageSize;
+        paginatedLogs = filteredLogs.Skip(skip).Take(pageSize).ToList();
+        StateHasChanged();
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdatePagination();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdatePagination();
+        }
+    }
+
+    private string FormatTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+
+        return dateTime.ToString("MMM dd, yyyy");
+    }
+
+    private string FormatDuration(int seconds)
+    {
+        var minutes = seconds / 60;
+        var remainingSeconds = seconds % 60;
+        return $"{minutes}:{remainingSeconds:D2}";
+    }
+
+    private class ActivityLogDisplay
+    {
+        public string EventType { get; set; } = "";
+        public string Message { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+        public string User { get; set; } = "";
+        public string StatusClass { get; set; } = "success";
+        public string Icon { get; set; } = "ℹ️";
+        public string? AdditionalInfo { get; set; }
+    }
+}
