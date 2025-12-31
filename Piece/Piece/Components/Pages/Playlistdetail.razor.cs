@@ -67,10 +67,41 @@ namespace Piece.Components.Pages
 			isLoading = true;
 			try
 			{
-				playlist = await PlaylistService.GetPlaylistByIdAsync(Id, currentUserId);
+				// Check if user is admin
+				var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+				var isAdmin = authState.User.IsInRole("Admin");
+
+				// Admins can view any playlist, regular users only their own
+				if (isAdmin)
+				{
+					playlist = await DbContext.Playlists
+						.Include(p => p.PlaylistTracks)
+							.ThenInclude(pt => pt.Track)
+								.ThenInclude(t => t.Genre)
+						.FirstOrDefaultAsync(p => p.Id == Id);
+				}
+				else
+				{
+					playlist = await PlaylistService.GetPlaylistByIdAsync(Id, currentUserId);
+				}
+
 				if (playlist != null)
 				{
-					playlistTracks = await PlaylistService.GetPlaylistTracksAsync(Id, currentUserId);
+					if (isAdmin)
+					{
+						// For admin, load tracks directly from DbContext
+						playlistTracks = await DbContext.PlaylistTracks
+							.Where(pt => pt.PlaylistId == Id)
+							.Include(pt => pt.Track)
+								.ThenInclude(t => t.Genre)
+							.OrderBy(pt => pt.Position)
+							.Select(pt => pt.Track)
+							.ToListAsync();
+					}
+					else
+					{
+						playlistTracks = await PlaylistService.GetPlaylistTracksAsync(Id, currentUserId);
+					}
 				}
 
 				// Load all available tracks from database

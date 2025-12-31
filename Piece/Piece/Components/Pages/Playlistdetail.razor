@@ -466,6 +466,15 @@
             <div class="playlist-info-header">
                 <div class="playlist-type">Playlist</div>
                 <h1 class="playlist-title">@playlist.Name</h1>
+                @if (playlist != null && playlist.UserId != currentUserId)
+                {
+                    <div style="background: rgba(255, 211, 53, 0.1); border: 1px solid rgba(255, 211, 53, 0.3);
+                border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                        <div style="color: #FFD335; font-size: 13px; font-weight: 600;">
+                            🛡️ Admin View - This playlist belongs to another user
+                        </div>
+                    </div>
+                }
                 @if (!string.IsNullOrEmpty(playlist.Description))
                 {
                     <p class="playlist-description-text">@playlist.Description</p>
@@ -507,6 +516,7 @@
                                     @if (!string.IsNullOrEmpty(track.CoverImageUrl))
                                     {
                                         <img src="@track.CoverImageUrl" alt="@track.Title" />
+
                                     }
                                     else
                                     {
@@ -596,3 +606,5 @@
         </div>
     </div>
 }
+
+

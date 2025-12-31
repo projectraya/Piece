@@ -1,0 +1,755 @@
+﻿@page "/admin/playlists"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Piece.Data
+@using Piece.Data.Models
+@using Microsoft.EntityFrameworkCore
+@using Piece.Services
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+@inject IActivityLogger ActivityLogger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Playlist Management - Piece</PageTitle>
+
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 211, 53, 0.2);
+    }
+
+    .admin-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #000;
+    }
+
+    .admin-subtitle {
+        font-size: 14px;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FFD335;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #FFD335;
+        }
+
+    .filter-select {
+        padding: 12px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        min-width: 150px;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #FFD335;
+        }
+
+    .table-container {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table th {
+            text-align: left;
+            padding: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .data-table td {
+            padding: 16px;
+            font-size: 14px;
+            color: #ccc;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .data-table tbody tr:hover {
+            background: #1a1a1a;
+        }
+
+    .playlist-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .playlist-cover {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .playlist-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .playlist-name {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .playlist-meta {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .visibility-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .visibility-public {
+        background: rgba(74, 222, 128, 0.1);
+        color: #4ade80;
+    }
+
+    .visibility-private {
+        background: rgba(156, 163, 175, 0.1);
+        color: #9ca3af;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-small {
+        padding: 6px 12px;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        background: #1a1a1a;
+        color: #ccc;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+
+        .btn-small:hover {
+            background: #2a2a2a;
+            border-color: #FFD335;
+            color: #FFD335;
+        }
+
+    .btn-danger {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    .page-btn {
+        padding: 8px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        color: #ccc;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .page-btn:hover:not(:disabled) {
+            background: #3a3a3a;
+            border-color: #FFD335;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+    .page-info {
+        color: #888;
+        font-size: 14px;
+    }
+
+    /* Delete Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: #2a2a2a;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 500px;
+        width: 100%;
+        border: 1px solid #3a3a3a;
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 8px;
+    }
+
+    .modal-subtitle {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .modal-body {
+        margin: 20px 0;
+        padding: 20px;
+        background: #1a1a1a;
+        border-radius: 8px;
+    }
+
+    .modal-playlist-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modal-playlist-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .modal-playlist-meta {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .modal-warning {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 15px;
+    }
+
+    .modal-warning-text {
+        color: #ef4444;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-delete {
+        background: #ef4444;
+        color: #fff;
+    }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+    .btn-cancel {
+        background: #3a3a3a;
+        color: #fff;
+    }
+
+        .btn-cancel:hover {
+            background: #4a4a4a;
+        }
+</style>
+
+@if (isLoading)
+{
+    <div class="admin-container">
+        <div style="text-align: center; padding: 100px 0;">
+            <div class="spinner"></div>
+            <p style="color: #888; margin-top: 20px;">Loading playlists...</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">Playlist Management</h1>
+                <p class="admin-subtitle">Moderate user-created playlists</p>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-value">@totalPlaylists</div>
+                <div class="stat-label">Total Playlists</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@publicPlaylists</div>
+                <div class="stat-label">Public</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@privatePlaylists</div>
+                <div class="stat-label">Private</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@filteredPlaylists.Count</div>
+                <div class="stat-label">Showing</div>
+            </div>
+        </div>
+
+        <!-- Search & Filters -->
+        <div class="search-bar">
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search by playlist name or owner..."
+                   @bind="searchQuery"
+                   @bind:event="oninput"
+                   @onkeyup="ApplyFilters" />
+            <select class="filter-select" @bind="visibilityFilter" @bind:after="ApplyFilters">
+                <option value="">All Playlists</option>
+                <option value="public">Public Only</option>
+                <option value="private">Private Only</option>
+            </select>
+        </div>
+
+        <!-- Playlists Table -->
+        <div class="table-container">
+            @if (filteredPlaylists.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Playlist</th>
+                            <th>Owner</th>
+                            <th>Tracks</th>
+                            <th>Visibility</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var playlist in paginatedPlaylists)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="playlist-info">
+                                        <div class="playlist-cover">
+                                            📚
+                                        </div>
+                                        <div class="playlist-details">
+                                            <div class="playlist-name">@playlist.Name</div>
+                                            @if (!string.IsNullOrEmpty(playlist.Description))
+                                            {
+                                                <div class="playlist-meta">@playlist.Description</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="color: #888;">
+                                    @playlist.User.Email
+                                </td>
+                                <td>
+                                    <span style="color: #4ade80; font-weight: 600;">
+                                        @playlist.PlaylistTracks.Count tracks
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (playlist.IsPublic)
+                                    {
+                                        <span class="visibility-badge visibility-public">Public</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="visibility-badge visibility-private">Private</span>
+                                    }
+                                </td>
+                                <td style="color: #888; font-size: 13px;">
+                                    @playlist.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="/playlist/@playlist.Id" class="btn-small" target="_blank">
+                                            View
+                                        </a>
+                                        <button class="btn-small btn-danger" @onclick="() => OpenDeleteModal(playlist)">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <div class="pagination">
+                        <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                            ← Previous
+                        </button>
+                        <span class="page-info">Page @currentPage of @totalPages</span>
+                        <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)">
+                            Next →
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No playlists found</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if (showDeleteModal && playlistToDelete != null)
+    {
+        <div class="modal-overlay" @onclick="CloseDeleteModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">Delete Playlist</div>
+                    <div class="modal-subtitle">Are you sure you want to delete this playlist?</div>
+                </div>
+
+                <div class="modal-body">
+                    <div class="modal-playlist-info">
+                        <div class="modal-playlist-name">@playlistToDelete.Name</div>
+                        <div class="modal-playlist-meta">
+                            Created by @playlistToDelete.User.Email
+                        </div>
+                        <div class="modal-playlist-meta">
+                            @playlistToDelete.PlaylistTracks.Count tracks
+                        </div>
+                    </div>
+
+                    <div class="modal-warning">
+                        <div class="modal-warning-text">
+                            ⚠️ This action cannot be undone. The playlist and all its track associations will be permanently deleted.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-delete" @onclick="ConfirmDelete" disabled="@isDeleting">
+                        @if (isDeleting)
+                        {
+                            <span>Deleting...</span>
+                        }
+                        else
+                        {
+                            <span>Delete Playlist</span>
+                        }
+                    </button>
+                    <button class="btn btn-cancel" @onclick="CloseDeleteModal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private List<Playlist> allPlaylists = new();
+    private List<Playlist> filteredPlaylists = new();
+    private List<Playlist> paginatedPlaylists = new();
+
+    // Statistics
+    private int totalPlaylists = 0;
+    private int publicPlaylists = 0;
+    private int privatePlaylists = 0;
+
+    // Filters
+    private string searchQuery = "";
+    private string visibilityFilter = "";
+
+    // Pagination
+    private int currentPage = 1;
+    private int pageSize = 15;
+    private int totalPages = 1;
+
+    // Delete Modal
+    private bool showDeleteModal = false;
+    private Playlist? playlistToDelete = null;
+    private bool isDeleting = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadPlaylists();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadPlaylists()
+    {
+        isLoading = true;
+        try
+        {
+            allPlaylists = await DbContext.Playlists
+                .Include(p => p.User)
+                .Include(p => p.PlaylistTracks)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            totalPlaylists = allPlaylists.Count;
+            publicPlaylists = allPlaylists.Count(p => p.IsPublic);
+            privatePlaylists = allPlaylists.Count(p => !p.IsPublic);
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading playlists: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allPlaylists.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var search = searchQuery.ToLower();
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(search) ||
+                p.User.Email.ToLower().Contains(search) ||
+                (p.Description?.ToLower().Contains(search) ?? false)
+            );
+        }
+
+        // Visibility filter
+        if (!string.IsNullOrEmpty(visibilityFilter))
+        {
+            if (visibilityFilter == "public")
+                query = query.Where(p => p.IsPublic);
+            else if (visibilityFilter == "private")
+                query = query.Where(p => !p.IsPublic);
+        }
+
+        filteredPlaylists = query.ToList();
+
+        // Reset to page 1 when filters change
+        currentPage = 1;
+        UpdatePagination();
+    }
+
+    private void UpdatePagination()
+    {
+        totalPages = (int)Math.Ceiling(filteredPlaylists.Count / (double)pageSize);
+        var skip = (currentPage - 1) * pageSize;
+        paginatedPlaylists = filteredPlaylists.Skip(skip).Take(pageSize).ToList();
+        StateHasChanged();
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdatePagination();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdatePagination();
+        }
+    }
+
+    private void OpenDeleteModal(Playlist playlist)
+    {
+        playlistToDelete = playlist;
+        showDeleteModal = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        playlistToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (playlistToDelete == null) return;
+
+        isDeleting = true;
+        try
+        {
+            // Delete the playlist
+            DbContext.Playlists.Remove(playlistToDelete);
+            await DbContext.SaveChangesAsync();
+
+            // LOG THE DELETION
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+            await ActivityLogger.LogAsync(
+                "PlaylistDelete",
+                $"Deleted playlist '{playlistToDelete.Name}' by {playlistToDelete.User.Email}",
+                currentUserEmail,
+                playlistToDelete.Name,
+                $"Owner: {playlistToDelete.User.Email}, Tracks: {playlistToDelete.PlaylistTracks.Count}",
+                "Warning"
+            );
+
+            Console.WriteLine($"[PlaylistManagement] Deleted playlist: {playlistToDelete.Name}");
+
+            // Remove from lists
+            allPlaylists.Remove(playlistToDelete);
+
+            // Refresh statistics
+            totalPlaylists = allPlaylists.Count;
+            publicPlaylists = allPlaylists.Count(p => p.IsPublic);
+            privatePlaylists = allPlaylists.Count(p => !p.IsPublic);
+
+            ApplyFilters();
+            CloseDeleteModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting playlist: {ex.Message}");
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+}
