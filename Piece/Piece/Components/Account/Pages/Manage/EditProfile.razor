@@ -11,6 +11,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IProfileService ProfileService
 @inject NavigationManager Navigation
+@inject IInputSanitizer InputSanitizer
 
 <PageTitle>Edit Profile - Piece</PageTitle>
 
@@ -324,10 +325,14 @@
 
         try
         {
+            // Sanitize inputs before saving
+            var sanitizedDisplayName = InputSanitizer.SanitizeString(Input.DisplayName ?? "", 100);
+            var sanitizedBio = InputSanitizer.SanitizeString(Input.Bio ?? "", 500);
+
             var success = await ProfileService.UpdateProfileAsync(
                 user.Id,
-                Input.DisplayName,
-                Input.Bio,
+                sanitizedDisplayName,
+                sanitizedBio,
                 Input.IsProfilePublic,
                 Input.ShowListeningHistory,
                 Input.ShowPlaylists
@@ -338,9 +343,9 @@
                 message = "✓ Profile updated successfully!";
                 isSuccess = true;
 
-                // Update local user object
-                user.DisplayName = Input.DisplayName;
-                user.Bio = Input.Bio;
+                // Update local user object with sanitized values
+                user.DisplayName = sanitizedDisplayName;
+                user.Bio = sanitizedBio;
                 user.IsProfilePublic = Input.IsProfilePublic;
                 user.ShowPlaylists = Input.ShowPlaylists;
                 user.ShowListeningHistory = Input.ShowListeningHistory;

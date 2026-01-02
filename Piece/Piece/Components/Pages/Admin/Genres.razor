@@ -12,6 +12,7 @@
 @inject NavigationManager Navigation
 @inject IActivityLogger ActivityLogger
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IInputSanitizer InputSanitizer
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Genre Management - Piece</PageTitle>
@@ -1146,9 +1147,10 @@ else
                     return;
                 }
 
-                // Update properties
-                genreToUpdate.Name = genreName.Trim();
-                genreToUpdate.Description = string.IsNullOrWhiteSpace(genreDescription) ? null : genreDescription.Trim();
+                genreToUpdate.Name = InputSanitizer.SanitizeString(genreName.Trim(), 50);
+                genreToUpdate.Description = string.IsNullOrWhiteSpace(genreDescription)
+                    ? null
+                    : InputSanitizer.SanitizeString(genreDescription.Trim(), 500);
                 genreToUpdate.Color = genreColor;
 
                 Console.WriteLine($"[GenreManagement] Setting color to: {genreColor}");
@@ -1176,8 +1178,10 @@ else
             {
                 var newGenre = new Genre
                     {
-                        Name = genreName.Trim(),
-                        Description = string.IsNullOrWhiteSpace(genreDescription) ? null : genreDescription.Trim(),
+                        Name = InputSanitizer.SanitizeString(genreName.Trim(), 50),
+                        Description = string.IsNullOrWhiteSpace(genreDescription)
+                        ? null
+                        : InputSanitizer.SanitizeString(genreDescription.Trim(), 500),
                         Color = genreColor
                     };
 

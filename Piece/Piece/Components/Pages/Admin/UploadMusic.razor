@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.RateLimiting
 @using Piece.Data
 @using Piece.Data.Models
 @using Piece.Data.Enums
@@ -13,6 +14,9 @@
 @inject IActivityLogger ActivityLogger
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Roles = "Admin")]
+
+@inject IInputSanitizer InputSanitizer
+@attribute [EnableRateLimiting("uploads")]
 
 
 <PageTitle>Upload Music - Admin</PageTitle>
@@ -484,9 +488,11 @@
 
             var track = new Track
                 {
-                    Title = uploadModel.Title.Trim(),
-                    ArtistName = uploadModel.ArtistName.Trim(),
-                    AlbumName = uploadModel.AlbumName?.Trim() ?? string.Empty,
+                    Title = InputSanitizer.SanitizeString(uploadModel.Title.Trim(), 200),
+                    ArtistName = InputSanitizer.SanitizeString(uploadModel.ArtistName.Trim(), 200),
+                    AlbumName = string.IsNullOrWhiteSpace(uploadModel.AlbumName?.Trim())
+                                ? null
+                                    : InputSanitizer.SanitizeString(uploadModel.AlbumName?.Trim(), 200),
                     GenreId = uploadModel.GenreId,
                     YearPublished = uploadModel.YearPublished,
                     DurationSeconds = durationSeconds,

@@ -10,6 +10,7 @@ namespace Piece.Components.Pages
 		[Inject] private IPlaylistService PlaylistService { get; set; } = default!;
 		[Inject] private NavigationManager Navigation { get; set; } = default!;
 		[Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
+		[Inject] private IInputSanitizer? InputSanitizer { get; set; }
 
 		private List<Playlist> playlists = new();
 		private bool isLoading = true;
@@ -109,8 +110,10 @@ namespace Piece.Components.Pages
 					await PlaylistService.UpdatePlaylistAsync(
 						editingPlaylistId.Value,
 						currentUserId,
-						playlistName.Trim(),
-						string.IsNullOrWhiteSpace(playlistDescription) ? null : playlistDescription.Trim(),
+						InputSanitizer.SanitizeString(playlistName.Trim(), 100),
+						string.IsNullOrWhiteSpace(playlistDescription)
+							? null
+							: InputSanitizer.SanitizeString(playlistDescription.Trim(), 500),
 						isPublic
 					);
 				}
@@ -118,8 +121,10 @@ namespace Piece.Components.Pages
 				{
 					await PlaylistService.CreatePlaylistAsync(
 						currentUserId,
-						playlistName.Trim(),
-						string.IsNullOrWhiteSpace(playlistDescription) ? null : playlistDescription.Trim(),
+						InputSanitizer.SanitizeString(playlistName.Trim(), 100),
+						string.IsNullOrWhiteSpace(playlistDescription)
+							? null
+							: InputSanitizer.SanitizeString(playlistDescription.Trim(), 500),
 						isPublic
 					);
 				}

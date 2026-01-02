@@ -11,6 +11,7 @@
 @inject IActivityLogger ActivityLogger
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Roles = "Admin")]
+@inject IInputSanitizer InputSanitizer
 
 <PageTitle>Track Management - Piece</PageTitle>
 
@@ -927,7 +928,6 @@ else
         {
             using var context = await DbFactory.CreateDbContextAsync();
 
-            // Re-fetch the track from the new context
             var trackToUpdate = await context.Tracks.FindAsync(trackToEdit.Id);
 
             if (trackToUpdate == null)
@@ -936,10 +936,11 @@ else
                 return;
             }
 
-            // Update the properties
-            trackToUpdate.Title = editTitle;
-            trackToUpdate.ArtistName = editArtistName;
-            trackToUpdate.AlbumName = string.IsNullOrWhiteSpace(editAlbumName) ? null : editAlbumName;
+            trackToUpdate.Title = InputSanitizer.SanitizeString(editTitle, 200);
+            trackToUpdate.ArtistName = InputSanitizer.SanitizeString(editArtistName, 200);
+            trackToUpdate.AlbumName = string.IsNullOrWhiteSpace(editAlbumName)
+                ? null
+                : InputSanitizer.SanitizeString(editAlbumName, 200);
             trackToUpdate.GenreId = int.TryParse(editGenreId, out int gId) ? gId : null;
             trackToUpdate.YearPublished = editYearPublished;
 

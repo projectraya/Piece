@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject IActivityLogger ActivityLogger
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IInputSanitizer InputSanitizer
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Playlist Management - Piece</PageTitle>
@@ -583,21 +584,17 @@ else
     private List<Playlist> filteredPlaylists = new();
     private List<Playlist> paginatedPlaylists = new();
 
-    // Statistics
     private int totalPlaylists = 0;
     private int publicPlaylists = 0;
     private int privatePlaylists = 0;
 
-    // Filters
     private string searchQuery = "";
     private string visibilityFilter = "";
 
-    // Pagination
     private int currentPage = 1;
     private int pageSize = 15;
     private int totalPages = 1;
 
-    // Delete Modal
     private bool showDeleteModal = false;
     private Playlist? playlistToDelete = null;
     private bool isDeleting = false;
@@ -643,7 +640,6 @@ else
     {
         var query = allPlaylists.AsEnumerable();
 
-        // Search filter
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
             var search = searchQuery.ToLower();
@@ -654,7 +650,6 @@ else
             );
         }
 
-        // Visibility filter
         if (!string.IsNullOrEmpty(visibilityFilter))
         {
             if (visibilityFilter == "public")
@@ -665,7 +660,6 @@ else
 
         filteredPlaylists = query.ToList();
 
-        // Reset to page 1 when filters change
         currentPage = 1;
         UpdatePagination();
     }
@@ -733,10 +727,8 @@ else
 
             Console.WriteLine($"[PlaylistManagement] Deleted playlist: {playlistToDelete.Name}");
 
-            // Remove from lists
             allPlaylists.Remove(playlistToDelete);
 
-            // Refresh statistics
             totalPlaylists = allPlaylists.Count;
             publicPlaylists = allPlaylists.Count(p => p.IsPublic);
             privatePlaylists = allPlaylists.Count(p => !p.IsPublic);
