@@ -12,6 +12,7 @@
 @inject IProfileService ProfileService
 @inject NavigationManager Navigation
 @inject IInputSanitizer InputSanitizer
+@inject IProfanityFilter ProfanityFilter
 
 <PageTitle>Edit Profile - Piece</PageTitle>
 
@@ -320,12 +321,27 @@
             return;
         }
 
+        // Check for profanity BEFORE saving
+        if (ProfanityFilter.ContainsProfanity(Input.DisplayName ?? ""))
+        {
+            message = "⚠️ Display name contains inappropriate language. Please choose a different name.";
+            isSuccess = false;
+            return;
+        }
+
+        if (ProfanityFilter.ContainsProfanity(Input.Bio ?? ""))
+        {
+            message = "⚠️ Bio contains inappropriate language. Please revise your bio.";
+            isSuccess = false;
+            return;
+        }
+
         isLoading = true;
         StateHasChanged();
 
         try
         {
-            // Sanitize inputs before saving
+            // Sanitize inputs (removes HTML/scripts, but profanity already blocked above)
             var sanitizedDisplayName = InputSanitizer.SanitizeString(Input.DisplayName ?? "", 100);
             var sanitizedBio = InputSanitizer.SanitizeString(Input.Bio ?? "", 500);
 

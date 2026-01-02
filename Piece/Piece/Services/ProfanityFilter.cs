@@ -13,14 +13,15 @@
 
 		public ProfanityFilter()
 		{
-			// Common profanity list (add more as needed)
 			_profanityList = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 			{
 				"fuck", "shit", "ass", "bitch", "damn", "bastard", "crap",
 				"dick", "piss", "pussy", "cock", "cunt", "whore", "slut",
 				"fag", "nigger", "retard", "hell", "asshole", "motherfucker",
 				"bullshit", "dumbass", "jackass", "prick", "douche", "twat", 
-				"nigga", "n word", "nnn", "fat", "fk", "f@k", "fy", "niggers"
+				"nigga", "n word", "nnn", "fat", "fk", "f@k", "fy", "niggers",
+				"niggas", "nigas", "nigs", "nnnngs", "ngs", "nig", "nigg@", "nigg@s",
+				"yo mom", "your mom", "licky dicky", "mf", "mfs",
                 
             };
 		}
