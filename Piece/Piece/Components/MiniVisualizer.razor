@@ -3,19 +3,20 @@
 @using Piece.DTOs
 @using Microsoft.EntityFrameworkCore
 @using Piece.Services
+@using System.Text.RegularExpressions
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject PlayerService PlayerService
 @inject IServiceScopeFactory ScopeFactory
 @implements IDisposable
 
-<canvas id="miniVisualizerCanvas" width="200" height="40" style="border-radius: 8px;"></canvas>
+<canvas id="miniVisualizerCanvas" width="300" height="40" style="border-radius: 8px;"></canvas>
 
 @code {
     private bool isOnVisualizerPage = false;
     private PlayableTrack? currentTrack;
-    private string currentColor = "#667eea";
-    private string lighterColor = "#a5b4fc";
+    private string currentColor = "#ffef00";
+    private string lighterColor = "#fff";
 
     protected override void OnInitialized()
     {
@@ -67,8 +68,16 @@
 
         try
         {
-            if (currentTrack.Source == TrackSource.Local && int.TryParse(currentTrack.Id, out int trackId))
+            if (currentTrack.Source == TrackSource.Local)
             {
+                Regex regex = new Regex(@"\d+");
+                Match match = regex.Match(currentTrack.Id);
+                string value = "";
+                if (match.Success)
+                {
+                    value = match.ToString();
+                }
+                int trackId = int.Parse(value);
                 Console.WriteLine($"[MiniVisualizer] Parsed local track ID: {trackId}");
 
                 using var scope = ScopeFactory.CreateScope();
@@ -84,7 +93,7 @@
                 if (track?.Genre != null && !string.IsNullOrEmpty(track.Genre.Color))
                 {
                     currentColor = track.Genre.Color;
-                    lighterColor = LightenColor(currentColor, 0.4);
+                    lighterColor = LightenColor(currentColor, 0.9);
 
                     Console.WriteLine($"[MiniVisualizer] ✅ COLORS CALCULATED - Base: {currentColor}, Lighter: {lighterColor}");
 
@@ -101,16 +110,16 @@
                 else
                 {
                     Console.WriteLine($"[MiniVisualizer] No genre/color found, using defaults");
-                    currentColor = "#667eea";
-                    lighterColor = "#a5b4fc";
+                    currentColor = "#ffef00";
+                    lighterColor = "#fff";
                     await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
                 }
             }
             else
             {
                 Console.WriteLine($"[MiniVisualizer] External track or parse failed, using defaults");
-                currentColor = "#667eea";
-                lighterColor = "#a5b4fc";
+                currentColor = "#ffef00";
+                lighterColor = "#fff";
                 await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
             }
         }

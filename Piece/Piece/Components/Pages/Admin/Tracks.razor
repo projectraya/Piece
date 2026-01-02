@@ -921,15 +921,27 @@ else
     private async Task SaveTrackEdit()
     {
         if (trackToEdit == null) return;
-        using var context = await DbFactory.CreateDbContextAsync();
+
         isSaving = true;
         try
         {
-            trackToEdit.Title = editTitle;
-            trackToEdit.ArtistName = editArtistName;
-            trackToEdit.AlbumName = editAlbumName;
-            trackToEdit.GenreId = int.TryParse(editGenreId, out int gId) ? gId : null;
-            trackToEdit.YearPublished = editYearPublished;
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            // Re-fetch the track from the new context
+            var trackToUpdate = await context.Tracks.FindAsync(trackToEdit.Id);
+
+            if (trackToUpdate == null)
+            {
+                Console.WriteLine($"Track not found: {trackToEdit.Id}");
+                return;
+            }
+
+            // Update the properties
+            trackToUpdate.Title = editTitle;
+            trackToUpdate.ArtistName = editArtistName;
+            trackToUpdate.AlbumName = string.IsNullOrWhiteSpace(editAlbumName) ? null : editAlbumName;
+            trackToUpdate.GenreId = int.TryParse(editGenreId, out int gId) ? gId : null;
+            trackToUpdate.YearPublished = editYearPublished;
 
             await context.SaveChangesAsync();
 
@@ -937,14 +949,14 @@ else
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
             await ActivityLogger.LogAsync(
                 "TrackEdit",
-                $"Edited track '{trackToEdit.Title}' by {trackToEdit.ArtistName}",
+                $"Edited track '{trackToUpdate.Title}' by {trackToUpdate.ArtistName}",
                 currentUserEmail,
-                trackToEdit.Title,
-                $"Genre: {trackToEdit.Genre?.Name ?? "Unknown"}",
+                trackToUpdate.Title,
+                $"Genre: {trackToUpdate.Genre?.Name ?? "Unknown"}",
                 "Info"
             );
 
-            Console.WriteLine($"[TrackManagement] Edited track: {trackToEdit.Title}");
+            Console.WriteLine($"[TrackManagement] Edited track: {trackToUpdate.Title}");
 
             CloseEditModal();
             await LoadTracks();
@@ -974,26 +986,31 @@ else
     private async Task ConfirmArchive()
     {
         if (trackToArchive == null) return;
-        using var context = await DbFactory.CreateDbContextAsync();
+
         isArchiving = true;
         try
         {
-            trackToArchive.IsActive = false;
-            trackToArchive.ArchivedAt = DateTime.UtcNow;
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            var track = await context.Tracks.FindAsync(trackToArchive.Id);
+            if (track == null) return;
+
+            track.IsActive = false;
+            track.ArchivedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
             await ActivityLogger.LogAsync(
                 "TrackArchive",
-                $"Archived track '{trackToArchive.Title}' by {trackToArchive.ArtistName}",
+                $"Archived track '{track.Title}' by {track.ArtistName}",
                 currentUserEmail,
-                trackToArchive.Title,
-                $"Play Count: {trackToArchive.PlayCount}",
+                track.Title,
+                $"Play Count: {track.PlayCount}",
                 "Warning"
             );
 
-            Console.WriteLine($"[TrackManagement] Archived track: {trackToArchive.Title}");
+            Console.WriteLine($"[TrackManagement] Archived track: {track.Title}");
 
             activeTracks--;
             archivedTracks++;
@@ -1013,25 +1030,29 @@ else
 
     private async Task RestoreTrack(Track track)
     {
-        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            track.IsActive = true;
-            track.ArchivedAt = null;
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            var trackToRestore = await context.Tracks.FindAsync(track.Id);
+            if (trackToRestore == null) return;
+
+            trackToRestore.IsActive = true;
+            trackToRestore.ArchivedAt = null;
             await context.SaveChangesAsync();
 
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
             await ActivityLogger.LogAsync(
                 "TrackRestore",
-                $"Restored track '{track.Title}' by {track.ArtistName}",
+                $"Restored track '{trackToRestore.Title}' by {trackToRestore.ArtistName}",
                 currentUserEmail,
-                track.Title,
+                trackToRestore.Title,
                 "Track made active again",
                 "Success"
             );
 
-            Console.WriteLine($"[TrackManagement] Restored track: {track.Title}");
+            Console.WriteLine($"[TrackManagement] Restored track: {trackToRestore.Title}");
 
             activeTracks++;
             archivedTracks--;

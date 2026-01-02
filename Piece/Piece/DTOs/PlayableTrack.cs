@@ -14,7 +14,7 @@ namespace Piece.DTOs
 		public TrackSource Source { get; set; }
 		public bool IsFavorite { get; set; }
 		public int? LocalTrackId { get; set; }
-
+		public Genre? Genre { get; set; }
 		
 		public static PlayableTrack FromLocalTrack(Track track, bool isFavorite = false)
 		{
@@ -27,7 +27,8 @@ namespace Piece.DTOs
 				AlbumImage = track.CoverImageUrl,
 				Source = TrackSource.Local,
 				LocalTrackId = track.Id,
-				IsFavorite = isFavorite
+				IsFavorite = isFavorite,
+				Genre = track.Genre
 			};
 		}
 

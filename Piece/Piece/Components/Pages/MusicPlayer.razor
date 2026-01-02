@@ -8,6 +8,7 @@
 @inject PlayerService PlayerService
 @inject IConfiguration Configuration
 @inject IFavoriteService FavoriteService
+@inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Piece - Music Player</PageTitle>
@@ -258,6 +259,8 @@
         color: #888;
     }
 
+    
+
     .spinner {
         width: 50px;
         height: 50px;
@@ -456,7 +459,7 @@ else
                 {
                     <div class="content-section">
                         <div class="section-header">
-                            <h2 class="section-title">Your Library</h2>
+                            <h2 class="section-title">Library</h2>
                             <span style="color: #888; font-size: 14px;">@filteredTracks.Count tracks</span>
                         </div>
                         <div class="track-grid">
@@ -491,7 +494,7 @@ else
                     <div class="empty-state">
                         <div class="empty-state-icon">🎵</div>
                         <h3>No tracks found</h3>
-                        <p>@(string.IsNullOrEmpty(selectedGenre) ? "Your library is empty" : $"No tracks found in genre: {selectedGenre}")</p>
+                        <p>@(string.IsNullOrEmpty(selectedGenre) ? "Library is empty" : $"No tracks found in genre: {selectedGenre}")</p>
                     </div>
                 }
             }
@@ -700,13 +703,38 @@ else
         }
     }
 
-    private void PlayTrack(Track track)
+    private async Task PlayTrack(Track track)
     {
         bool isFavorite = favoriteTrackIds.Contains(track.Id);
         var playableTrack = PlayableTrack.FromLocalTrack(track, isFavorite);
         PlayerService.PlayTrack(playableTrack);
-        track.PlayCount++;
+
+        // Increment and save to database
+        await IncrementPlayCountAsync(track.Id);
+
         StateHasChanged();
+    }
+
+    private async Task IncrementPlayCountAsync(int trackId)
+    {
+
+        try
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var track = await context.Tracks.FindAsync(trackId);
+            if (track != null)
+            {
+                track.PlayCount++;
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[MusicPlayer] Incremented play count for: {track.Title} - New count: {track.PlayCount}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MusicPlayer] Error incrementing play count: {ex.Message}");
+        }
     }
 
     private void PlayJamendoTrack(JamendoTrack track)

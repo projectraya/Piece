@@ -48,9 +48,21 @@
                 }
             </div>
             <div>
-                <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #ffffff;">
-                    @PlayerService.CurrentTrack.Title
-                </h4>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    
+                    <span style="
+                        background-color: @PlayerService.CurrentTrack.Genre?.Color;
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                        display: inline-block;
+                        flex-shrink: 0;">
+                    </span>
+                    <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #ffffff;">
+                        @PlayerService.CurrentTrack.Title
+                    </h4>
+                </div>
                 <p style="font-size: 12px; color: #888; margin: 2px 0 0 0;">
                     @PlayerService.CurrentTrack.ArtistName
                     @if (PlayerService.CurrentTrack.Source == TrackSource.Jamendo)
