@@ -1,0 +1,1265 @@
+﻿@page "/admin/genres"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Piece.Data
+@using Piece.Data.Models
+@using Piece.Data.Enums
+@using Microsoft.EntityFrameworkCore
+@using Piece.Services
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@inject IActivityLogger ActivityLogger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Genre Management - Piece</PageTitle>
+
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #fff;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 211, 53, 0.2);
+    }
+
+    .admin-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #000;
+    }
+
+    .admin-subtitle {
+        font-size: 14px;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .btn-add {
+        padding: 10px 20px;
+        background: #FFD335;
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+        background: #ffd000;
+        transform: translateY(-2px);
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #FFD335;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FFD335;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        text-align: left;
+        padding: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #1a1a1a;
+        border-bottom: 1px solid #3a3a3a;
+    }
+
+    .data-table td {
+        padding: 16px;
+        font-size: 14px;
+        color: #ccc;
+        border-bottom: 1px solid #2a2a2a;
+    }
+
+    .data-table tbody tr:hover {
+        background: #1a1a1a;
+    }
+
+    .genre-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .color-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        flex-shrink: 0;
+    }
+
+    .genre-name {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        background: #1a1a1a;
+        color: #ccc;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-action:hover {
+        background: #2a2a2a;
+        border-color: #FFD335;
+        color: #FFD335;
+    }
+
+    .btn-danger {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+    .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    .page-btn {
+        padding: 8px 16px;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        color: #ccc;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .page-btn:hover:not(:disabled) {
+        background: #3a3a3a;
+        border-color: #FFD335;
+    }
+
+    .page-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .page-info {
+        color: #888;
+        font-size: 14px;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: #2a2a2a;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 800px;
+        width: 100%;
+        border: 1px solid #3a3a3a;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 8px;
+    }
+
+    .modal-subtitle {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #ccc;
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #FFD335;
+    }
+
+    .color-picker-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .color-input {
+        width: 60px;
+        height: 40px;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #1a1a1a;
+    }
+
+    .color-preview {
+        flex: 1;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #888;
+        font-family: monospace;
+    }
+
+    .track-list {
+        background: #1a1a1a;
+        border-radius: 8px;
+        padding: 16px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .track-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        border-bottom: 1px solid #2a2a2a;
+    }
+
+    .track-item:last-child {
+        border-bottom: none;
+    }
+
+    .track-icon {
+        width: 32px;
+        height: 32px;
+        background: #2a2a2a;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .track-details {
+        flex: 1;
+    }
+
+    .track-title {
+        font-size: 13px;
+        color: #fff;
+        margin-bottom: 2px;
+    }
+
+    .track-artist {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #FFD335;
+        color: #1a1a1a;
+    }
+
+    .btn-primary:hover {
+        background: #ffd000;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: #3a3a3a;
+        color: #fff;
+    }
+
+    .btn-secondary:hover {
+        background: #4a4a4a;
+    }
+
+    .warning-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .warning-text {
+        color: #ef4444;
+        font-size: 14px;
+    }
+
+    /* Track Assignment Styles */
+    .track-assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .track-search {
+        width: 100%;
+        padding: 10px 14px;
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+    .track-search:focus {
+        outline: none;
+        border-color: #FFD335;
+    }
+
+    .tracks-grid {
+        display: grid;
+        gap: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+    .track-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .track-checkbox-item:hover {
+        background: #252525;
+        border-color: #FFD335;
+    }
+
+    .track-checkbox-item.selected {
+        background: rgba(255, 211, 53, 0.1);
+        border-color: #FFD335;
+    }
+
+    .track-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #FFD335;
+    }
+
+    .track-checkbox-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .track-checkbox-title {
+        font-size: 14px;
+        color: #fff;
+        font-weight: 500;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .track-checkbox-artist {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .track-source-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .badge-local {
+        background: rgba(74, 222, 128, 0.1);
+        color: #4ade80;
+    }
+
+    .badge-jamendo {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+
+    .selection-summary {
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .selection-text {
+        color: #ccc;
+        font-size: 13px;
+    }
+
+    .selection-count {
+        color: #FFD335;
+        font-weight: 600;
+    }
+
+    .clear-selection-btn {
+        padding: 6px 12px;
+        background: #3a3a3a;
+        border: 1px solid #4a4a4a;
+        border-radius: 6px;
+        color: #ccc;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .clear-selection-btn:hover {
+        background: #4a4a4a;
+        color: #fff;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="admin-container">
+        <div style="text-align: center; padding: 100px 0;">
+            <div class="spinner"></div>
+            <p style="color: #888; margin-top: 20px;">Loading genres...</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1 class="admin-title">Genre Management</h1>
+                <p class="admin-subtitle">Manage music genres and their properties</p>
+            </div>
+            <button class="btn-add" @onclick="OpenAddModal">
+                + Add Genre
+            </button>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-value">@allGenres.Count</div>
+                <div class="stat-label">Total Genres</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@allTracks.Count</div>
+                <div class="stat-label">Library Tracks</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@allTracks.Count(t => t.GenreId != null)</div>
+                <div class="stat-label">Assigned Tracks</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">@allTracks.Count(t => t.GenreId == null)</div>
+                <div class="stat-label">Unassigned Tracks</div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search genres..."
+                   @bind="searchQuery"
+                   @bind:event="oninput"
+                   @onkeyup="ApplyFilters" />
+        </div>
+
+        <!-- Genres Table -->
+        <div class="table-container">
+            @if (filteredGenres.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Genre</th>
+                            <th>Color</th>
+                            <th>Track Count</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var genre in paginatedGenres)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="genre-info">
+                                        <div class="color-circle" style="background-color: @genre.Color;"></div>
+                                        <div class="genre-name">@genre.Name</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="color: #888; font-family: monospace;">@genre.Color</span>
+                                </td>
+                                <td>
+                                    <span style="color: #FFD335; font-weight: 600;">@genre.Tracks.Count tracks</span>
+                                </td>
+                                <td>
+                                    <span style="color: #888;">@(string.IsNullOrEmpty(genre.Description) ? "No description" : genre.Description)</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-action" @onclick="() => OpenManageTracksModal(genre)">
+                                            Manage Tracks
+                                        </button>
+                                        <button class="btn-action" @onclick="() => OpenEditModal(genre)">
+                                            Edit
+                                        </button>
+                                        <button class="btn-action btn-danger" @onclick="() => OpenDeleteModal(genre)">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <div class="pagination">
+                        <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                            ← Previous
+                        </button>
+                        <span class="page-info">Page @currentPage of @totalPages</span>
+                        <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)">
+                            Next →
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No genres found matching your criteria</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Add/Edit Genre Modal -->
+    @if (showEditModal)
+    {
+        <div class="modal-overlay" @onclick="CloseEditModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">@(isEditMode ? "Edit Genre" : "Add New Genre")</div>
+                    <div class="modal-subtitle">@(isEditMode ? selectedGenre?.Name : "Create a new music genre")</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Genre Name *</label>
+                    <input type="text" class="form-input" @bind="genreName" placeholder="e.g., Electronic, Jazz, Rock" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" @bind="genreDescription" placeholder="Brief description of the genre" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Color *</label>
+                    <div class="color-picker-group">
+                        <input type="color" class="color-input" @bind="genreColor" />
+                        <div class="color-preview">@genreColor</div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-primary" @onclick="SaveGenre" disabled="@(isSaving || string.IsNullOrWhiteSpace(genreName))">
+                        @if (isSaving)
+                        {
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>@(isEditMode ? "Save Changes" : "Create Genre")</span>
+                        }
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CloseEditModal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Manage Tracks Modal -->
+    @if (showManageTracksModal && selectedGenre != null)
+    {
+        <div class="modal-overlay" @onclick="CloseManageTracksModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">Manage Tracks for @selectedGenre.Name</div>
+                    <div class="modal-subtitle">Select which tracks belong to this genre</div>
+                </div>
+
+                <div class="selection-summary">
+                    <div class="selection-text">
+                        <span class="selection-count">@selectedTrackIds.Count</span> track(s) selected
+                    </div>
+                    @if (selectedTrackIds.Any())
+                    {
+                        <button class="clear-selection-btn" @onclick="ClearSelection">
+                            Clear All
+                        </button>
+                    }
+                </div>
+
+                <input type="text"
+                       class="track-search"
+                       placeholder="Search tracks..."
+                       @bind="trackSearchQuery"
+                       @bind:event="oninput"
+                       @onkeyup="FilterTracks" />
+
+                <div class="tracks-grid">
+                    @foreach (var track in filteredTracks)
+                    {
+                        var isSelected = selectedTrackIds.Contains(track.Id);
+                        <div class="track-checkbox-item @(isSelected ? "selected" : "")"
+                             @onclick="() => ToggleTrackSelection(track.Id)">
+                            <input type="checkbox"
+                                   class="track-checkbox"
+                                   checked="@isSelected"
+                                   @onclick:stopPropagation="true"
+                                   @onchange="() => ToggleTrackSelection(track.Id)" />
+                            <div class="track-checkbox-details">
+                                <div class="track-checkbox-title">@track.Title</div>
+                                <div class="track-checkbox-artist">@track.ArtistName</div>
+                            </div>
+                            <span class="track-source-badge @(track.Source == TrackSource.Local ? "badge-local" : "badge-jamendo")">
+                                @track.Source.ToString()
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-primary" @onclick="SaveTrackAssignments" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save Assignments (@selectedTrackIds.Count tracks)</span>
+                        }
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CloseManageTracksModal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Delete Genre Modal -->
+    @if (showDeleteModal && selectedGenre != null)
+    {
+        <div class="modal-overlay" @onclick="CloseDeleteModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-title">Delete Genre</div>
+                    <div class="modal-subtitle">@selectedGenre.Name</div>
+                </div>
+
+                <div class="warning-box">
+                    <div class="warning-text">
+                        ⚠️ Warning: This will delete the genre and remove it from @selectedGenre.Tracks.Count track(s). 
+                        Tracks will not be deleted, but they will no longer have a genre assigned.
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-primary" style="background: #ef4444;" @onclick="ConfirmDelete" disabled="@isDeleting">
+                        @if (isDeleting)
+                        {
+                            <span>Deleting...</span>
+                        }
+                        else
+                        {
+                            <span>Delete Genre</span>
+                        }
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CloseDeleteModal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private List<Genre> allGenres = new();
+    private List<Genre> filteredGenres = new();
+    private List<Genre> paginatedGenres = new();
+    private List<Track> allTracks = new();
+    private List<Track> filteredTracks = new();
+
+    private string searchQuery = "";
+    private string trackSearchQuery = "";
+
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages = 1;
+
+    // Modal states
+    private bool showEditModal = false;
+    private bool showDeleteModal = false;
+    private bool showManageTracksModal = false;
+    private bool isEditMode = false;
+    private Genre? selectedGenre = null;
+    private bool isSaving = false;
+    private bool isDeleting = false;
+
+    // Form fields
+    private string genreName = "";
+    private string genreDescription = "";
+    private string genreColor = "#667eea";
+
+    // Track assignment
+    private HashSet<int> selectedTrackIds = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadGenres();
+            await LoadTracks();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadGenres()
+    {
+        isLoading = true;
+        try
+        {
+            allGenres = await DbContext.Genres
+                .Include(g => g.Tracks)
+                .OrderBy(g => g.Name)
+                .ToListAsync();
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading genres: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadTracks()
+    {
+        try
+        {
+            allTracks = await DbContext.Tracks
+                .Where(t => t.IsActive && t.Source == TrackSource.Local)
+                .OrderBy(t => t.Title)
+                .ToListAsync();
+
+            filteredTracks = allTracks;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading tracks: {ex.Message}");
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allGenres.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var search = searchQuery.ToLower();
+            query = query.Where(g =>
+                g.Name.ToLower().Contains(search) ||
+                (g.Description?.ToLower().Contains(search) ?? false)
+            );
+        }
+
+        filteredGenres = query.ToList();
+        currentPage = 1;
+        UpdatePagination();
+    }
+
+    private void FilterTracks()
+    {
+        if (string.IsNullOrWhiteSpace(trackSearchQuery))
+        {
+            filteredTracks = allTracks;
+        }
+        else
+        {
+            var search = trackSearchQuery.ToLower();
+            filteredTracks = allTracks
+                .Where(t => t.Title.ToLower().Contains(search) || 
+                            t.ArtistName.ToLower().Contains(search))
+                .ToList();
+        }
+        StateHasChanged();
+    }
+
+    private void UpdatePagination()
+    {
+        totalPages = (int)Math.Ceiling(filteredGenres.Count / (double)pageSize);
+        var skip = (currentPage - 1) * pageSize;
+        paginatedGenres = filteredGenres.Skip(skip).Take(pageSize).ToList();
+        StateHasChanged();
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdatePagination();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdatePagination();
+        }
+    }
+
+    private void OpenAddModal()
+    {
+        isEditMode = false;
+        selectedGenre = null;
+        genreName = "";
+        genreDescription = "";
+        genreColor = "#667eea";
+        showEditModal = true;
+    }
+
+    private void OpenEditModal(Genre genre)
+    {
+        isEditMode = true;
+        selectedGenre = genre;
+        genreName = genre.Name;
+        genreDescription = genre.Description ?? "";
+        genreColor = genre.Color;
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        selectedGenre = null;
+    }
+
+    private void OpenManageTracksModal(Genre genre)
+    {
+        selectedGenre = genre;
+        trackSearchQuery = "";
+        
+        // Load currently assigned tracks
+        selectedTrackIds = genre.Tracks.Select(t => t.Id).ToHashSet();
+        
+        FilterTracks();
+        showManageTracksModal = true;
+    }
+    private void CloseManageTracksModal()
+    {
+        showManageTracksModal = false;
+        selectedGenre = null;
+        selectedTrackIds.Clear();
+        trackSearchQuery = "";
+    }
+
+    private void ToggleTrackSelection(int trackId)
+    {
+        if (selectedTrackIds.Contains(trackId))
+        {
+            selectedTrackIds.Remove(trackId);
+        }
+        else
+        {
+            selectedTrackIds.Add(trackId);
+        }
+        StateHasChanged();
+    }
+
+    private void ClearSelection()
+    {
+        selectedTrackIds.Clear();
+        StateHasChanged();
+    }
+
+    private async Task SaveTrackAssignments()
+    {
+        if (selectedGenre == null) return;
+
+        isSaving = true;
+        try
+        {
+            // Get all tracks that are currently in this genre
+            var currentTracks = await DbContext.Tracks
+                .Where(t => t.GenreId == selectedGenre.Id)
+                .ToListAsync();
+
+            // Remove genre from tracks that are no longer selected
+            foreach (var track in currentTracks)
+            {
+                if (!selectedTrackIds.Contains(track.Id))
+                {
+                    track.GenreId = null;
+                }
+            }
+
+            // Assign genre to newly selected tracks
+            var tracksToAdd = await DbContext.Tracks
+                .Where(t => selectedTrackIds.Contains(t.Id))
+                .ToListAsync();
+
+            foreach (var track in tracksToAdd)
+            {
+                track.GenreId = selectedGenre.Id;
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            // Log activity
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+            await ActivityLogger.LogAsync(
+                "GenreTrackAssignment",
+                $"Updated track assignments for genre '{selectedGenre.Name}'",
+                currentUserEmail,
+                selectedGenre.Name,
+                $"Assigned {selectedTrackIds.Count} tracks",
+                "Info"
+            );
+
+            Console.WriteLine($"[GenreManagement] Updated track assignments for: {selectedGenre.Name}");
+
+            await LoadGenres();
+            await LoadTracks();
+            CloseManageTracksModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GenreManagement] ERROR: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void OpenDeleteModal(Genre genre)
+    {
+        selectedGenre = genre;
+        showDeleteModal = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        selectedGenre = null;
+    }
+
+    private async Task SaveGenre()
+    {
+        if (string.IsNullOrWhiteSpace(genreName)) return;
+
+        isSaving = true;
+        try
+        {
+            if (isEditMode && selectedGenre != null)
+            {
+                Console.WriteLine($"[GenreManagement] BEFORE UPDATE - Genre: {selectedGenre.Name}, Old Color: {selectedGenre.Color}, New Color: {genreColor}");
+
+                // Re-fetch the genre to avoid tracking issues
+                var genreToUpdate = await DbContext.Genres.FindAsync(selectedGenre.Id);
+
+                if (genreToUpdate == null)
+                {
+                    Console.WriteLine($"[GenreManagement] ERROR: Genre not found with ID {selectedGenre.Id}");
+                    return;
+                }
+
+                // Update properties
+                genreToUpdate.Name = genreName.Trim();
+                genreToUpdate.Description = string.IsNullOrWhiteSpace(genreDescription) ? null : genreDescription.Trim();
+                genreToUpdate.Color = genreColor;
+
+                Console.WriteLine($"[GenreManagement] Setting color to: {genreColor}");
+
+                // Save changes
+                await DbContext.SaveChangesAsync();
+
+                Console.WriteLine($"[GenreManagement] AFTER SAVE - Genre: {genreToUpdate.Name}, Color in DB should be: {genreColor}");
+
+                // Log activity
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+                await ActivityLogger.LogAsync(
+                    "GenreUpdate",
+                    $"Updated genre '{genreToUpdate.Name}'",
+                    currentUserEmail,
+                    genreToUpdate.Name,
+                    $"Color: {genreColor}, Description: {genreToUpdate.Description}",
+                    "Info"
+                );
+
+                Console.WriteLine($"[GenreManagement] Successfully updated genre: {genreToUpdate.Name}");
+            }
+            else
+            {
+                // Create new genre
+                var newGenre = new Genre
+                    {
+                        Name = genreName.Trim(),
+                        Description = string.IsNullOrWhiteSpace(genreDescription) ? null : genreDescription.Trim(),
+                        Color = genreColor
+                    };
+
+                DbContext.Genres.Add(newGenre);
+                await DbContext.SaveChangesAsync();
+
+                // Log activity
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+                await ActivityLogger.LogAsync(
+                    "GenreCreate",
+                    $"Created new genre '{newGenre.Name}'",
+                    currentUserEmail,
+                    newGenre.Name,
+                    $"Color: {genreColor}",
+                    "Info"
+                );
+
+                Console.WriteLine($"[GenreManagement] Created genre: {newGenre.Name}");
+            }
+
+            await LoadGenres();
+            CloseEditModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GenreManagement] ERROR saving genre: {ex.Message}");
+            Console.WriteLine($"[GenreManagement] Stack trace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (selectedGenre == null) return;
+
+        isDeleting = true;
+        try
+        {
+            // Remove genre from all tracks
+            var tracksWithGenre = await DbContext.Tracks
+                .Where(t => t.GenreId == selectedGenre.Id)
+                .ToListAsync();
+
+            foreach (var track in tracksWithGenre)
+            {
+                track.GenreId = null;
+            }
+
+            // Delete the genre
+            DbContext.Genres.Remove(selectedGenre);
+            await DbContext.SaveChangesAsync();
+
+            // Log activity
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
+            await ActivityLogger.LogAsync(
+                "GenreDelete",
+                $"Deleted genre '{selectedGenre.Name}'",
+                currentUserEmail,
+                selectedGenre.Name,
+                $"Removed from {tracksWithGenre.Count} tracks",
+                "Warning"
+            );
+
+            Console.WriteLine($"[GenreManagement] Deleted genre: {selectedGenre.Name}");
+
+            await LoadGenres();
+            await LoadTracks();
+            CloseDeleteModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GenreManagement] ERROR: {ex.Message}");
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+}
