@@ -17,7 +17,6 @@ namespace Piece.Services
 		public List<PlayableTrack> Queue => _queue;
 		public bool IsPlaying { get; private set; }
 
-		// Add this method
 		public void SetAvailableTracks(List<PlayableTrack> tracks)
 		{
 			_allAvailableTracks = tracks;
@@ -28,7 +27,6 @@ namespace Piece.Services
 		{
 			Console.WriteLine($"[PlayerService] Playing: {track.Title}");
 
-			// Add current track to history before switching
 			if (_currentTrack != null && (_history.Count == 0 || _history.Last().Id != _currentTrack.Id))
 			{
 				_history.Add(_currentTrack);
@@ -37,7 +35,6 @@ namespace Piece.Services
 			_currentTrack = track;
 			IsPlaying = true;
 
-			// Add to queue if not already there
 			if (!_queue.Any(t => t.Id == track.Id))
 			{
 				_queue.Add(track);
@@ -69,13 +66,11 @@ namespace Piece.Services
 
 		public void PlayNext()
 		{
-			// Add current to history
 			if (_currentTrack != null)
 			{
 				_history.Add(_currentTrack);
 			}
 
-			// Pick a random track from ALL available tracks
 			if (_allAvailableTracks.Any())
 			{
 				var random = new Random();
@@ -83,7 +78,6 @@ namespace Piece.Services
 
 				_currentTrack = randomTrack;
 
-				// Add to queue if not already there
 				if (!_queue.Any(t => t.Id == randomTrack.Id))
 				{
 					_queue.Add(randomTrack);
@@ -97,7 +91,6 @@ namespace Piece.Services
 			}
 			else if (_queue.Any())
 			{
-				// Fallback: pick from queue if no available tracks set
 				var random = new Random();
 				_currentIndex = random.Next(_queue.Count);
 				_currentTrack = _queue[_currentIndex];
@@ -109,7 +102,6 @@ namespace Piece.Services
 
 		public void PlayPrevious()
 		{
-			// Play the last track from history
 			if (_history.Any())
 			{
 				var previousTrack = _history.Last();

@@ -7,7 +7,7 @@
 @using Piece.Data.Enums
 @using Microsoft.EntityFrameworkCore
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager Navigation
 @inject IActivityLogger ActivityLogger
@@ -879,6 +879,8 @@ else
     // Track assignment
     private HashSet<int> selectedTrackIds = new();
 
+   
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -891,10 +893,11 @@ else
 
     private async Task LoadGenres()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         isLoading = true;
         try
         {
-            allGenres = await DbContext.Genres
+            allGenres = await context.Genres
                 .Include(g => g.Tracks)
                 .OrderBy(g => g.Name)
                 .ToListAsync();
@@ -913,9 +916,10 @@ else
 
     private async Task LoadTracks()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            allTracks = await DbContext.Tracks
+            allTracks = await context.Tracks
                 .Where(t => t.IsActive && t.Source == TrackSource.Local)
                 .OrderBy(t => t.Title)
                 .ToListAsync();
@@ -1057,15 +1061,14 @@ else
     {
         if (selectedGenre == null) return;
 
+        using var context = await DbFactory.CreateDbContextAsync();
         isSaving = true;
         try
         {
-            // Get all tracks that are currently in this genre
-            var currentTracks = await DbContext.Tracks
+            var currentTracks = await context.Tracks
                 .Where(t => t.GenreId == selectedGenre.Id)
                 .ToListAsync();
 
-            // Remove genre from tracks that are no longer selected
             foreach (var track in currentTracks)
             {
                 if (!selectedTrackIds.Contains(track.Id))
@@ -1074,8 +1077,7 @@ else
                 }
             }
 
-            // Assign genre to newly selected tracks
-            var tracksToAdd = await DbContext.Tracks
+            var tracksToAdd = await context.Tracks
                 .Where(t => selectedTrackIds.Contains(t.Id))
                 .ToListAsync();
 
@@ -1084,9 +1086,8 @@ else
                 track.GenreId = selectedGenre.Id;
             }
 
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-            // Log activity
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
             await ActivityLogger.LogAsync(
@@ -1129,7 +1130,7 @@ else
     private async Task SaveGenre()
     {
         if (string.IsNullOrWhiteSpace(genreName)) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isSaving = true;
         try
         {
@@ -1137,8 +1138,7 @@ else
             {
                 Console.WriteLine($"[GenreManagement] BEFORE UPDATE - Genre: {selectedGenre.Name}, Old Color: {selectedGenre.Color}, New Color: {genreColor}");
 
-                // Re-fetch the genre to avoid tracking issues
-                var genreToUpdate = await DbContext.Genres.FindAsync(selectedGenre.Id);
+                var genreToUpdate = await context.Genres.FindAsync(selectedGenre.Id);
 
                 if (genreToUpdate == null)
                 {
@@ -1154,7 +1154,7 @@ else
                 Console.WriteLine($"[GenreManagement] Setting color to: {genreColor}");
 
                 // Save changes
-                await DbContext.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 Console.WriteLine($"[GenreManagement] AFTER SAVE - Genre: {genreToUpdate.Name}, Color in DB should be: {genreColor}");
 
@@ -1174,7 +1174,6 @@ else
             }
             else
             {
-                // Create new genre
                 var newGenre = new Genre
                     {
                         Name = genreName.Trim(),
@@ -1182,8 +1181,8 @@ else
                         Color = genreColor
                     };
 
-                DbContext.Genres.Add(newGenre);
-                await DbContext.SaveChangesAsync();
+                context.Genres.Add(newGenre);
+                await context.SaveChangesAsync();
 
                 // Log activity
                 var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -1217,12 +1216,11 @@ else
     private async Task ConfirmDelete()
     {
         if (selectedGenre == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isDeleting = true;
         try
         {
-            // Remove genre from all tracks
-            var tracksWithGenre = await DbContext.Tracks
+            var tracksWithGenre = await context.Tracks
                 .Where(t => t.GenreId == selectedGenre.Id)
                 .ToListAsync();
 
@@ -1231,9 +1229,8 @@ else
                 track.GenreId = null;
             }
 
-            // Delete the genre
-            DbContext.Genres.Remove(selectedGenre);
-            await DbContext.SaveChangesAsync();
+            context.Genres.Remove(selectedGenre);
+            await context.SaveChangesAsync();
 
             // Log activity
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();

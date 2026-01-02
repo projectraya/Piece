@@ -6,7 +6,7 @@
 @using Piece.Data.Enums
 @using Microsoft.EntityFrameworkCore
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IActivityLogger ActivityLogger
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -810,15 +810,16 @@ else
     private async Task LoadTracks()
     {
         isLoading = true;
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            allTracks = await DbContext.Tracks
+            allTracks = await context.Tracks
                 .Include(t => t.Genre)
                 .Where(t => t.Source == TrackSource.Local)
                 .OrderByDescending(t => t.PlayCount)
                 .ToListAsync();
 
-            allGenres = await DbContext.Genres
+            allGenres = await context.Genres
                 .OrderBy(g => g.Name)
                 .ToListAsync();
 
@@ -920,7 +921,7 @@ else
     private async Task SaveTrackEdit()
     {
         if (trackToEdit == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isSaving = true;
         try
         {
@@ -930,7 +931,7 @@ else
             trackToEdit.GenreId = int.TryParse(editGenreId, out int gId) ? gId : null;
             trackToEdit.YearPublished = editYearPublished;
 
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
@@ -973,13 +974,13 @@ else
     private async Task ConfirmArchive()
     {
         if (trackToArchive == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isArchiving = true;
         try
         {
             trackToArchive.IsActive = false;
             trackToArchive.ArchivedAt = DateTime.UtcNow;
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
@@ -1012,11 +1013,12 @@ else
 
     private async Task RestoreTrack(Track track)
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
             track.IsActive = true;
             track.ArchivedAt = null;
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";

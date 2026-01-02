@@ -1,6 +1,6 @@
 ﻿@page "/subscriptions"
 @rendermode InteractiveServer
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @using Microsoft.EntityFrameworkCore
@@ -739,7 +739,8 @@
 
     private async Task LoadPlans()
     {
-        plans = await DbContext.SubscriptionPlans
+        using var context = await DbFactory.CreateDbContextAsync();
+        plans = await context.SubscriptionPlans
             .Where(p => p.IsActive)
             .OrderBy(p => p.Price)
             .ToListAsync();
@@ -748,8 +749,8 @@
     private async Task LoadCurrentSubscription()
     {
         if (string.IsNullOrEmpty(currentUserId)) return;
-
-        var currentSub = await DbContext.UserSubscriptions
+        using var context = await DbFactory.CreateDbContextAsync();
+        var currentSub = await context.UserSubscriptions
             .Where(s => s.UserId == currentUserId && s.Status == SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
             .Include(s => s.SubscriptionPlan)
             .FirstOrDefaultAsync();
@@ -787,11 +788,11 @@
     private async Task ActivateFreePlan()
     {
         if (string.IsNullOrEmpty(currentUserId) || selectedPlan == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
             // Deactivate any existing subscriptions
-            var existingSubs = await DbContext.UserSubscriptions
+            var existingSubs = await context.UserSubscriptions
                 .Where(s => s.UserId == currentUserId)
                 .ToListAsync();
 
@@ -811,8 +812,8 @@
                     AutoRenew = false
                 };
 
-            DbContext.UserSubscriptions.Add(newSub);
-            await DbContext.SaveChangesAsync();
+            context.UserSubscriptions.Add(newSub);
+            await context.SaveChangesAsync();
 
             currentPlanId = selectedPlan.Id;
             StateHasChanged();
@@ -847,14 +848,14 @@
         isProcessing = true;
         errorMessage = "";
         StateHasChanged();
-
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
             // Simulate payment processing delay
             await Task.Delay(2000);
 
             // Deactivate any existing subscriptions
-            var existingSubs = await DbContext.UserSubscriptions
+            var existingSubs = await context.UserSubscriptions
                 .Where(s => s.UserId == currentUserId)
                 .ToListAsync();
 
@@ -863,7 +864,6 @@
                 sub.Status = SubscriptionStatus.Cancelled;
             }
 
-            // Create new subscription
             var newSub = new UserSubscription
                 {
                     UserId = currentUserId,
@@ -876,10 +876,10 @@
                     TransactionId = Guid.NewGuid().ToString()
                 };
 
-            DbContext.UserSubscriptions.Add(newSub);
+            context.UserSubscriptions.Add(newSub);
 
             // SAVE HERE to get the UserSubscription.Id
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             // NOW create payment record with the saved subscription ID
             var payment = new Payment
@@ -894,8 +894,8 @@
                     CompletedAt = DateTime.UtcNow
                 };
 
-            DbContext.Payments.Add(payment);
-            await DbContext.SaveChangesAsync(); // Save again for the payment
+            context.Payments.Add(payment);
+            await context.SaveChangesAsync(); // Save again for the payment
 
             // Show success message
             showSuccessMessage = true;

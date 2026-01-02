@@ -57,7 +57,6 @@ namespace Piece.Services
 			return $"https://mp3l.jamendo.com/?trackid={jamendoTrackId}&format=mp31";
 		}
 
-		// Response models
 		private class JamendoResponse
 		{
 			public List<JamendoTrack>? Results { get; set; }

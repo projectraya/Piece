@@ -5,7 +5,7 @@
 @using Piece.Data.Models
 @using Microsoft.EntityFrameworkCore
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IActivityLogger ActivityLogger
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -613,10 +613,11 @@ else
 
     private async Task LoadPlaylists()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         isLoading = true;
         try
         {
-            allPlaylists = await DbContext.Playlists
+            allPlaylists = await context.Playlists
                 .Include(p => p.User)
                 .Include(p => p.PlaylistTracks)
                 .OrderByDescending(p => p.CreatedAt)
@@ -710,13 +711,13 @@ else
     private async Task ConfirmDelete()
     {
         if (playlistToDelete == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isDeleting = true;
         try
         {
             // Delete the playlist
-            DbContext.Playlists.Remove(playlistToDelete);
-            await DbContext.SaveChangesAsync();
+            context.Playlists.Remove(playlistToDelete);
+            await context.SaveChangesAsync();
 
             // LOG THE DELETION
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();

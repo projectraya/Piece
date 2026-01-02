@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @using Piece.DTOs
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JSRuntime
 @inject HttpClient HttpClient
 @inject PlayerService PlayerService
@@ -608,6 +608,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         if (user.Identity?.IsAuthenticated == true)
@@ -626,7 +627,7 @@ else
 
         try
         {
-            tracks = await DbContext.Tracks
+            tracks = await context.Tracks
                 .Include(t => t.Genre)
                 .Where(t => t.Source == TrackSource.Local && t.IsActive)
                 .OrderBy(t => t.Title)

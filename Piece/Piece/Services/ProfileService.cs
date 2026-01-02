@@ -17,16 +17,17 @@ namespace Piece.Services
 
 	public class ProfileService : IProfileService
 	{
-		private readonly ApplicationDbContext _context;
+		private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 
-		public ProfileService(ApplicationDbContext context)
+		public ProfileService(IDbContextFactory<ApplicationDbContext> dbFactory)
 		{
-			_context = context;
+			_dbFactory = dbFactory;
 		}
 
 		public async Task<ApplicationUser?> GetUserProfileAsync(string userId)
 		{
-			return await _context.Users
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.Users
 				.Include(u => u.Playlists.Where(p => p.IsPublic))
 					.ThenInclude(p => p.PlaylistTracks)
 				.FirstOrDefaultAsync(u => u.Id == userId);
@@ -34,7 +35,8 @@ namespace Piece.Services
 
 		public async Task<ApplicationUser?> GetUserProfileByUsernameAsync(string username)
 		{
-			return await _context.Users
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.Users
 				.Include(u => u.Playlists.Where(p => p.IsPublic))
 					.ThenInclude(p => p.PlaylistTracks)
 				.FirstOrDefaultAsync(u => u.UserName == username);
@@ -42,7 +44,8 @@ namespace Piece.Services
 
 		public async Task<ApplicationUser?> GetUserProfileByEmailAsync(string email)
 		{
-			return await _context.Users
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.Users
 				.Include(u => u.Playlists.Where(p => p.IsPublic))
 					.ThenInclude(p => p.PlaylistTracks)
 				.FirstOrDefaultAsync(u => u.Email == email);
@@ -50,7 +53,8 @@ namespace Piece.Services
 
 		public async Task<bool> UpdateProfileAsync(string userId, string? displayName, string? bio, bool isPublic, bool showHistory, bool showPlaylists)
 		{
-			var user = await _context.Users.FindAsync(userId);
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var user = await context.Users.FindAsync(userId);
 			if (user == null)
 				return false;
 
@@ -60,18 +64,19 @@ namespace Piece.Services
 			user.ShowListeningHistory = showHistory;
 			user.ShowPlaylists = showPlaylists;
 
-			await _context.SaveChangesAsync();
+			await context.SaveChangesAsync();
 			return true;
 		}
 
 		public async Task<List<ApplicationUser>> SearchUsersAsync(string searchQuery, int limit = 20)
 		{
+			using var context = await _dbFactory.CreateDbContextAsync();
 			if (string.IsNullOrWhiteSpace(searchQuery))
 				return new List<ApplicationUser>();
 
 			var query = searchQuery.ToLower().Trim();
 
-			return await _context.Users
+			return await context.Users
 				.Where(u => u.IsProfilePublic &&
 						   (u.DisplayName != null && u.DisplayName.ToLower().Contains(query) ||
 							u.Email != null && u.Email.ToLower().Contains(query)))
@@ -81,7 +86,8 @@ namespace Piece.Services
 
 		public async Task<List<Playlist>> GetUserPublicPlaylistsAsync(string userId)
 		{
-			var user = await _context.Users
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var user = await context.Users
 				.Include(u => u.Playlists.Where(p => p.IsPublic))
 					.ThenInclude(p => p.PlaylistTracks)
 						.ThenInclude(pt => pt.Track)
@@ -95,11 +101,12 @@ namespace Piece.Services
 
 		public async Task UpdateLastActiveAsync(string userId)
 		{
-			var user = await _context.Users.FindAsync(userId);
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var user = await context.Users.FindAsync(userId);
 			if (user != null)
 			{
 				user.LastActiveAt = DateTime.UtcNow;
-				await _context.SaveChangesAsync();
+				await context.SaveChangesAsync();
 			}
 		}
 	}

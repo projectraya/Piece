@@ -18,15 +18,16 @@ namespace Piece.Services
 	}
 	public class FavoriteService : IFavoriteService
 	{
-		private readonly ApplicationDbContext _dbContext;
+		private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 
-		public FavoriteService(ApplicationDbContext dbContext)
+		public FavoriteService(IDbContextFactory<ApplicationDbContext> dbFactory)
 		{
-			_dbContext = dbContext;
+			_dbFactory = dbFactory;
 		}
 		public async Task<List<Track>> GetUserFavoritesAsync(string userId)
 		{
-			return await _dbContext.UserTrackLikes
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.UserTrackLikes
 				.Where(x => x.UserId == userId)
 				.Include(x => x.Track)
 				.ThenInclude(t => t.Genre)
@@ -37,7 +38,8 @@ namespace Piece.Services
 
 		public async Task<List<int>> GetUserFavoriteTrackIdsAsync(string userId)
 		{
-			return await _dbContext.UserTrackLikes
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.UserTrackLikes
 				.Where(x => x.UserId == userId)
 				.Select(x => x.TrackId)
 				.ToListAsync();
@@ -45,19 +47,21 @@ namespace Piece.Services
 
 		public async Task<bool> IsFavoriteAsync(string userId, int trackId)
 		{
-			return await _dbContext.UserTrackLikes
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.UserTrackLikes
 				.AnyAsync(f => f.UserId == userId && f.TrackId == trackId);
 		}
 
 		public async Task<bool> ToggleFavoriteAsync(string userId, int trackId)
 		{
-			var existing = await _dbContext.UserTrackLikes
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var existing = await context.UserTrackLikes
 				.FirstOrDefaultAsync(f => f.UserId == userId && f.TrackId == trackId);
 
 			if(existing != null)
 			{
-				_dbContext.UserTrackLikes.Remove(existing);
-				await _dbContext.SaveChangesAsync();
+				context.UserTrackLikes.Remove(existing);
+				await context.SaveChangesAsync();
 				return false;
 			}
 			else
@@ -70,8 +74,8 @@ namespace Piece.Services
 
 				};
 
-				_dbContext.UserTrackLikes.Add(favorite);
-				await _dbContext.SaveChangesAsync();
+				context.UserTrackLikes.Add(favorite);
+				await context.SaveChangesAsync();
 				return true;
 			}
 
@@ -79,19 +83,18 @@ namespace Piece.Services
 
 		public async Task<bool> ToggleExternalFavoriteAsync(string userId, TrackSource source, string externalId, string title, string artistName, string audioUrl, string? albumImage)
 		{
-			var existing = await _dbContext.ExternalFavorites
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var existing = await context.ExternalFavorites
 				.FirstOrDefaultAsync(f => f.UserId == userId && f.Source == source && f.ExternalId == externalId);
 
 			if (existing != null)
 			{
-				// Unlike - remove
-				_dbContext.ExternalFavorites.Remove(existing);
-				await _dbContext.SaveChangesAsync();
+				context.ExternalFavorites.Remove(existing);
+				await context.SaveChangesAsync();
 				return false;
 			}
 			else
 			{
-				// Like - add
 				var favorite = new ExternalFavorite
 				{
 					UserId = userId,
@@ -104,21 +107,23 @@ namespace Piece.Services
 					LikedAt = DateTime.UtcNow
 				};
 
-				_dbContext.ExternalFavorites.Add(favorite);
-				await _dbContext.SaveChangesAsync();
+				context.ExternalFavorites.Add(favorite);
+				await context.SaveChangesAsync();
 				return true;
 			}
 		}
 
 		public async Task<bool> IsExternalFavoriteAsync(string userId, TrackSource source, string externalId)
 		{
-			return await _dbContext.ExternalFavorites
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.ExternalFavorites
 				.AnyAsync(f => f.UserId == userId && f.Source == source && f.ExternalId == externalId);
 		}
 
 		public async Task<List<ExternalFavorite>> GetUserExternalFavoritesAsync(string userId, TrackSource? source = null)
 		{
-			var query = _dbContext.ExternalFavorites.Where(f => f.UserId == userId);
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var query = context.ExternalFavorites.Where(f => f.UserId == userId);
 
 			if (source.HasValue)
 				query = query.Where(f => f.Source == source.Value);

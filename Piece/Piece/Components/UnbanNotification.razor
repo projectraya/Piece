@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Piece.Data
 @inject UserManager<ApplicationUser> UserManager
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 @if (showNotification)
@@ -79,6 +79,7 @@
 
     private async Task CheckUnbanNotification()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -102,7 +103,7 @@
                     StateHasChanged();
 
                     // Clear the notification flag
-                    await DbContext.Database.ExecuteSqlRawAsync(
+                    await context.Database.ExecuteSqlRawAsync(
                         "UPDATE AspNetUsers SET ShowUnbanNotification = 0 WHERE Id = {0}",
                         userId);
                     Console.WriteLine("[UnbanNotification] Notification flag cleared");

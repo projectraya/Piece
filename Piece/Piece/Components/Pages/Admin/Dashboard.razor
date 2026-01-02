@@ -4,7 +4,7 @@
 @using Piece.Data
 @using Piece.Data.Models
 @using Microsoft.EntityFrameworkCore
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @attribute [Authorize(Roles = "Admin")]
 
@@ -457,22 +457,23 @@ else
         }
     }
 
+
     private async Task LoadDashboardData()
     {
         isLoading = true;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            totalUsers = await DbContext.Users.CountAsync();
+            totalUsers = await context.Users.CountAsync();
             Console.WriteLine($"[Dashboard] Total users: {totalUsers}");
 
             var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-            newUsersThisWeek = await DbContext.Users
+            newUsersThisWeek = await context.Users
                 .Where(u => u.CreatedAt >= oneWeekAgo)
                 .CountAsync();
             Console.WriteLine($"[Dashboard] New users this week: {newUsersThisWeek}");
 
-            var allLocalTracks = await DbContext.Tracks
+            var allLocalTracks = await context.Tracks
                 .Where(t => t.IsActive && t.Source == Data.Enums.TrackSource.Local)
                 .OrderBy(t => t.CreatedAt)
                 .Select(t => new { t.Id, t.Title, t.CreatedAt })
@@ -505,16 +506,16 @@ else
 
             Console.WriteLine($"[Dashboard] Uploaded tracks (non-seeded): {uploadedTracks}");
 
-            totalPlaylists = await DbContext.Playlists.CountAsync();
-            publicPlaylists = await DbContext.Playlists.Where(p => p.IsPublic).CountAsync();
+            totalPlaylists = await context.Playlists.CountAsync();
+            publicPlaylists = await context.Playlists.Where(p => p.IsPublic).CountAsync();
             Console.WriteLine($"[Dashboard] Playlists: {totalPlaylists}, Public: {publicPlaylists}");
 
-            totalPlays = await DbContext.Tracks
+            totalPlays = await context.Tracks
                 .Where(t => t.IsActive)
                 .SumAsync(t => t.PlayCount);
             Console.WriteLine($"[Dashboard] Total plays: {totalPlays}");
 
-            mostPlayedTracks = await DbContext.Tracks
+            mostPlayedTracks = await context.Tracks
                 .Include(t => t.Genre)
                 .Where(t => t.IsActive && t.PlayCount > 0)
                 .OrderByDescending(t => t.PlayCount)
@@ -522,7 +523,7 @@ else
                 .ToListAsync();
             Console.WriteLine($"[Dashboard] Most played tracks: {mostPlayedTracks.Count}");
 
-            var recentTracksWithUsers = await DbContext.Tracks
+            var recentTracksWithUsers = await context.Tracks
                 .Include(t => t.Genre)
                 .Where(t => t.IsActive &&
                            t.Source == Data.Enums.TrackSource.Local &&

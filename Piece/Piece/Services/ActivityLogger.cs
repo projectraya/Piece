@@ -13,15 +13,17 @@ namespace Piece.Services
 
 	public class ActivityLogger : IActivityLogger
 	{
-		private readonly ApplicationDbContext _context;
+		private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 
-		public ActivityLogger(ApplicationDbContext context)
+		public ActivityLogger(IDbContextFactory<ApplicationDbContext> dbFactory)
 		{
-			_context = context;
+			_dbFactory = dbFactory;
 		}
+
 
 		public async Task LogAsync(string eventType, string message, string performedBy, string? targetEntity = null, string? additionalInfo = null, string severity = "Info")
 		{
+			using var context = await _dbFactory.CreateDbContextAsync();
 			var log = new ActivityLog
 			{
 				EventType = eventType,
@@ -33,15 +35,16 @@ namespace Piece.Services
 				Timestamp = DateTime.UtcNow
 			};
 
-			_context.ActivityLogs.Add(log);
-			await _context.SaveChangesAsync();
+			context.ActivityLogs.Add(log);
+			await context.SaveChangesAsync();
 
 			Console.WriteLine($"[ActivityLogger] {severity}: {message}");
 		}
 
 		public async Task<List<ActivityLog>> GetRecentLogsAsync(int count = 100)
 		{
-			return await _context.ActivityLogs
+			using var context = await _dbFactory.CreateDbContextAsync();
+			return await context.ActivityLogs
 				.OrderByDescending(l => l.Timestamp)
 				.Take(count)
 				.ToListAsync();
@@ -49,7 +52,8 @@ namespace Piece.Services
 
 		public async Task<List<ActivityLog>> GetFilteredLogsAsync(string? eventType = null, DateTime? startDate = null, DateTime? endDate = null)
 		{
-			var query = _context.ActivityLogs.AsQueryable();
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var query = context.ActivityLogs.AsQueryable();
 
 			if (!string.IsNullOrEmpty(eventType))
 				query = query.Where(l => l.EventType == eventType);

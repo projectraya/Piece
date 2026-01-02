@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @using Piece.DTOs
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject PlayerService PlayerService
 @inject IListeningHistoryService ListeningHistoryService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -376,29 +376,26 @@
 
     private async Task LoadStatistics()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         Console.WriteLine("[Statistics] Loading statistics...");
 
         var endDate = DateTime.UtcNow.Date;
         var startDate = endDate.AddDays(-90);
 
-        // Load genre history
         genreHistory = await ListeningHistoryService.GetGenreHistoryAsync(currentUserId!, startDate, endDate);
         Console.WriteLine($"[Statistics] Loaded {genreHistory.Count} days with data");
 
-        // Load top genres
         topGenres = await ListeningHistoryService.GetTopGenresAsync(currentUserId!, 30);
         Console.WriteLine($"[Statistics] Loaded {topGenres.Count} top genres");
 
-        // Load most played tracks
-        mostPlayedTracks = await DbContext.Tracks
+        mostPlayedTracks = await context.Tracks
             .Include(t => t.Genre)
             .Where(t => t.Source == TrackSource.Local)
             .OrderByDescending(t => t.PlayCount)
             .Take(10)
             .ToListAsync();
 
-        // Load recently played
-        recentlyPlayed = await DbContext.ListeningHistory
+        recentlyPlayed = await context.ListeningHistory
             .Include(h => h.Track)
                 .ThenInclude(t => t.Genre)
             .Where(h => h.UserId == currentUserId && h.Track.Source == TrackSource.Local)

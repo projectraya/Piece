@@ -6,7 +6,7 @@
 @using Piece.Data.Models
 @using Microsoft.EntityFrameworkCore
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager Navigation
 @inject IActivityLogger ActivityLogger
@@ -735,10 +735,11 @@ else
 
     private async Task LoadUsers()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         isLoading = true;
         try
         {
-            allUsers = await DbContext.Users
+            allUsers = await context.Users
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
 
@@ -754,7 +755,7 @@ else
                 }
             }
 
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             totalUsers = allUsers.Count;
             adminCount = allUsers.Count(u => u.IsAdmin);
@@ -846,7 +847,7 @@ else
     private async Task SaveUserRoles()
     {
         if (selectedUser == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isSaving = true;
         try
         {
@@ -870,7 +871,7 @@ else
                 Console.WriteLine($"[UserManagement] Remove Admin role result: {removeResult.Succeeded}");
             }
 
-            var updated = await DbContext.Database.ExecuteSqlRawAsync(
+            var updated = await context.Database.ExecuteSqlRawAsync(
                 "UPDATE AspNetUsers SET IsAdmin = {0}, IsPremium = {1} WHERE Id = {2}",
                 editIsAdmin, editIsPremium, selectedUser.Id);
 
@@ -960,12 +961,12 @@ else
     private async Task ConfirmBan()
     {
         if (userToBan == null) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         isBanning = true;
         try
         {
             // Ban the user using raw SQL
-            var updated = await DbContext.Database.ExecuteSqlRawAsync(
+            var updated = await context.Database.ExecuteSqlRawAsync(
                 "UPDATE AspNetUsers SET IsBanned = {0}, BannedAt = {1}, BanReason = {2} WHERE Id = {3}",
                 true, DateTime.UtcNow, string.IsNullOrWhiteSpace(banReason) ? "Violation of terms of service" : banReason, userToBan.Id);
 
@@ -1014,9 +1015,10 @@ else
 
     private async Task UnbanUser(ApplicationUser user)
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            var updated = await DbContext.Database.ExecuteSqlRawAsync(
+            var updated = await context.Database.ExecuteSqlRawAsync(
                     @"UPDATE AspNetUsers
               SET IsBanned = 0,
                   BannedAt = NULL,

@@ -16,7 +16,7 @@ namespace Piece.Components.Pages
 
 		[Inject] private IPlaylistService PlaylistService { get; set; } = default!;
 		[Inject] private PlayerService PlayerService { get; set; } = default!;
-		[Inject] private ApplicationDbContext DbContext { get; set; } = default!;
+		[Inject] private IDbContextFactory<ApplicationDbContext> DbFactory { get; set; } = default!;
 		[Inject] private NavigationManager Navigation { get; set; } = default!;
 		[Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 		[Inject] private IFavoriteService FavoriteService { get; set; } = default!;
@@ -63,7 +63,7 @@ namespace Piece.Components.Pages
 				isLoading = false;
 				return;
 			}
-
+			using var context = await DbFactory.CreateDbContextAsync();
 			isLoading = true;
 			try
 			{
@@ -74,7 +74,7 @@ namespace Piece.Components.Pages
 				// Admins can view any playlist, regular users only their own
 				if (isAdmin)
 				{
-					playlist = await DbContext.Playlists
+					playlist = await context.Playlists
 						.Include(p => p.PlaylistTracks)
 							.ThenInclude(pt => pt.Track)
 								.ThenInclude(t => t.Genre)
@@ -90,7 +90,7 @@ namespace Piece.Components.Pages
 					if (isAdmin)
 					{
 						// For admin, load tracks directly from DbContext
-						playlistTracks = await DbContext.PlaylistTracks
+						playlistTracks = await context.PlaylistTracks
 							.Where(pt => pt.PlaylistId == Id)
 							.Include(pt => pt.Track)
 								.ThenInclude(t => t.Genre)
@@ -105,7 +105,7 @@ namespace Piece.Components.Pages
 				}
 
 				// Load all available tracks from database
-				availableTracks = await DbContext.Tracks
+				availableTracks = await context.Tracks
 					.Include(t => t.Genre)
 					.Where(t => t.Source == TrackSource.Local && t.IsActive)
 					.OrderBy(t => t.Title)

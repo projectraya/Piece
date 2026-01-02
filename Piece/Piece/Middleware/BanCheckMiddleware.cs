@@ -16,7 +16,6 @@ namespace Piece.Middleware
 		{
 			var path = context.Request.Path.Value?.ToLower() ?? "";
 
-			// Skip ban check for these paths
 			if (path.Contains("/account/banned") ||
 				path.Contains("/account/logout") ||
 				path.Contains("/account/login") ||
@@ -38,7 +37,6 @@ namespace Piece.Middleware
 				return;
 			}
 
-			// Only check ban status for authenticated users
 			if (context.User.Identity?.IsAuthenticated == true)
 			{
 				var userId = userManager.GetUserId(context.User);
@@ -47,7 +45,6 @@ namespace Piece.Middleware
 					var user = await userManager.FindByIdAsync(userId);
 					if (user?.IsBanned == true && !path.Contains("/account/banned"))
 					{
-						// Redirect to banned page
 						context.Response.Redirect("/Account/Banned");
 						return;
 					}

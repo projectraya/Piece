@@ -1,6 +1,6 @@
 ﻿@page "/Account/Manage/PaymentHistory"
 @rendermode InteractiveServer
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @using Microsoft.EntityFrameworkCore
@@ -869,24 +869,21 @@
     private async Task LoadData()
     {
         if (string.IsNullOrEmpty(currentUserId)) return;
-
-        // Load current active subscription
-        currentSubscription = await DbContext.UserSubscriptions
+        using var context = await DbFactory.CreateDbContextAsync();
+        currentSubscription = await context.UserSubscriptions
             .Where(s => s.UserId == currentUserId && s.Status == SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
             .Include(s => s.SubscriptionPlan)
             .OrderByDescending(s => s.StartDate)
             .FirstOrDefaultAsync();
 
-        // Load payment history
-        payments = await DbContext.Payments
+        payments = await context.Payments
             .Where(p => p.UserId == currentUserId)
             .Include(p => p.UserSubscription)
                 .ThenInclude(s => s!.SubscriptionPlan)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
 
-        // Load subscription history
-        subscriptionHistory = await DbContext.UserSubscriptions
+        subscriptionHistory = await context.UserSubscriptions
             .Where(s => s.UserId == currentUserId)
             .Include(s => s.SubscriptionPlan)
             .OrderByDescending(s => s.StartDate)
@@ -906,14 +903,14 @@
     private async Task ConfirmDowngrade()
     {
         if (currentSubscription == null || string.IsNullOrEmpty(currentUserId)) return;
-
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
             // Don't cancel immediately - let them use premium until end date
             currentSubscription.AutoRenew = false;
             currentSubscription.Status = SubscriptionStatus.Cancelled;
 
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             // Close modal and reload
             showDowngradeModal = false;

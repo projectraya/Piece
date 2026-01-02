@@ -16,6 +16,9 @@
 
         this.drawMini = true;
         this.drawFull = false;
+
+        this.miniColor = '#667eea';
+        this.miniLighterColor = '#a5b4fc';
     }
 
     async initialize(audioElementId) {
@@ -131,6 +134,9 @@
         const barCount = 24;
         const barWidth = this.miniCanvas.width / barCount;
 
+        const baseColor = this.miniColor || '#667eea';
+        const lighterColor = this.miniLighterColor || '#a5b4fc';
+
         for (let i = 0; i < barCount; i++) {
             const logIndex = Math.pow(i / barCount, 1.5);
             const dataIndex = Math.floor(logIndex * this.dataArray.length);
@@ -141,22 +147,22 @@
             const x = i * barWidth + 1;
             const y = this.miniCanvas.height - height;
 
-            const t = i / barCount;
-            const hue = 240 + (t * 60);
-            const saturation = 70 + (t * 30);
-            const lightness = 60 + (Math.sin(t * Math.PI * 4) * 20);
-
             const gradient = this.miniCtx.createLinearGradient(0, y, 0, this.miniCanvas.height);
-            const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            gradient.addColorStop(0, color);
-            gradient.addColorStop(1, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.6)`);
+            gradient.addColorStop(0, lighterColor);
+            gradient.addColorStop(1, baseColor);
 
             this.miniCtx.fillStyle = gradient;
             this.miniCtx.shadowBlur = 12;
-            this.miniCtx.shadowColor = color;
+            this.miniCtx.shadowColor = baseColor;
             this.miniCtx.fillRect(x, y, barWidth - 2, height);
             this.miniCtx.shadowBlur = 0;
         }
+    }
+
+    updateMiniColors(baseColor, lighterColor) {
+        this.miniColor = baseColor || '#667eea';
+        this.miniLighterColor = lighterColor || '#a5b4fc';
+        console.log('[VisualizerManager] Updated mini colors:', this.miniColor, '→', this.miniLighterColor);
     }
 
     drawFullVisualizer() {
@@ -182,30 +188,7 @@
         }
     }
 
-    //drawBars() {
-    //    const barCount = 128;
-    //    const barWidth = this.fullCanvas.width / barCount;
-
-    //    const gradient = this.fullCtx.createLinearGradient(0, 0, this.fullCanvas.width, 0);
-    //    gradient.addColorStop(0, '#0066ff');
-    //    gradient.addColorStop(0.25, '#00aaff');
-    //    gradient.addColorStop(0.5, '#9966ff');
-    //    gradient.addColorStop(0.75, '#ff00ff');
-    //    gradient.addColorStop(1, '#ffff00');
-
-    //    for (let i = 0; i < barCount; i++) {
-    //        const logIndex = Math.pow(i / barCount, 1.5);
-    //        const dataIndex = Math.floor(logIndex * this.dataArray.length);
-    //        const value = this.dataArray[dataIndex] || 0;
-
-    //        const height = (value / 255) * this.fullCanvas.height * 0.8;
-    //        const x = i * barWidth;
-    //        const y = this.fullCanvas.height - height;
-
-    //        this.fullCtx.fillStyle = gradient;
-    //        this.fullCtx.fillRect(x, y, barWidth - 2, height);
-    //    }
-    //}
+    
     drawBars() {
         const barCount = 64;
         const barWidth = (this.fullCanvas.width / barCount) * 0.8;

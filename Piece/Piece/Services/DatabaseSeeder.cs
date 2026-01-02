@@ -6,35 +6,34 @@ using Piece.Services;
 
 public class DatabaseSeeder
 {
-	private readonly ApplicationDbContext _context;
+	private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 
-	public DatabaseSeeder(ApplicationDbContext context)
+	public DatabaseSeeder(IDbContextFactory<ApplicationDbContext> dbFactory)
 	{
-		_context = context;
+		_dbFactory = dbFactory;
 	}
 
 	public async Task SeedAllAsync()
 	{
-		// Always seed genres (it has its own check inside)
+		using var context = await _dbFactory.CreateDbContextAsync();
 		await SeedGenresAsync();
 
-		// Seed subscription plans (check if they exist first)
-		if (!await _context.SubscriptionPlans.AnyAsync())
+		if (!await context.SubscriptionPlans.AnyAsync())
 		{
 			await SeedSubscriptionPlansAsync();
 		}
 
-		// Seed tracks (check if they exist first)
-		if (!await _context.Tracks.AnyAsync())
+		if (!await context.Tracks.AnyAsync())
 		{
 			await SeedLocalTracksAsync();
 		}
 
-		await _context.SaveChangesAsync();
+		await context.SaveChangesAsync();
 	}
 
 	public async Task SeedGenresAsync()
 	{
+		using var context = await _dbFactory.CreateDbContextAsync();
 		var genres = new List<Genre>
 	{
 		new Genre { Name = "EDM", Description = "Electronic and dance music", Color = "#e91e63" },
@@ -44,28 +43,20 @@ public class DatabaseSeeder
 		new Genre { Name = "Trance", Description = "Subgenre of trap", Color = "#ffeb3b" },
 		new Genre { Name = "Trap", Description = "Bass based", Color = "#3498db" },
 		new Genre { Name = "Lofi", Description = "Slow and calm", Color = "#CBC3E3" },
-		new Genre { Name = "Bounce", Description = "Bouncy ambient music", Color = "#41dc8e" }, // Added # here
+		new Genre { Name = "Bounce", Description = "Bouncy ambient music", Color = "#41dc8e" }, 
         new Genre { Name = "RNB", Description = "Rock and blues music", Color = "#FF474C" },
 		new Genre { Name = "Electronic", Description = "Music created by electric impulses", Color = "#FF00FF" }
 	};
 
-		if (!_context.Genres.Any())
+		if (!context.Genres.Any())
 		{
-			await _context.Genres.AddRangeAsync(genres); // Added await
-			await _context.SaveChangesAsync(); // Added await
+			await context.Genres.AddRangeAsync(genres);
+			await context.SaveChangesAsync();
+			Console.WriteLine("Genres seeded with initial colors!");
 		}
 		else
 		{
-			// Update existing genres with colors
-			foreach (var genre in genres)
-			{
-				var existing = _context.Genres.FirstOrDefault(g => g.Name == genre.Name);
-				if (existing != null)
-				{
-					existing.Color = genre.Color;
-				}
-			}
-			await _context.SaveChangesAsync(); // Added await
+			Console.WriteLine("Genres already exist - skipping seed to preserve custom colors.");
 		}
 
 		Console.WriteLine("Genres seeded/updated with colors!");
@@ -73,6 +64,7 @@ public class DatabaseSeeder
 
 	private async Task SeedSubscriptionPlansAsync()
 	{
+		using var context = await _dbFactory.CreateDbContextAsync();
 		var plans = new List<SubscriptionPlan>
 			{
 				new SubscriptionPlan
@@ -95,18 +87,19 @@ public class DatabaseSeeder
 				}
 			};
 
-		await _context.SubscriptionPlans.AddRangeAsync(plans);
-		await _context.SaveChangesAsync();
+		await context.SubscriptionPlans.AddRangeAsync(plans);
+		await context.SaveChangesAsync();
 	} 
 
 	private async Task SeedLocalTracksAsync()
 	{
-		// Get genre IDs (we need these for foreign keys)
-		var electronicGenre = await _context.Genres.FirstAsync(g => g.Name == "Electronic");
-		var tranceGenre = await _context.Genres.FirstAsync(g => g.Name == "Trance");
-		var bounceGenre = await _context.Genres.FirstAsync(g => g.Name == "Bounce");
-		var lofiGenre = await _context.Genres.FirstAsync(g => g.Name == "Lofi");
-		var edmGenre = await _context.Genres.FirstAsync(g => g.Name == "EDM");
+		using var context = await _dbFactory.CreateDbContextAsync();
+
+		var electronicGenre = await context.Genres.FirstAsync(g => g.Name == "Electronic");
+		var tranceGenre = await context.Genres.FirstAsync(g => g.Name == "Trance");
+		var bounceGenre = await context.Genres.FirstAsync(g => g.Name == "Bounce");
+		var lofiGenre = await context.Genres.FirstAsync(g => g.Name == "Lofi");
+		var edmGenre = await context.Genres.FirstAsync(g => g.Name == "EDM");
 		
 
 		var tracks = new List<Track>
@@ -282,8 +275,8 @@ public class DatabaseSeeder
 			}
 		}
 
-		await _context.Tracks.AddRangeAsync(tracks);
-		await _context.SaveChangesAsync();
+		await context.Tracks.AddRangeAsync(tracks);
+		await context.SaveChangesAsync();
 
 		Console.WriteLine($"[Seeder] Seeded {tracks.Count} tracks with file hashes!");
 	}

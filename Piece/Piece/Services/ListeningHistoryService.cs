@@ -13,15 +13,16 @@ namespace Piece.Services
 
 	public class ListeningHistoryService : IListeningHistoryService
 	{
-		private readonly ApplicationDbContext _context;
+		private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 
-		public ListeningHistoryService(ApplicationDbContext context)
+		public ListeningHistoryService(IDbContextFactory<ApplicationDbContext> dbFactory)
 		{
-			_context = context;
+			_dbFactory = dbFactory;
 		}
 
 		public async Task RecordListeningAsync(string userId, int trackId, int durationSeconds)
 		{
+			using var context = await _dbFactory.CreateDbContextAsync();
 			var history = new ListeningHistory
 			{
 				UserId = userId,
@@ -30,8 +31,8 @@ namespace Piece.Services
 				DurationListened = durationSeconds
 			};
 
-			_context.ListeningHistory.Add(history);
-			await _context.SaveChangesAsync();
+			context.ListeningHistory.Add(history);
+			await context.SaveChangesAsync();
 
 			Console.WriteLine($"[ListeningHistoryService] Recorded {durationSeconds}s for track {trackId}");
 		}
@@ -39,10 +40,10 @@ namespace Piece.Services
 		public async Task<Dictionary<DateTime, List<(string Color, int Count)>>> GetGenreHistoryAsync(string userId, DateTime startDate, DateTime endDate)
 		{
 			Console.WriteLine($"[ListeningHistoryService] Query range: {startDate:yyyy-MM-dd HH:mm:ss} to {endDate:yyyy-MM-dd HH:mm:ss}");
-
+			using var context = await _dbFactory.CreateDbContextAsync();
 			var endDateTime = endDate.AddDays(1).AddSeconds(-1);
 
-			var history = await _context.ListeningHistory
+			var history = await context.ListeningHistory
 				.Where(h => h.UserId == userId && h.PlayedAt >= startDate && h.PlayedAt <= endDateTime)
 				.Include(h => h.Track)
 					.ThenInclude(t => t.Genre)
@@ -50,14 +51,12 @@ namespace Piece.Services
 
 			Console.WriteLine($"[ListeningHistoryService] Found {history.Count} listening records");
 
-			// Group by date AND genre to get counts per genre per day
 			var dailyGenres = history
 				.Where(h => h.Track.Genre != null)
 				.GroupBy(h => h.PlayedAt.Date)
 				.ToDictionary(
 					g => g.Key,
 					g => {
-						// Count plays per genre for this day
 						var genreCounts = g
 							.GroupBy(h => h.Track.Genre!)
 							.Select(genreGroup => (
@@ -78,8 +77,8 @@ namespace Piece.Services
 		public async Task<Dictionary<string, (int Count, string Color)>> GetTopGenresAsync(string userId, int days = 30)
 		{
 			var startDate = DateTime.UtcNow.AddDays(-days);
-
-			var topGenres = await _context.ListeningHistory
+			using var context = await _dbFactory.CreateDbContextAsync();
+			var topGenres = await context.ListeningHistory
 				.Where(h => h.UserId == userId && h.PlayedAt >= startDate)
 				.Include(h => h.Track)
 					.ThenInclude(t => t.Genre)

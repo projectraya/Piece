@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Piece.Data
 @using Microsoft.EntityFrameworkCore
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @attribute [Authorize(Roles = "Admin")]
 
@@ -412,9 +412,10 @@ else
     private async Task LoadLogs()
     {
         isLoading = true;
+        using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            var dbLogs = await DbContext.ActivityLogs
+            var dbLogs = await context.ActivityLogs
                 .OrderByDescending(l => l.Timestamp)
                 .ToListAsync();
 

@@ -1,16 +1,36 @@
-﻿@inject IJSRuntime JSRuntime
+﻿@using Piece.Data
+@using Piece.Data.Enums
+@using Piece.DTOs
+@using Microsoft.EntityFrameworkCore
+@using Piece.Services
+@inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@inject PlayerService PlayerService
+@inject IServiceScopeFactory ScopeFactory
 @implements IDisposable
 
 <canvas id="miniVisualizerCanvas" width="200" height="40" style="border-radius: 8px;"></canvas>
 
 @code {
     private bool isOnVisualizerPage = false;
+    private PlayableTrack? currentTrack;
+    private string currentColor = "#667eea";
+    private string lighterColor = "#a5b4fc";
 
     protected override void OnInitialized()
     {
+        Console.WriteLine("[MiniVisualizer] OnInitialized");
         CheckIfOnVisualizerPage();
         Navigation.LocationChanged += OnLocationChanged;
+        PlayerService.OnTrackChanged += OnTrackChanged;
+
+        currentTrack = PlayerService.CurrentTrack;
+        Console.WriteLine($"[MiniVisualizer] Current track on init: {currentTrack?.Title ?? "none"}");
+
+        if (currentTrack != null)
+        {
+            _ = LoadGenreColorAsync();
+        }
     }
 
     private void CheckIfOnVisualizerPage()
@@ -21,8 +41,105 @@
     private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         CheckIfOnVisualizerPage();
-
         await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", !isOnVisualizerPage);
+    }
+
+    private async void OnTrackChanged()
+    {
+        Console.WriteLine("[MiniVisualizer] OnTrackChanged fired");
+        currentTrack = PlayerService.CurrentTrack;
+        Console.WriteLine($"[MiniVisualizer] New track: {currentTrack?.Title ?? "none"}");
+        await LoadGenreColorAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadGenreColorAsync()
+    {
+        Console.WriteLine($"[MiniVisualizer] LoadGenreColorAsync START - Track: {currentTrack?.Title ?? "null"}");
+
+        if (currentTrack == null)
+        {
+            Console.WriteLine("[MiniVisualizer] currentTrack is NULL, exiting");
+            return;
+        }
+
+        Console.WriteLine($"[MiniVisualizer] Track ID: '{currentTrack.Id}', Source: {currentTrack.Source}");
+
+        try
+        {
+            if (currentTrack.Source == TrackSource.Local && int.TryParse(currentTrack.Id, out int trackId))
+            {
+                Console.WriteLine($"[MiniVisualizer] Parsed local track ID: {trackId}");
+
+                using var scope = ScopeFactory.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+                var track = await dbContext.Tracks
+                    .Include(t => t.Genre)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == trackId);
+
+                Console.WriteLine($"[MiniVisualizer] DB Query result - Track: {track?.Title ?? "null"}, Genre: {track?.Genre?.Name ?? "null"}");
+
+                if (track?.Genre != null && !string.IsNullOrEmpty(track.Genre.Color))
+                {
+                    currentColor = track.Genre.Color;
+                    lighterColor = LightenColor(currentColor, 0.4);
+
+                    Console.WriteLine($"[MiniVisualizer] ✅ COLORS CALCULATED - Base: {currentColor}, Lighter: {lighterColor}");
+
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
+                        Console.WriteLine($"[MiniVisualizer] ✅ JS METHOD CALLED SUCCESSFULLY");
+                    }
+                    catch (Exception jsEx)
+                    {
+                        Console.WriteLine($"[MiniVisualizer] ❌ JS CALL FAILED: {jsEx.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[MiniVisualizer] No genre/color found, using defaults");
+                    currentColor = "#667eea";
+                    lighterColor = "#a5b4fc";
+                    await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[MiniVisualizer] External track or parse failed, using defaults");
+                currentColor = "#667eea";
+                lighterColor = "#a5b4fc";
+                await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MiniVisualizer] ❌ ERROR: {ex.Message}");
+            Console.WriteLine($"[MiniVisualizer] Stack: {ex.StackTrace}");
+        }
+
+        Console.WriteLine("[MiniVisualizer] LoadGenreColorAsync END");
+    }
+
+    private string LightenColor(string hexColor, double amount)
+    {
+        hexColor = hexColor.TrimStart('#');
+
+        int r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
+        int b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
+
+        r = (int)(r + (255 - r) * amount);
+        g = (int)(g + (255 - g) * amount);
+        b = (int)(b + (255 - b) * amount);
+
+        r = Math.Min(255, Math.Max(0, r));
+        g = Math.Min(255, Math.Max(0, g));
+        b = Math.Min(255, Math.Max(0, b));
+
+        return $"#{r:X2}{g:X2}{b:X2}";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -31,18 +148,20 @@
         {
             try
             {
+                Console.WriteLine("[MiniVisualizer] OnAfterRenderAsync - firstRender");
                 await Task.Delay(1500);
                 await JSRuntime.InvokeVoidAsync("visualizerManager.initialize", "globalAudioPlayer");
-
                 await JSRuntime.InvokeVoidAsync("visualizerManager.registerMiniCanvas", "miniVisualizerCanvas");
-
                 await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", !isOnVisualizerPage);
+
+                Console.WriteLine($"[MiniVisualizer] Setting initial colors: {currentColor} → {lighterColor}");
+                await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
 
                 Console.WriteLine("[MiniVisualizer] Registered with manager");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[MiniVisualizer] Error: {ex.Message}");
+                Console.WriteLine($"[MiniVisualizer] Init Error: {ex.Message}");
             }
         }
     }
@@ -50,5 +169,6 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
+        PlayerService.OnTrackChanged -= OnTrackChanged;
     }
 }

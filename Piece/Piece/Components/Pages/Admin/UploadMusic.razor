@@ -7,7 +7,7 @@
 @using Piece.Data.Enums
 @using System.ComponentModel.DataAnnotations
 @using Piece.Services
-@inject ApplicationDbContext DbContext
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IActivityLogger ActivityLogger
@@ -16,26 +16,7 @@
 
 
 <PageTitle>Upload Music - Admin</PageTitle>
-@* @if (confirmation)
-{
-    <div class="modal" tabindex="-1" role="dialog" style="display:block">
-        <div class="modal-dialog text-center" role="document">
-            <div class="modal-content">
-                <div class="modal-header text-center">
-                    <h5 class="modal-title tex-center">Successful upload!</h5>
-                </div>
-                <div class="modal-body text-center">
-                    <h5>Your upload was successful!</h5>
-                </div>
-                <div class="modal-footer">
 
-                    <button type="button" class="btn btn-success" data-dismiss="modal" @onclick=ConfirmClose>Close</button>
-
-                </div>
-            </div>
-        </div>
-    </div>
-} *@
 @if (confirmation)
 {
     <div class="notification-toast">
@@ -295,7 +276,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        genres = await DbContext.Genres.OrderBy(g => g.Name).ToListAsync();
+        using var context = await DbFactory.CreateDbContextAsync();
+        genres = await context.Genres.OrderBy(g => g.Name).ToListAsync();
     }
 
     private void OnImageSelected(InputFileChangeEventArgs e)
@@ -314,6 +296,7 @@
 
     private async Task HandleUpload()
     {
+        using var context = await DbFactory.CreateDbContextAsync();
         if (selectedFile == null)
         {
             uploadMessage = "Please select an audio file";
@@ -424,7 +407,7 @@
             }
 
             // SECURITY: Check if this exact file already exists
-            var (isDuplicate, existingTitle) = await FileValidator.IsDuplicateFile(DbContext, fileHash);
+            var (isDuplicate, existingTitle) = await FileValidator.IsDuplicateFile(context, fileHash);
             if (isDuplicate)
             {
                 File.Delete(filePath);
@@ -515,8 +498,8 @@
                     CreatedAt = DateTime.UtcNow
                 };
 
-            DbContext.Tracks.Add(track);
-            await DbContext.SaveChangesAsync();
+            context.Tracks.Add(track);
+            await context.SaveChangesAsync();
 
             var currentUserEmail = authState.User.Identity?.Name ?? "Unknown";
             await ActivityLogger.LogAsync(
