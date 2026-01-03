@@ -124,13 +124,18 @@ namespace Piece
 				context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
 
 				// Content Security Policy - prevents inline scripts
+				// In development, allow hot reload WebSocket connections and Browser Link
+				var connectSrc = app.Environment.IsDevelopment()
+					? "connect-src 'self' ws: wss: http://localhost:* https://localhost:*; "
+					: "connect-src 'self'; ";
+
 				context.Response.Headers.Append("Content-Security-Policy",
 					"default-src 'self'; " +
 					"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; " +
 					"style-src 'self' 'unsafe-inline'; " +
 					"img-src 'self' data: https:; " +
 					"font-src 'self' data:; " +
-					"connect-src 'self'; " +
+					connectSrc +
 					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com; " +
 					"frame-src 'none';");
 

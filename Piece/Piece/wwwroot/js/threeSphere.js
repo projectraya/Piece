@@ -10,7 +10,7 @@
         this.animationId = null;
         this.isInitialized = false;
         this.originalPositions = [];
-        this.impacts = []; 
+        this.impacts = [];
         this.lastBeatTime = 0;
     }
 
@@ -65,6 +65,12 @@
 
         this.sphere = new THREE.Mesh(geometry, material);
         this.scene.add(this.sphere);
+
+        // Check if OrbitControls is available
+        if (typeof THREE.OrbitControls === 'undefined') {
+            console.error('[ThreeSphere] THREE.OrbitControls is not defined. Make sure OrbitControls.js loads after THREE.js');
+            return false;
+        }
 
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
@@ -156,9 +162,9 @@
             y: impactY,
             z: impactZ,
             strength: strength,
-            radius: 0.4, 
+            radius: 0.4,
             time: 0,
-            duration: 0.4, 
+            duration: 0.4,
             type: type
         });
     }
@@ -167,7 +173,7 @@
         const geometry = this.sphere.geometry;
         const positions = geometry.attributes.position.array;
         const time = Date.now() / 1000;
-        const deltaTime = 1 / 60; 
+        const deltaTime = 1 / 60;
 
         for (let i = this.impacts.length - 1; i >= 0; i--) {
             this.impacts[i].time += deltaTime;
@@ -200,7 +206,7 @@
 
                 if (dist < impact.radius) {
                     const progress = impact.time / impact.duration;
-                    const curve = Math.sin(progress * Math.PI); 
+                    const curve = Math.sin(progress * Math.PI);
 
                     const falloff = 1 - (dist / impact.radius);
 
