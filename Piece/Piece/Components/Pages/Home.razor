@@ -1,10 +1,14 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Components.Authorization
+@using Piece.Data
+@using Piece.Data.Models
+@using Piece.Data.Enums
+@using Microsoft.EntityFrameworkCore
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 
-<PageTitle>Piece - Complete Your Musical Journey</PageTitle>
+<PageTitle>Piece - Discover Music Globally</PageTitle>
 
 <style>
     * {
@@ -13,49 +17,40 @@
         box-sizing: border-box;
     }
 
-    .landing-container {
+    .landing-page {
         min-height: 100vh;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: #ffffff;
+        color: #1a1a1a;
         overflow-x: hidden;
     }
 
     /* Header */
-    .landing-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 25px 60px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
+    .header {
         position: sticky;
         top: 0;
         z-index: 100;
-        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 20px 60px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     .logo {
-        font-size: 32px;
-        font-weight: 800;
-        color: #49B8C9;
-        letter-spacing: -1px;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
-    .logo-puzzle {
-        width: 35px;
-        height: 35px;
-        background: #49B8C9;
-        clip-path: polygon(0% 20%, 20% 20%, 20% 0%, 50% 0%, 50% 20%, 80% 20%, 80% 50%, 100% 50%, 100% 80%, 80% 80%, 80% 100%, 50% 100%, 50% 80%, 20% 80%, 20% 50%, 0% 50%);
-        transition: transform 0.3s;
-    }
+        .logo img {
+            height: 128px;
+            width: auto;
+            object-fit: contain;
+        }
 
-    .logo:hover .logo-puzzle {
-        transform: rotate(90deg);
-    }
-
-    .nav-buttons {
+    .auth-buttons {
         display: flex;
         gap: 15px;
     }
@@ -66,419 +61,416 @@
         font-weight: 600;
         font-size: 15px;
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s;
         text-decoration: none;
         border: none;
         display: inline-block;
     }
 
-    .btn-primary {
-        background: #49B8C9;
-        color: white;
+    .btn-login {
+        background: transparent;
+        color: #1a1a1a;
+        border: 2px solid rgba(0, 0, 0, 0.2);
     }
 
-        .btn-primary:hover {
-            background: #3aa4b5;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(73, 184, 201, 0.4);
+        .btn-login:hover {
+            border-color: #FFD335;
+            color: #FFD335;
         }
 
-    .btn-secondary {
-        background: white;
-        color: #49B8C9;
-        border: 2px solid #49B8C9;
+    .btn-signup {
+        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
+        color: #000;
     }
 
-        .btn-secondary:hover {
-            background: #49B8C9;
-            color: white;
+        .btn-signup:hover {
             transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 211, 53, 0.4);
         }
 
     /* Hero Section */
     .hero {
         padding: 80px 60px;
         text-align: center;
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
-        position: relative;
     }
 
-    .hero-badge {
-        display: inline-block;
-        padding: 8px 20px;
-        background: rgba(73, 184, 201, 0.1);
-        border: 1px solid rgba(73, 184, 201, 0.3);
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #49B8C9;
-        margin-bottom: 30px;
+    .hero-title {
+        font-size: 72px;
+        font-weight: 900;
+        margin-bottom: 20px;
+        letter-spacing: -2px;
+        line-height: 1.1;
+        background: linear-gradient(135deg, #1a1a1a 0%, #FFD335 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        font-size: 24px;
+        color: rgba(0, 0, 0, 0.6);
+        margin-bottom: 50px;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 30px;
+        max-width: 900px;
+        margin: 0 auto 60px;
+    }
+
+    .stat-box {
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-number {
+        font-size: 48px;
+        font-weight: 900;
+        color: #FFD335;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.6);
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
-    .hero-title {
-        font-size: 68px;
-        font-weight: 900;
-        color: #1a1a1a;
-        margin-bottom: 25px;
-        letter-spacing: -2px;
-        line-height: 1.1;
+    /* Section Title */
+    .section {
+        padding: 60px;
+        max-width: 1400px;
+        margin: 0 auto;
     }
 
-    .accent-text {
-        color: #49B8C9;
-    }
-
-    .hero-subtitle {
-        font-size: 22px;
-        color: #666;
-        margin-bottom: 50px;
-        line-height: 1.6;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .hero-cta {
+    .section-header {
         display: flex;
-        gap: 20px;
-        justify-content: center;
-        margin-bottom: 60px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
     }
 
-    .btn-large {
-        padding: 18px 40px;
-        font-size: 18px;
-        border-radius: 30px;
-    }
-
-    /* Interactive Puzzle Section */
-    .puzzle-section {
-        padding: 60px 60px 100px;
-        text-align: center;
-    }
-
-    .puzzle-intro {
-        max-width: 700px;
-        margin: 0 auto 60px;
-    }
-
-    .puzzle-title {
-        font-size: 42px;
+    .section-title {
+        font-size: 36px;
         font-weight: 800;
         color: #1a1a1a;
-        margin-bottom: 20px;
-        letter-spacing: -1px;
     }
 
-    .puzzle-subtitle {
-        font-size: 18px;
-        color: #666;
-        margin-bottom: 15px;
-    }
-
-    .puzzle-hint {
-        font-size: 14px;
-        color: #49B8C9;
+    .section-link {
+        color: #FFD335;
+        text-decoration: none;
         font-weight: 600;
-        animation: pulse 2s ease-in-out infinite;
+        transition: all 0.3s;
     }
 
-    @@keyframes pulse {
-        0%, 100% {
-            opacity: 1;
+        .section-link:hover {
+            color: #FFA500;
         }
 
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    /* Puzzle Container */
-    .puzzle-container {
-        perspective: 1500px;
+    /* Track Cards */
+    .tracks-scroll {
         display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 600px;
-    }
-
-    .puzzle-piece-wrapper {
-        position: relative;
-        width: 400px;
-        height: 400px;
-    }
-
-    .puzzle-piece {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        transform-style: preserve-3d;
-        transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .puzzle-front {
-        background: linear-gradient(135deg, #49B8C9 0%, #3aa4b5 100%);
-        clip-path: polygon( 0% 20%, 15% 20%, 15% 10%, 25% 10%, 25% 0%, 75% 0%, 75% 10%, 85% 10%, 85% 20%, 100% 20%, 100% 80%, 85% 80%, 85% 90%, 75% 90%, 75% 100%, 25% 100%, 25% 90%, 15% 90%, 15% 80%, 0% 80% );
-        cursor: pointer;
-    }
-
-    .puzzle-back {
-        background: white;
-        transform: rotateY(180deg);
-        padding: 30px;
-        overflow-y: auto;
-    }
-
-        .puzzle-piece.flipped {
-            transform: rotateY(180deg);
-        }
-
-    .puzzle-face {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        backface-visibility: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 30px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-    }
-
-    
-
-    .puzzle-front-content {
-        text-align: center;
-        color: white;
-        padding: 40px;
-    }
-
-    .puzzle-icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-    }
-
-    .puzzle-front-text {
-        font-size: 28px;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    
-
-    .features-list {
-        display: grid;
         gap: 20px;
-        max-height: 100%;
+        overflow-x: auto;
+        padding-bottom: 20px;
+        scrollbar-width: thin;
+        scrollbar-color: #FFD335 rgba(0, 0, 0, 0.1);
     }
 
-    .feature-item {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-left: 4px solid #49B8C9;
-        padding: 20px;
-        border-radius: 12px;
-        text-align: left;
-        transition: all 0.3s;
-    }
-
-        .feature-item:hover {
-            background: linear-gradient(135deg, #49B8C9 0%, #3aa4b5 100%);
-            transform: translateX(5px);
+        .tracks-scroll::-webkit-scrollbar {
+            height: 8px;
         }
 
-            .feature-item:hover .feature-item-title,
-            .feature-item:hover .feature-item-desc {
-                color: white;
-            }
+        .tracks-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
 
-    .feature-item-number {
-        font-size: 12px;
-        font-weight: 700;
-        color: #49B8C9;
-        margin-bottom: 8px;
-        transition: color 0.3s;
-    }
+        .tracks-scroll::-webkit-scrollbar-thumb {
+            background: #FFD335;
+            border-radius: 10px;
+        }
 
-    .feature-item:hover .feature-item-number {
-        color: rgba(255, 255, 255, 0.8);
-    }
-
-    .feature-item-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 6px;
-        transition: color 0.3s;
-    }
-
-    .feature-item-desc {
-        font-size: 13px;
-        color: #666;
-        line-height: 1.5;
-        transition: color 0.3s;
-    }
-
-    .flip-button {
-        margin-top: 30px;
-        padding: 12px 30px;
-        background: white;
-        color: #49B8C9;
-        border: 2px solid #49B8C9;
-        border-radius: 25px;
-        font-weight: 600;
+    .track-card {
+        min-width: 280px;
+        background: #f8f8f8;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        padding: 20px;
         cursor: pointer;
         transition: all 0.3s;
-    }
-
-        .flip-button:hover {
-            background: #49B8C9;
-            color: white;
-        }
-
-    /* Stats Section */
-    .stats-section {
-        padding: 80px 60px;
-        background: white;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 40px;
-        max-width: 1000px;
-        margin: 0 auto;
-        text-align: center;
-    }
-
-    .stat-item {
-        padding: 20px;
-    }
-
-    .stat-number {
-        font-size: 56px;
-        font-weight: 900;
-        color: #49B8C9;
-        margin-bottom: 10px;
-        line-height: 1;
-    }
-
-    .stat-label {
-        font-size: 16px;
-        color: #666;
-        font-weight: 600;
-    }
-
-    /* CTA Section */
-    .cta-section {
-        padding: 100px 60px;
-        background: linear-gradient(135deg, #49B8C9 0%, #3aa4b5 100%);
-        text-align: center;
         position: relative;
         overflow: hidden;
     }
 
-    .cta-content {
+        .track-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FFD335, #FFA500);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .track-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .track-card:hover {
+            transform: translateY(-5px);
+            border-color: #FFD335;
+            box-shadow: 0 15px 40px rgba(255, 211, 53, 0.3);
+        }
+
+    .track-rank {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        background: #FFD335;
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 18px;
+    }
+
+    .track-art {
+        width: 100%;
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        overflow: hidden;
+    }
+
+        .track-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .track-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .track-artist {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.6);
+        margin-bottom: 12px;
+    }
+
+    .track-plays {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #FFD335;
+    }
+
+    /* Interactive Logo Section */
+    .logo-section {
+        text-align: center;
+        padding: 80px 60px;
+    }
+
+    .logo-container {
+        display: inline-block;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+    }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-container:active {
+            transform: scale(0.98);
+        }
+
+    .interactive-logo {
+        width: 450px;
+        height: 450px;
+        filter: drop-shadow(0 15px 40px rgba(0, 0, 0, 0.15));
+        transition: filter 0.3s;
+    }
+
+    .logo-container:hover .interactive-logo {
+        filter: drop-shadow(0 20px 50px rgba(255, 211, 53, 0.4));
+    }
+
+    .logo-subtitle {
+        margin-top: 30px;
+        font-size: 18px;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 500;
+    }
+
+    /* Genre Grid */
+    .genres-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .genre-card {
+        aspect-ratio: 1;
+        border-radius: 15px;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        cursor: pointer;
+        transition: all 0.3s;
         position: relative;
-        z-index: 2;
-        max-width: 700px;
-        margin: 0 auto;
+        overflow: hidden;
+    }
+
+        .genre-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            filter: brightness(0.8);
+            transition: filter 0.3s;
+        }
+
+        .genre-card:hover::before {
+            filter: brightness(1.2);
+        }
+
+        .genre-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+    .genre-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .genre-name {
+        font-size: 24px;
+        font-weight: 800;
+        color: white;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        margin-bottom: 8px;
+    }
+
+    .genre-count {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Features */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+
+    .feature-card {
+        background: #f8f8f8;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #FFD335;
+        }
+
+    .feature-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+    }
+
+    .feature-desc {
+        font-size: 15px;
+        color: rgba(0, 0, 0, 0.6);
+        line-height: 1.6;
+    }
+
+    /* CTA */
+    .cta-section {
+        text-align: center;
+        padding: 80px 60px;
+        background: linear-gradient(135deg, rgba(255, 211, 53, 0.15) 0%, rgba(255, 165, 0, 0.15) 100%);
+        margin: 60px;
+        border-radius: 20px;
     }
 
     .cta-title {
         font-size: 48px;
-        font-weight: 800;
-        color: white;
+        font-weight: 900;
+        color: #1a1a1a;
         margin-bottom: 20px;
-        letter-spacing: -1px;
     }
 
-    .cta-text {
+    .cta-subtitle {
         font-size: 20px;
-        color: rgba(255, 255, 255, 0.95);
+        color: rgba(0, 0, 0, 0.6);
         margin-bottom: 40px;
-        line-height: 1.6;
     }
 
-    .cta-decorative {
-        position: absolute;
-        width: 300px;
-        height: 300px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 50%;
-        filter: blur(80px);
+    .btn-cta {
+        padding: 18px 50px;
+        font-size: 18px;
+        border-radius: 30px;
     }
 
-        .cta-decorative:nth-child(1) {
-            top: -100px;
-            left: -100px;
-        }
-
-        .cta-decorative:nth-child(2) {
-            bottom: -100px;
-            right: -100px;
-        }
-
-    /* Footer */
-    .footer {
-        padding: 50px 60px 30px;
-        background: #1a1a1a;
-        color: white;
-    }
-
-    .footer-content {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 30px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .footer-logo {
-        font-size: 24px;
-        font-weight: 800;
-        color: #49B8C9;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .footer-logo-piece {
-        width: 25px;
-        height: 25px;
-        background: #49B8C9;
-        clip-path: polygon(0% 20%, 20% 20%, 20% 0%, 50% 0%, 50% 20%, 80% 20%, 80% 50%, 100% 50%, 100% 80%, 80% 80%, 80% 100%, 50% 100%, 50% 80%, 20% 80%, 20% 50%, 0% 50%);
-    }
-
-    .footer-links {
-        display: flex;
-        gap: 30px;
-    }
-
-    .footer-link {
-        color: rgba(255, 255, 255, 0.7);
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 15px;
-        transition: color 0.3s;
-    }
-
-        .footer-link:hover {
-            color: #49B8C9;
-        }
-
-    .footer-bottom {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding-top: 25px;
+    /* Loading State */
+    .loading-state {
         text-align: center;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 14px;
+        padding: 100px 20px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(255, 211, 53, 0.2);
+        border-top-color: #FFD335;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     /* Responsive */
@@ -487,199 +479,281 @@
             font-size: 42px;
         }
 
-        .puzzle-piece-wrapper {
-            width: 320px;
-            height: 320px;
+        .section {
+            padding: 40px 20px;
         }
 
-        .puzzle-title {
-            font-size: 32px;
+        .header {
+            padding: 15px 20px;
         }
 
-        .hero-cta {
-            flex-direction: column;
-        }
-
-        .footer-content {
-            flex-direction: column;
-            gap: 25px;
-            text-align: center;
+        .interactive-logo {
+            width: 300px;
+            height: 300px;
         }
     }
 </style>
 
-<div class="landing-container">
-    <!-- Header -->
-    <header class="landing-header">
-        <div class="logo">
-            <div class="logo-puzzle"></div>
-            Piece
-        </div>
-        <div class="nav-buttons">
-            <a href="/Account/Login" class="btn btn-secondary">Log In</a>
-            <a href="/Account/Register" class="btn btn-primary">Sign Up</a>
-        </div>
-    </header>
+@if (isLoading)
+{
+    <div class="loading-state">
+        <div class="spinner"></div>
+        <p style="color: rgba(0, 0, 0, 0.6);">Loading amazing music...</p>
+    </div>
+}
+else
+{
+    <div class="landing-page">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <a href="/">
+                    <img src="./images/piece_logo_black.png" alt="Piece logo">
+                </a>
+            </div>
+            <div class="auth-buttons">
+                <a href="/Account/Login" class="btn btn-login">Log In</a>
+                <a href="/Account/Register" class="btn btn-signup">Sign Up Free</a>
+            </div>
+        </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-badge">Complete Your Musical Journey</div>
-        <h1 class="hero-title">
-            Find Your Missing<br />
-            <span class="accent-text">Piece</span>
-        </h1>
-        <p class="hero-subtitle">
-            Every great experience needs all its pieces. Discover music streaming
-            with interactive visualizations, geographic exploration, and beautiful design.
-        </p>
-        <div class="hero-cta">
-            <a href="/Account/Register" class="btn btn-primary btn-large">Start Free Today</a>
-            <a href="#puzzle" class="btn btn-secondary btn-large">Explore Features</a>
-        </div>
-    </section>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="hero-title">Discover Music From Every Corner of the World</h1>
+            <p class="hero-subtitle">500,000+ tracks. Real-time visualizers. Global discovery.</p>
 
-    <!-- Interactive Puzzle Section -->
-    <section class="puzzle-section" id="puzzle">
-        <div class="puzzle-intro">
-            <h2 class="puzzle-title">Six Pieces, One Perfect Experience</h2>
-            <p class="puzzle-subtitle">
-                Each feature is a piece of the puzzle that makes Piece complete
-            </p>
-            <p class="puzzle-hint">Click the puzzle piece to reveal all features ↓</p>
-        </div>
-
-        <div class="puzzle-container">
-            <div class="puzzle-piece-wrapper">
-                <div class="puzzle-piece @(isFlipped ? "flipped" : "")">
-                    <!-- Front Face -->
-                    <div class="puzzle-face puzzle-front" @onclick="FlipPuzzle">
-                        <div class="puzzle-front-content">
-                            <div class="puzzle-icon">♪</div>
-                            <div class="puzzle-front-text">Click to Reveal</div>
-                        </div>
-                    </div>
-
-                    <!-- Back Face -->
-                    <div class="puzzle-face puzzle-back">
-                        <div class="features-list">
-                            <div class="feature-item">
-                                <div class="feature-item-number">PIECE 01</div>
-                                <div class="feature-item-title">Audio Visualization</div>
-                                <div class="feature-item-desc">Six unique modes transform your music into visual art</div>
-                            </div>
-
-                            <div class="feature-item">
-                                <div class="feature-item-number">PIECE 02</div>
-                                <div class="feature-item-title">Geographic Discovery</div>
-                                <div class="feature-item-desc">Explore artists from every corner of the world</div>
-                            </div>
-
-                            <div class="feature-item">
-                                <div class="feature-item-number">PIECE 03</div>
-                                <div class="feature-item-title">Smart Library</div>
-                                <div class="feature-item-desc">Unlimited playlists, perfectly organized</div>
-                            </div>
-
-                            <div class="feature-item">
-                                <div class="feature-item-number">PIECE 04</div>
-                                <div class="feature-item-title">Listening Analytics</div>
-                                <div class="feature-item-desc">Beautiful stats show your musical journey</div>
-                            </div>
-
-                            <div class="feature-item">
-                                <div class="feature-item-number">PIECE 05</div>
-                                <div class="feature-item-title">Premium Streaming</div>
-                                <div class="feature-item-desc">Crystal clear audio quality always</div>
-                            </div>
-
-                            <div class="feature-item">
-                                <div class="feature-item-number">PIECE 06</div>
-                                <div class="feature-item-title">Elegant Design</div>
-                                <div class="feature-item-desc">Clean, beautiful interface that puts music first</div>
-                            </div>
-                        </div>
-                        <button class="flip-button" @onclick="FlipPuzzle" @onclick:stopPropagation="true">
-                            Flip Back
-                        </button>
-                    </div>
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-number">0.5M+</div>
+                    <div class="stat-label">Total Tracks</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">@totalGenres</div>
+                    <div class="stat-label">Genres</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">@totalPlays.ToString("N0")</div>
+                    <div class="stat-label">Plays Today</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">@continentCount</div>
+                    <div class="stat-label">Continents</div>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Stats Section -->
-    <section class="stats-section">
-        <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-number">500K+</div>
-                <div class="stat-label">Available Tracks</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">6</div>
-                <div class="stat-label">Feature Pieces</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">10+</div>
-                <div class="stat-label">Music Genres</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">Free</div>
-                <div class="stat-label">Forever Plan</div>
-            </div>
-        </div>
-    </section>
+            <a href="/Account/Register" class="btn btn-signup btn-cta">Start Your Journey</a>
+        </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-decorative"></div>
-        <div class="cta-decorative"></div>
-        <div class="cta-content">
-            <h2 class="cta-title">Complete Your Collection</h2>
-            <p class="cta-text">
-                Join music lovers who've found their missing piece.
-                Start streaming, visualizing, and discovering today.
-            </p>
-            <a href="/Account/Register" class="btn btn-large" style="background: white; color: #49B8C9; border: none;">
-                Get Your Piece Free
-            </a>
-        </div>
-    </section>
+        <!-- Trending Tracks -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Trending Now</h2>
+            </div>
+            <div class="tracks-scroll">
+                @for (int i = 0; i < trendingTracks.Count && i < 10; i++)
+                {
+                    var track = trendingTracks[i];
+                    <div class="track-card">
+                        <div class="track-rank">@(i + 1)</div>
+                        <div class="track-art">
+                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                            {
+                                <img src="@track.CoverImageUrl" alt="@track.Title" />
+                            }
+                            else
+                            {
+                                <span>🎵</span>
+                            }
+                        </div>
+                        <div class="track-title">@track.Title</div>
+                        <div class="track-artist">@track.ArtistName</div>
+                        <div class="track-plays">
+                            <span>@track.PlayCount.ToString("N0") plays</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-logo">
-                <div class="footer-logo-piece"></div>
-                Piece
+        <!-- Interactive Logo Section -->
+        <section class="logo-section">
+            <div class="logo-container" onclick="rotatePuzzleLogo()">
+                <img src="./images/piece_logo_black.png"
+                     alt="Piece - Interactive Music Discovery"
+                     class="interactive-logo"
+                     id="puzzleLogo">
             </div>
-            <div class="footer-links">
-                <a href="#" class="footer-link">About</a>
-                <a href="#puzzle" class="footer-link">Features</a>
-                <a href="#" class="footer-link">Privacy</a>
-                <a href="#" class="footer-link">Terms</a>
+            <p class="logo-subtitle">Click to spin the puzzle 🧩</p>
+        </section>
+
+        <!-- Fresh Uploads -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Fresh Uploads</h2>
             </div>
-        </div>
-        <div class="footer-bottom">
-            © 2025 Piece. Every journey needs all its pieces.
-        </div>
-    </footer>
-</div>
+            <div class="tracks-scroll">
+                @foreach (var track in latestTracks.Take(10))
+                {
+                    <div class="track-card">
+                        <div class="track-art">
+                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                            {
+                                <img src="@track.CoverImageUrl" alt="@track.Title" />
+                            }
+                            else
+                            {
+                                <span>🎵</span>
+                            }
+                        </div>
+                        <div class="track-title">@track.Title</div>
+                        <div class="track-artist">@track.ArtistName</div>
+                        <div class="track-plays">
+                            <span>@track.PlayCount plays</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Genre Spotlight -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Explore by Genre</h2>
+            </div>
+            <div class="genres-grid">
+                @foreach (var genre in genres)
+                {
+                    <div class="genre-card" style="background: @genre.Color;">
+                        <div class="genre-content">
+                            <div class="genre-name">@genre.Name</div>
+                            <div class="genre-count">@genre.Tracks.Count tracks</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Why Piece?</h2>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-title">6 Visualizer Modes</div>
+                    <div class="feature-desc">Transform music into art with real-time audio visualization</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">Global Discovery</div>
+                    <div class="feature-desc">Explore artists and music from every continent</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">Listening Analytics</div>
+                    <div class="feature-desc">Beautiful stats tracking your musical journey</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <h2 class="cta-title">Ready to Experience Music Differently?</h2>
+            <p class="cta-subtitle">Join thousands discovering new sounds every day</p>
+            <a href="/Account/Register" class="btn btn-signup btn-cta">Get Started Free</a>
+        </section>
+    </div>
+}
+
+<script>
+    let isRotating = false;
+    let currentRotation = 0;
+
+    function rotatePuzzleLogo() {
+        if (isRotating) return;
+
+        const logo = document.getElementById('puzzleLogo');
+        if (!logo) return;
+
+        isRotating = true;
+        currentRotation += 90; // Quarter turn (90 degrees)
+
+        logo.style.transition = 'transform 0.6s ease-in-out';
+        logo.style.transform = `rotate(${currentRotation}deg)`;
+
+        setTimeout(() => {
+            isRotating = false;
+        }, 600);
+    }
+</script>
 
 @code {
-    private bool isFlipped = false;
+    private bool isLoading = true;
+
+    // Stats
+    private int totalTracks = 0;
+    private int totalGenres = 0;
+    private int totalPlays = 0;
+    private int continentCount = 6;
+
+    // Data
+    private List<Track> trendingTracks = new();
+    private List<Track> latestTracks = new();
+    private List<Genre> genres = new();
 
     protected override async Task OnInitializedAsync()
     {
-        // If user is already logged in, redirect to player
+        // Redirect logged-in users
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState.User.Identity?.IsAuthenticated == true)
         {
-            Navigation.NavigateTo("/player");
+            // Let them stay if they navigated here directly
+            // Navigation.NavigateTo("/player");
         }
+
+        await LoadData();
     }
 
-    private void FlipPuzzle()
+    private async Task LoadData()
     {
-        isFlipped = !isFlipped;
+        isLoading = true;
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            // Load stats
+            var allTracks = await context.Tracks
+                .Include(t => t.Genre)
+                .Where(t => t.IsActive && t.Source == TrackSource.Local)
+                .ToListAsync();
+
+            totalTracks = 500000;
+            totalGenres = await context.Genres.CountAsync();
+            totalPlays = allTracks.Sum(t => t.PlayCount);
+
+            // Trending tracks (most played)
+            trendingTracks = allTracks
+                .OrderByDescending(t => t.PlayCount)
+                .Take(10)
+                .ToList();
+
+            // Latest uploads
+            latestTracks = allTracks
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(10)
+                .ToList();
+
+            // Genres
+            genres = await context.Genres
+                .Include(g => g.Tracks)
+                .OrderByDescending(g => g.Tracks.Count)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading landing page data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }
