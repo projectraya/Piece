@@ -24,6 +24,7 @@ namespace Piece
 				.AddInteractiveWebAssemblyComponents();
 
 			builder.Services.AddScoped<DatabaseSeeder>();
+
 			builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 
 			builder.Services.AddCascadingAuthenticationState();
@@ -94,6 +95,12 @@ namespace Piece
 
 			using (var scope = app.Services.CreateScope())
 			{
+				var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+				await Piece.Services.CountrySeeder.SeedCountriesAsync(context);
+			}
+
+			using (var scope = app.Services.CreateScope())
+			{
 				var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 				var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 				await AdminSeeder.SeedAdminRoleAndUser(roleManager, userManager);
@@ -123,19 +130,14 @@ namespace Piece
 				// Enable XSS protection
 				context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
 
-				// Content Security Policy - prevents inline scripts
-				// In development, allow hot reload WebSocket connections and Browser Link
-				var connectSrc = app.Environment.IsDevelopment()
-					? "connect-src 'self' ws: wss: http://localhost:* https://localhost:*; "
-					: "connect-src 'self'; ";
-
+				// Content Security Policy - WITH D3.JS AND CDN SUPPORT FOR MAP
 				context.Response.Headers.Append("Content-Security-Policy",
 					"default-src 'self'; " +
-					"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; " +
-					"style-src 'self' 'unsafe-inline'; " +
-					"img-src 'self' data: https:; " +
+					"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com; " +
+					"style-src 'self' 'unsafe-inline' https://unpkg.com; " +
+					"img-src 'self' data: https: blob:; " +
 					"font-src 'self' data:; " +
-					connectSrc +
+					"connect-src 'self' https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com ws://localhost:* wss://localhost:*; " +
 					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com; " +
 					"frame-src 'none';");
 
@@ -149,7 +151,7 @@ namespace Piece
 			app.UseRouting();
 			app.UseAuthentication();
 			app.UseAuthorization();
-			app.UseMiddleware<Piece.Middleware.BanCheckMiddleware>(); 
+			app.UseMiddleware<Piece.Middleware.BanCheckMiddleware>();
 			app.UseAntiforgery();
 			app.UseRateLimiter();
 

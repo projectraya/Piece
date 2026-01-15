@@ -18,12 +18,19 @@
 				"fuck", "shit", "ass", "bitch", "damn", "bastard", "crap",
 				"dick", "piss", "pussy", "cock", "cunt", "whore", "slut",
 				"fag", "nigger", "retard", "hell", "asshole", "motherfucker",
-				"bullshit", "dumbass", "jackass", "prick", "douche", "twat", 
+				"bullshit", "dumbass", "jackass", "prick", "douche", "twat",
 				"nigga", "n word", "nnn", "fat", "fk", "f@k", "fy", "niggers",
 				"niggas", "nigas", "nigs", "nnnngs", "ngs", "nig", "nigg@", "nigg@s",
-				"yo mom", "your mom", "licky dicky", "mf", "mfs",
-                
-            };
+				"yo mom", "your mom", "licky dicky", "mf", "mfs", "niga", "negro",
+				"n1gg@", "n1g@", "negri", "negronis", "giganiga", "niglet", "nigglet", 
+				"bikestealer", "ni ga", "ni gga", "ne gro", "ne ggro", "negrofication", 
+				"negromacy", "niggervile", "cool aid brothers", "nizza", "jew", "juice",
+				"negromania", "negrocity", "negger", "negur", "negri", "cheren", "idiot",
+				"piknq", "kurwa", "kurva", "hui", "pishka", "tits", "boobs", "cici", "evrei",
+				"evrein", "sera", "laino", "kreten", "guz", "guza ti", "maika ti", "maika", "sopol",
+				"gadnqr", "retard", "pederas", "pederast", "pedo", "pedofil", "pedofile", "negroo", "negrooo", "negroooo"
+
+			};
 		}
 
 		public string FilterText(string text)

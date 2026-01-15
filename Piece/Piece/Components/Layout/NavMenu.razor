@@ -11,13 +11,13 @@
 
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
-        <div class="app-logo">
+        <a href="/" class="app-logo">
             <span class="logo-icon">꩜</span>
             @if (!isCollapsed)
             {
                 <span class="logo-text">Piece</span>
             }
-        </div>
+        </a>
         <button class="toggle-btn" @onclick="ToggleSidebar" type="button" title="Toggle Sidebar">
             @(isCollapsed ? "→" : "←")
         </button>
@@ -136,7 +136,7 @@
                                     <span class="nav-text">Upload Music</span>
                                 }
                             </NavLink>
-                            
+
                         </div>
                     </Authorized>
                 </AuthorizeView>
@@ -203,10 +203,9 @@
 </div>
 
 <style>
-    .nav-menu
-    {
+    .nav-menu {
         width: 250px;
-        height: 100vh; 
+        height: 100vh;
         background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
         display: flex;
         flex-direction: column;
@@ -219,7 +218,7 @@
         z-index: 1000;
         padding-bottom: 120px;
     }
-    
+
 
         .nav-menu.collapsed {
             width: 80px;
@@ -245,41 +244,53 @@
 
     /* Header */
     .nav-header {
-        padding: 30px 20px 20px;
+        padding: 25px 20px;
         border-bottom: 1px solid rgba(255, 211, 53, 0.1);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
     }
 
     .app-logo {
         display: flex;
         align-items: center;
         gap: 12px;
-        flex: 1;
-        min-width: 0;
+        transition: all 0.3s;
+        text-decoration: none;
+        cursor: pointer;
     }
+
+        .app-logo:hover {
+            transform: translateX(3px);
+        }
+
+            .app-logo:hover .logo-icon {
+                filter: drop-shadow(0 0 12px rgba(255, 211, 53, 0.8));
+                transform: rotate(90deg);
+            }
+
+            .app-logo:hover .logo-text {
+                color: #FFD335;
+            }
 
     .logo-icon {
-        font-size: 32px;
-        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1));
-        flex-shrink: 0;
-        transition: opacity 0.2s;
-    }
-
-    .nav-menu.collapsed .logo-icon {
-        opacity: 0;
-        width: 0;
-        overflow: hidden;
+        font-size: 28px;
+        color: #FFD335;
+        filter: drop-shadow(0 0 8px rgba(255, 211, 53, 0.6));
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .logo-text {
         font-size: 24px;
         font-weight: 700;
-        color: #FFF;
-        letter-spacing: -0.5px;
-        white-space: nowrap;
+        color: #fff;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+
+    .nav-menu.collapsed .logo-text {
+        display: none;
     }
 
     .toggle-btn {

@@ -1,0 +1,569 @@
+﻿@page "/map"
+@rendermode InteractiveServer
+@using Piece.Data
+@using Piece.Data.Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>World Music Map - Piece</PageTitle>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body, html {
+        overflow: hidden;
+    }
+
+    .map-page {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #0a0a0a;
+    }
+
+    .back-btn {
+        position: fixed;
+        top: 24px;
+        left: 24px;
+        z-index: 2000;
+        background: rgba(139, 92, 246, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+        .back-btn:hover {
+            background: #7C3AED;
+            transform: scale(1.1);
+        }
+
+    #map {
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
+    }
+
+    .info-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 450px;
+        height: 100vh;
+        background: linear-gradient(to left, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95));
+        backdrop-filter: blur(20px);
+        border-left: 2px solid rgba(139, 92, 246, 0.4);
+        z-index: 1500;
+        transform: translateX(100%);
+        transition: transform 0.4s;
+        padding: 30px;
+        overflow-y: auto;
+        pointer-events: auto;
+    }
+
+        .info-panel.active {
+            transform: translateX(0);
+        }
+
+        .info-panel:not(.active) {
+            pointer-events: none;
+        }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .country-name {
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .close-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+        .close-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+        }
+
+    .tracks-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .track-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+        .track-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.4);
+            transform: translateX(-4px);
+        }
+
+    .track-cover {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .track-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .track-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .track-artist {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .no-tracks {
+        text-align: center;
+        padding: 60px 20px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        color: white;
+        font-size: 18px;
+    }
+
+    .track-cover-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        flex-shrink: 0;
+    }
+
+    .play-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        color: white;
+    }
+
+    .track-item:hover .play-icon {
+        opacity: 0.9;
+    }
+
+    .track-count {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 16px;
+    }
+</style>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="map-page">
+    @if (isLoading)
+    {
+        <div class="loading-overlay">
+            <div>Loading world map...</div>
+        </div>
+    }
+
+    <button class="back-btn" @onclick="GoBack">←</button>
+
+    <div id="map"></div>
+
+    <div class="info-panel @(selectedCountryName != null ? "active" : "")">
+        @if (selectedCountryName != null)
+        {
+            <div class="panel-header">
+                <h2 class="country-name">@selectedCountryName</h2>
+                <button class="close-btn" @onclick="ClosePanel">×</button>
+            </div>
+
+            @if (countryTracks.Any())
+            {
+                <div class="track-count">@countryTracks.Count tracks found</div>
+                <div class="tracks-grid">
+                    @foreach (var artistTrack in countryTracks)
+                    {
+                        <div class="track-item" @onclick="() => PlayTrack(artistTrack)">
+                            @if (!string.IsNullOrEmpty(artistTrack.AlbumArtUrl))
+                            {
+                                <div class="track-cover-wrapper">
+                                    <img src="@artistTrack.AlbumArtUrl" class="track-cover" alt="@artistTrack.TrackName" />
+                                    <div class="play-icon">▶</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="track-cover"></div>
+                            }
+                            <div class="track-info">
+                                <div class="track-name">@artistTrack.TrackName</div>
+                                <div class="track-artist">@artistTrack.Artist.Name</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-tracks">
+                    <p>No music from @selectedCountryName yet</p>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    window.pieceMapInstance = null;
+    window.pieceMapComponentRef = null;
+
+    // Wait for Leaflet to load before initializing
+    window.waitForLeaflet = function() {
+        return new Promise((resolve) => {
+            if (typeof L !== 'undefined') {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (typeof L !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            }
+        });
+    };
+
+    window.initializeWorldMap = async function (dotNetRef) {
+        console.log('Initializing world map...');
+
+        // Wait for Leaflet to be available
+        await window.waitForLeaflet();
+
+        window.pieceMapComponentRef = dotNetRef;
+
+        // Clear existing map if any
+        if (window.pieceMapInstance) {
+            window.pieceMapInstance.remove();
+        }
+
+        // Create map centered on world view
+        const map = L.map('map', {
+            minZoom: 2,
+            maxZoom: 6,
+            maxBounds: [[-90, -180], [90, 180]],
+            maxBoundsViscosity: 1.0
+        }).setView([20, 0], 2);
+
+        // Dark tile layer (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors © CARTO',
+            subdomains: 'abcd',
+            maxZoom: 6
+        }).addTo(map);
+
+        window.pieceMapInstance = map;
+        console.log('Map initialized');
+    };
+
+    window.addCountryMarkers = async function (countries) {
+        // Wait for Leaflet to be available
+        await window.waitForLeaflet();
+
+        if (!window.pieceMapInstance) {
+            console.error('Map not initialized');
+            return;
+        }
+
+        console.log(`Adding ${countries.length} country markers...`);
+
+        countries.forEach(country => {
+            // Custom marker with purple/aqua styling
+            const marker = L.circleMarker([country.latitude, country.longitude], {
+                radius: 8,
+                fillColor: '#8B5CF6',
+                color: '#10B981',
+                weight: 2,
+                opacity: 0.8,
+                fillOpacity: 0.6
+            });
+
+            // Hover effects
+            marker.on('mouseover', function () {
+                this.setStyle({
+                    fillColor: '#10B981',
+                    radius: 12,
+                    fillOpacity: 0.9
+                });
+            });
+
+            marker.on('mouseout', function () {
+                this.setStyle({
+                    fillColor: '#8B5CF6',
+                    radius: 8,
+                    fillOpacity: 0.6
+                });
+            });
+
+            // Click handler
+            marker.on('click', function () {
+                console.log(`Clicked: ${country.name}`);
+                if (window.pieceMapComponentRef) {
+                    window.pieceMapComponentRef.invokeMethodAsync('SelectCountryFromJS', country.name)
+                        .then(() => console.log('Country selected'))
+                        .catch(err => console.error('Error selecting country:', err));
+                } else {
+                    console.error('Component reference not found');
+                }
+            });
+
+            // Tooltip
+            marker.bindTooltip(country.name, {
+                permanent: false,
+                direction: 'top',
+                className: 'country-tooltip'
+            });
+
+            marker.addTo(window.pieceMapInstance);
+        });
+
+        console.log('Markers added');
+    };
+</script>
+
+<style>
+    /* Custom Leaflet tooltip styling */
+    .country-tooltip {
+        background: rgba(139, 92, 246, 0.95) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 8px 12px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+
+        .country-tooltip::before {
+            border-top-color: rgba(139, 92, 246, 0.95) !important;
+        }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private string? selectedCountryName = null;
+    private List<ArtistTrack> countryTracks = new();
+    private List<Country> countries = new();
+    private DotNetObjectReference<Map>? objRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // Create object reference for JS interop
+                objRef = DotNetObjectReference.Create(this);
+
+                await LoadCountries();
+
+                // Add a small delay to ensure Leaflet script is loaded
+                await Task.Delay(500);
+
+                await JS.InvokeVoidAsync("initializeWorldMap", objRef);
+
+                // Pass countries to JS with proper data structure
+                var countryData = countries.Select(c => new
+                {
+                    name = c.Name,
+                    latitude = c.Latitude,
+                    longitude = c.Longitude,
+                    countryCode = c.CountryCode
+                }).ToList();
+
+                await JS.InvokeVoidAsync("addCountryMarkers", countryData);
+                isLoading = false;
+                StateHasChanged();
+
+                Console.WriteLine("Map initialization complete");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing map: {ex.Message}");
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task LoadCountries()
+    {
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
+            countries = await context.Countries
+                .Where(c => c.Latitude != 0 && c.Longitude != 0)
+                .ToListAsync();
+            Console.WriteLine($"Loaded {countries.Count} countries");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading countries: {ex.Message}");
+        }
+    }
+
+    [JSInvokable("SelectCountryFromJS")]
+    public async Task SelectCountryFromJS(string countryName)
+    {
+        Console.WriteLine($"JS invoked SelectCountryFromJS: {countryName}");
+        selectedCountryName = countryName;
+        await LoadCountryTracks(countryName);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadCountryTracks(string countryName)
+    {
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            // Find country with artists and their tracks
+            var country = await context.Countries
+                .Include(c => c.Artists)
+                .ThenInclude(a => a.ArtistTracks)
+                .FirstOrDefaultAsync(c => c.Name == countryName);
+
+            if (country != null && country.Artists.Any())
+            {
+                // Get all artist tracks from artists in this country
+                var tracksList = country.Artists
+                    .SelectMany(a => a.ArtistTracks)
+                    .OrderByDescending(at => at.Popularity)
+                    .Take(20)
+                    .ToList();
+
+                // Re-fetch with artist navigation property populated
+                var trackIds = tracksList.Select(t => t.Id).ToList();
+                countryTracks = await context.Set<ArtistTrack>()
+                    .Include(at => at.Artist)
+                    .Where(at => trackIds.Contains(at.Id))
+                    .ToListAsync();
+
+                Console.WriteLine($"Found {countryTracks.Count} tracks for {countryName}");
+            }
+            else
+            {
+                countryTracks = new List<ArtistTrack>();
+                Console.WriteLine($"No artists found for {countryName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading tracks: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            countryTracks = new();
+        }
+    }
+
+    private void ClosePanel()
+    {
+        selectedCountryName = null;
+        countryTracks.Clear();
+        StateHasChanged();
+    }
+
+    private async Task PlayTrack(ArtistTrack artistTrack)
+    {
+        if (!string.IsNullOrEmpty(artistTrack.PreviewUrl))
+        {
+            // Play the preview URL
+            await JS.InvokeVoidAsync("eval", $"new Audio('{artistTrack.PreviewUrl}').play()");
+            Console.WriteLine($"Playing: {artistTrack.TrackName}");
+        }
+        else
+        {
+            Console.WriteLine($"No preview available for {artistTrack.TrackName}");
+        }
+    }
+
+    private void GoBack()
+    {
+        Console.WriteLine("GoBack clicked");
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+}
