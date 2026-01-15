@@ -18,160 +18,166 @@
 
 <style>
     .edit-profile-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 40px 20px;
-        color: #fff;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    color: #fff;
     }
 
     .edit-header {
-        margin-bottom: 30px;
+    margin-bottom: 30px;
     }
 
     .edit-title {
-        font-size: 32px;
-        font-weight: 700;
-        color: #FFD335;
-        margin-bottom: 10px;
+    font-size: 32px;
+    font-weight: 700;
+    color: #FFD335;
+    margin-bottom: 10px;
     }
 
     .edit-subtitle {
-        font-size: 16px;
-        color: #888;
+    font-size: 16px;
+    color: #888;
     }
 
     .edit-form {
-        background: #2a2a2a;
-        border-radius: 12px;
-        padding: 30px;
+    background: #2a2a2a;
+    border-radius: 12px;
+    padding: 30px;
     }
 
     .form-group {
-        margin-bottom: 25px;
+    margin-bottom: 25px;
     }
 
     .form-label {
-        display: block;
-        margin-bottom: 8px;
-        color: #ccc;
-        font-size: 14px;
-        font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+    color: #ccc;
+    font-size: 14px;
+    font-weight: 600;
     }
 
     .form-input {
-        width: 100%;
-        padding: 12px;
-        background: #1a1a1a;
-        border: 2px solid #3a3a3a;
-        border-radius: 8px;
-        color: #fff;
-        font-size: 16px;
-        transition: border-color 0.3s;
+    width: 100%;
+    padding: 12px;
+    background: #1a1a1a;
+    border: 2px solid #3a3a3a;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    transition: border-color 0.3s;
     }
 
     .form-input:focus {
-        outline: none;
-        border-color: #FFD335;
+    outline: none;
+    border-color: #FFD335;
     }
 
     .form-textarea {
-        min-height: 120px;
-        resize: vertical;
-        font-family: inherit;
+    min-height: 120px;
+    resize: vertical;
+    font-family: inherit;
     }
 
     .form-checkbox-group {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
     }
 
     .checkbox-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px;
-        background: #1a1a1a;
-        border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #1a1a1a;
+    border-radius: 8px;
     }
 
     .checkbox-item input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
     }
 
     .checkbox-label {
-        color: #ccc;
-        cursor: pointer;
-        user-select: none;
+    color: #ccc;
+    cursor: pointer;
+    user-select: none;
     }
 
     .form-actions {
-        display: flex;
-        gap: 15px;
-        margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
     }
 
     .btn {
-        flex: 1;
-        padding: 15px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.3s;
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
     }
 
     .btn-primary {
-        background: #FFD335;
-        color: #1a1a1a;
+    background: #FFD335;
+    color: #1a1a1a;
     }
 
     .btn-primary:hover {
-        background: #ffd000;
-        transform: translateY(-2px);
+    background: #ffd000;
+    transform: translateY(-2px);
     }
 
     .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
     }
 
     .btn-secondary {
-        background: #3a3a3a;
-        color: #fff;
+    background: #3a3a3a;
+    color: #fff;
     }
 
     .btn-secondary:hover {
-        background: #4a4a4a;
+    background: #4a4a4a;
     }
 
     .alert {
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    }
+
+    .alert {
+        background: #dec12f;
+        color: #f0e8c0;
+        border: 1px solid #f0e8c0;
     }
 
     .alert-success {
-        background: #1a4d2e;
-        color: #4ade80;
-        border: 1px solid #4ade80;
+    background: #1a4d2e;
+    color: #4ade80;
+    border: 1px solid #4ade80;
     }
 
     .alert-error {
-        background: #4d1a1a;
-        color: #ff6b6b;
-        border: 1px solid #ff6b6b;
+    background: #4d1a1a;
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
     }
 
     .char-counter {
-        font-size: 12px;
-        color: #888;
-        text-align: right;
-        margin-top: 5px;
+    font-size: 12px;
+    color: #888;
+    text-align: right;
+    margin-top: 5px;
     }
 </style>
 
@@ -183,6 +189,9 @@
 
     @if (!string.IsNullOrEmpty(message))
     {
+        <div class="alert alert-info">
+            @note
+        </div>
         <div class="alert @(isSuccess ? "alert-success" : "alert-error")">
             @message
         </div>
@@ -203,8 +212,8 @@
             <div class="form-group">
                 <label class="form-label">Bio</label>
                 <InputTextArea @bind-Value="Input.Bio" class="form-input form-textarea" 
-                              placeholder="Tell us about your music taste..." 
-                              @oninput="UpdateBioCharCount" />
+                placeholder="Tell us about your music taste..." 
+                @oninput="UpdateBioCharCount" />
                 <div class="char-counter">@bioCharCount / 500 characters</div>
                 <ValidationMessage For="() => Input.Bio" class="text-danger" />
             </div>
@@ -256,6 +265,7 @@
 
 @code {
     private string? message;
+    private string note;
     private bool isSuccess;
     private bool isLoading;
     private ApplicationUser user = default!;
@@ -265,6 +275,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        note = "⚠️ Input is sanitized automatically, however if you manage to abuse our policy with inappropriate language, your account might get banned.";
         try
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -320,6 +331,8 @@
             isSuccess = false;
             return;
         }
+
+
 
         // Check for profanity BEFORE saving
         if (ProfanityFilter.ContainsProfanity(Input.DisplayName ?? ""))

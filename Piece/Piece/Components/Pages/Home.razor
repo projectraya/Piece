@@ -3,12 +3,16 @@
 @using Piece.Data
 @using Piece.Data.Models
 @using Piece.Data.Enums
+@using Piece.Services
+@using Piece.DTOs
 @using Microsoft.EntityFrameworkCore
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IListeningHistoryService ListeningHistoryService
+@inject PlayerService PlayerService
 
-<PageTitle>Piece - Discover Music Globally</PageTitle>
+<PageTitle>@pageTitle</PageTitle>
 
 <style>
     * {
@@ -17,25 +21,509 @@
         box-sizing: border-box;
     }
 
-    .landing-page {
+    /* ============================================
+                   LOGGED-IN USER DASHBOARD STYLES
+                   ============================================ */
+
+    .dashboard-container {
         min-height: 100vh;
-        background: #ffffff;
-        color: #1a1a1a;
-        overflow-x: hidden;
+        background: #0f0f0f;
+        color: #ffffff;
+        padding: 50px 70px 100px 70px;
+        margin: -1.5rem -1.5rem -1.5rem -2rem;
+        width: calc(100% + 3.5rem);
     }
 
-    /* Header */
+    /* Hero Section with Featured Discovery */
+    .hero-section {
+        margin-bottom: 60px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
+        border-radius: 24px;
+        padding: 60px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(138, 92, 246, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .welcome-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 12px;
+    }
+
+    .welcome-title {
+        font-size: 52px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #ffffff;
+        letter-spacing: -1px;
+        line-height: 1.1;
+    }
+
+    .welcome-subtitle {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 400;
+        margin-bottom: 40px;
+        max-width: 600px;
+    }
+
+    /* Roulette Discovery Wheel */
+    .discovery-wheel {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-top: 40px;
+    }
+
+    .wheel-container {
+        position: relative;
+        width: 180px;
+        height: 180px;
+    }
+
+    .wheel-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        cursor: pointer;
+        box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
+    }
+
+        .wheel-circle:hover {
+            box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
+        }
+
+    .wheel-inner {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: #0f0f0f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+        color: #8B5CF6;
+        text-align: center;
+        line-height: 1.3;
+    }
+
+    .wheel-arrow {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 25px solid #8B5CF6;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        z-index: 10;
+    }
+
+    .wheel-options {
+        flex: 1;
+    }
+
+    .wheel-option {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 16px 24px;
+        margin-bottom: 12px;
+        font-size: 16px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s;
+        cursor: default;
+    }
+
+        .wheel-option.active {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.4);
+            color: #8B5CF6;
+            transform: translateX(8px);
+        }
+
+    .spin-button {
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 16px 48px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffffff;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+        margin-top: 20px;
+    }
+
+        .spin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
+        }
+
+        .spin-button:active {
+            transform: translateY(0);
+        }
+
+    /* Stats Cards */
+    .stats-section {
+        margin-bottom: 60px;
+    }
+
+    .section-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 24px;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    @@media (max-width: 1024px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 32px 28px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #8B5CF6, #7C3AED);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-4px);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(139, 92, 246, 0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        font-size: 24px;
+    }
+
+    .stat-number {
+        font-size: 42px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 8px;
+        letter-spacing: -1px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    /* Recent Activity Section */
+    .activity-section {
+        margin-bottom: 60px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .view-all-link {
+        font-size: 14px;
+        color: #8B5CF6;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .view-all-link:hover {
+            color: #A78BFA;
+            transform: translateX(4px);
+        }
+
+    .activity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+
+    .activity-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+        .activity-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-4px);
+        }
+
+    .activity-art {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+        margin-bottom: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+        .activity-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .activity-art::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(139, 92, 246, 0.95);
+            color: #fff;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+            opacity: 0;
+        }
+
+    .activity-card:hover .activity-art::after {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+
+    .activity-track-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .activity-track-artist {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 8px;
+    }
+
+    .activity-time {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 500;
+    }
+
+    /* Empty States */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 16px;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    .empty-state-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 12px;
+    }
+
+    .empty-state-text {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.4);
+        max-width: 400px;
+        margin: 0 auto 24px;
+        line-height: 1.6;
+    }
+
+    .empty-state-button {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 8px;
+        padding: 12px 32px;
+        color: #8B5CF6;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+        .empty-state-button:hover {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.5);
+            transform: translateY(-2px);
+        }
+
+    /* Loading State */
+    .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #0f0f0f;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #8B5CF6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-text {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .dashboard-container {
+            padding: 30px 20px 80px 20px;
+        }
+
+        .hero-section {
+            padding: 40px 30px;
+        }
+
+        .welcome-title {
+            font-size: 36px;
+        }
+
+        .discovery-wheel {
+            flex-direction: column;
+        }
+
+        .wheel-container {
+            width: 160px;
+            height: 160px;
+        }
+
+        .wheel-circle {
+            width: 160px;
+            height: 160px;
+        }
+
+        .wheel-inner {
+            width: 120px;
+            height: 120px;
+        }
+    }
+
+    /* ============================================
+           LANDING PAGE STYLES (NON-LOGGED-IN)
+           ============================================ */
+    .landing-page {
+        min-height: 100vh;
+        background: #0f0f0f;
+        color: #ffffff;
+        overflow-x: hidden;
+        margin: -1.5rem -1.5rem -1.5rem -2rem;
+        width: calc(100% + 3.5rem);
+    }
+
     .header {
         position: sticky;
         top: 0;
         z-index: 100;
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(15, 15, 15, 0.95);
         backdrop-filter: blur(10px);
         padding: 20px 60px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .logo {
@@ -45,7 +533,7 @@
     }
 
         .logo img {
-            height: 128px;
+            height: 64px;
             width: auto;
             object-fit: contain;
         }
@@ -69,28 +557,27 @@
 
     .btn-login {
         background: transparent;
-        color: #1a1a1a;
-        border: 2px solid rgba(0, 0, 0, 0.2);
+        color: #ffffff;
+        border: 2px solid rgba(255, 255, 255, 0.2);
     }
 
         .btn-login:hover {
-            border-color: #FFD335;
-            color: #FFD335;
+            border-color: #8B5CF6;
+            color: #8B5CF6;
         }
 
     .btn-signup {
-        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
-        color: #000;
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        color: #ffffff;
     }
 
         .btn-signup:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(255, 211, 53, 0.4);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
         }
 
-    /* Hero Section */
     .hero {
-        padding: 80px 60px;
+        padding: 100px 60px;
         text-align: center;
         max-width: 1200px;
         margin: 0 auto;
@@ -102,14 +589,18 @@
         margin-bottom: 20px;
         letter-spacing: -2px;
         line-height: 1.1;
-        background: linear-gradient(135deg, #1a1a1a 0%, #FFD335 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #ffffff;
     }
+
+        .hero-title .highlight {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
     .hero-subtitle {
         font-size: 24px;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(255, 255, 255, 0.6);
         margin-bottom: 50px;
     }
 
@@ -122,66 +613,61 @@
     }
 
     .stat-box {
-        padding: 20px;
-        background: rgba(0, 0, 0, 0.03);
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 30px 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 15px;
         backdrop-filter: blur(10px);
+        transition: all 0.3s;
     }
 
-    .stat-number {
+        .stat-box:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-4px);
+        }
+
+    .landing-stat-number {
         font-size: 48px;
         font-weight: 900;
-        color: #FFD335;
+        background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin-bottom: 8px;
     }
 
-    .stat-label {
+    .landing-stat-label {
         font-size: 14px;
-        color: rgba(0, 0, 0, 0.6);
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
     }
 
-    /* Section Title */
     .section {
         padding: 60px;
         max-width: 1400px;
         margin: 0 auto;
     }
 
-    .section-header {
+    .section-header-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 40px;
     }
 
-    .section-title {
+    .landing-section-title {
         font-size: 36px;
         font-weight: 800;
-        color: #1a1a1a;
+        color: #ffffff;
     }
 
-    .section-link {
-        color: #FFD335;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-
-        .section-link:hover {
-            color: #FFA500;
-        }
-
-    /* Track Cards */
     .tracks-scroll {
         display: flex;
         gap: 20px;
         overflow-x: auto;
         padding-bottom: 20px;
         scrollbar-width: thin;
-        scrollbar-color: #FFD335 rgba(0, 0, 0, 0.1);
+        scrollbar-color: #8B5CF6 rgba(255, 255, 255, 0.1);
     }
 
         .tracks-scroll::-webkit-scrollbar {
@@ -189,19 +675,19 @@
         }
 
         .tracks-scroll::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
         }
 
         .tracks-scroll::-webkit-scrollbar-thumb {
-            background: #FFD335;
+            background: #8B5CF6;
             border-radius: 10px;
         }
 
     .track-card {
         min-width: 280px;
-        background: #f8f8f8;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 15px;
         padding: 20px;
         cursor: pointer;
@@ -217,7 +703,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #FFD335, #FFA500);
+            background: linear-gradient(90deg, #8B5CF6, #7C3AED);
             transform: scaleX(0);
             transition: transform 0.3s;
         }
@@ -228,8 +714,8 @@
 
         .track-card:hover {
             transform: translateY(-5px);
-            border-color: #FFD335;
-            box-shadow: 0 15px 40px rgba(255, 211, 53, 0.3);
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.3);
         }
 
     .track-rank {
@@ -238,8 +724,8 @@
         right: 15px;
         width: 40px;
         height: 40px;
-        background: #FFD335;
-        color: #000;
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        color: #fff;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -251,7 +737,7 @@
     .track-art {
         width: 100%;
         aspect-ratio: 1;
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
         border-radius: 8px;
         margin-bottom: 12px;
         display: flex;
@@ -268,68 +754,52 @@
         }
 
     .track-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 8px;
-        white-space: nowrap;
+        color: #ffffff;
+        margin-bottom: 6px;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .track-artist {
         font-size: 14px;
-        color: rgba(0, 0, 0, 0.6);
-        margin-bottom: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 8px;
     }
 
     .track-plays {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        color: #FFD335;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
     }
 
-    /* Interactive Logo Section */
     .logo-section {
-        text-align: center;
         padding: 80px 60px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.02);
     }
 
     .logo-container {
-        display: inline-block;
+        max-width: 300px;
+        margin: 0 auto 20px;
         cursor: pointer;
-        transition: transform 0.1s ease;
     }
-
-        .logo-container:hover {
-            transform: scale(1.05);
-        }
-
-        .logo-container:active {
-            transform: scale(0.98);
-        }
 
     .interactive-logo {
-        width: 450px;
-        height: 450px;
-        filter: drop-shadow(0 15px 40px rgba(0, 0, 0, 0.15));
-        transition: filter 0.3s;
-    }
-
-    .logo-container:hover .interactive-logo {
-        filter: drop-shadow(0 20px 50px rgba(255, 211, 53, 0.4));
+        width: 100%;
+        height: auto;
+        transition: transform 0.6s ease-in-out;
     }
 
     .logo-subtitle {
-        margin-top: 30px;
         font-size: 18px;
-        color: rgba(0, 0, 0, 0.5);
-        font-weight: 500;
+        color: rgba(255, 255, 255, 0.6);
     }
 
-    /* Genre Grid */
     .genres-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -341,33 +811,30 @@
         border-radius: 15px;
         padding: 25px;
         display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
+        align-items: flex-end;
         cursor: pointer;
         transition: all 0.3s;
         position: relative;
         overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
         .genre-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: inherit;
-            filter: brightness(0.8);
-            transition: filter 0.3s;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s;
         }
 
         .genre-card:hover::before {
-            filter: brightness(1.2);
+            opacity: 0;
         }
 
         .genre-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            transform: scale(1.05);
+            border-color: rgba(139, 92, 246, 0.4);
         }
 
     .genre-content {
@@ -378,18 +845,17 @@
     .genre-name {
         font-size: 24px;
         font-weight: 800;
-        color: white;
+        color: #ffffff;
+        margin-bottom: 5px;
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        margin-bottom: 8px;
     }
 
     .genre-count {
         font-size: 14px;
         color: rgba(255, 255, 255, 0.9);
-        text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
 
-    /* Features */
     .features-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -397,118 +863,183 @@
     }
 
     .feature-card {
-        background: #f8f8f8;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 15px;
-        padding: 40px;
-        text-align: center;
+        padding: 35px;
         transition: all 0.3s;
     }
 
         .feature-card:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
             transform: translateY(-5px);
-            border-color: #FFD335;
         }
 
     .feature-title {
         font-size: 22px;
-        font-weight: 700;
-        color: #1a1a1a;
+        font-weight: 800;
+        color: #ffffff;
         margin-bottom: 12px;
     }
 
     .feature-desc {
-        font-size: 15px;
-        color: rgba(0, 0, 0, 0.6);
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.6);
         line-height: 1.6;
     }
 
-    /* CTA */
     .cta-section {
+        padding: 100px 60px;
         text-align: center;
-        padding: 80px 60px;
-        background: linear-gradient(135deg, rgba(255, 211, 53, 0.15) 0%, rgba(255, 165, 0, 0.15) 100%);
-        margin: 60px;
-        border-radius: 20px;
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        color: #ffffff;
     }
 
     .cta-title {
         font-size: 48px;
         font-weight: 900;
-        color: #1a1a1a;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
 
     .cta-subtitle {
         font-size: 20px;
-        color: rgba(0, 0, 0, 0.6);
-        margin-bottom: 40px;
+        margin-bottom: 35px;
+        opacity: 0.9;
     }
 
     .btn-cta {
-        padding: 18px 50px;
         font-size: 18px;
-        border-radius: 30px;
+        padding: 16px 40px;
+        background: #ffffff;
+        color: #8B5CF6;
+        font-weight: 700;
     }
 
-    /* Loading State */
-    .loading-state {
-        text-align: center;
-        padding: 100px 20px;
-    }
-
-    .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid rgba(255, 211, 53, 0.2);
-        border-top-color: #FFD335;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
-    }
-
-    @@keyframes spin {
-        to {
-            transform: rotate(360deg);
+        .btn-cta:hover {
+            background: #f3f4f6;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
         }
-    }
-
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .hero-title {
-            font-size: 42px;
-        }
-
-        .section {
-            padding: 40px 20px;
-        }
-
-        .header {
-            padding: 15px 20px;
-        }
-
-        .interactive-logo {
-            width: 300px;
-            height: 300px;
-        }
-    }
 </style>
 
 @if (isLoading)
 {
     <div class="loading-state">
         <div class="spinner"></div>
-        <p style="color: rgba(0, 0, 0, 0.6);">Loading amazing music...</p>
+        <p class="loading-text">@loadingMessage</p>
+    </div>
+}
+else if (isLoggedIn)
+{
+    <div class="dashboard-container">
+        <!-- Hero Discovery Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <div class="welcome-label">Welcome Back</div>
+                <h1 class="welcome-title">@userName</h1>
+                <p class="welcome-subtitle">Not sure what to listen to? Let the discovery wheel decide your next adventure.</p>
+
+                <div class="discovery-wheel">
+                    <div class="wheel-container">
+                        <div class="wheel-arrow"></div>
+                        <div class="wheel-circle" id="discoveryWheel" onclick="spinDiscoveryWheel()">
+                            <div class="wheel-inner">
+                                <span>SPIN<br />TO<br />DISCOVER</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="wheel-options">
+                        <div class="wheel-option" id="option0">Browse All Music</div>
+                        <div class="wheel-option" id="option1">Open Visualizer</div>
+                        <div class="wheel-option" id="option2">Your Playlists</div>
+                        <div class="wheel-option" id="option3">Liked Songs</div>
+                        <div class="wheel-option" id="option4">Listening Stats</div>
+                        <div class="wheel-option" id="option5">Upload Music</div>
+                    </div>
+                </div>
+                <button class="spin-button" id="goButton" style="display: none;" onclick="navigateToSelected('@userName')">Go There →</button>
+            </div>
+        </div>
+
+        <!-- Your Stats -->
+        <div class="stats-section">
+            <h2 class="section-title">Your Activity</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">▶</div>
+                    <div class="stat-number">@userStats.TotalPlays</div>
+                    <div class="stat-label">Total Plays</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">♫</div>
+                    <div class="stat-number">@userStats.UniqueTracksPlayed</div>
+                    <div class="stat-label">Unique Tracks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏱</div>
+                    <div class="stat-number">@userStats.TotalMinutes</div>
+                    <div class="stat-label">Minutes Listened</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">☰</div>
+                    <div class="stat-number">@userStats.PlaylistCount</div>
+                    <div class="stat-label">Playlists</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recently Played -->
+        @if (recentTracks.Any())
+        {
+            <div class="activity-section">
+                <div class="section-header">
+                    <h2 class="section-title">Recently Played</h2>
+                    <a href="/account/manage/statistics" class="view-all-link">View All →</a>
+                </div>
+                <div class="activity-grid">
+                    @foreach (var track in recentTracks.Take(6))
+                    {
+                        var trackId = track.TrackId;
+                        <div class="activity-card" onclick="playTrack(@trackId)">
+                            <div class="activity-art">
+                                @if (!string.IsNullOrEmpty(track.AlbumArt))
+                                {
+                                    <img src="@track.AlbumArt" alt="@track.Title" />
+                                }
+                                else
+                                {
+                                    <img src="/images/default-album-cover.png" alt="@track.Title" />
+                                }
+                            </div>
+                            <div class="activity-track-title">@track.Title</div>
+                            <div class="activity-track-artist">@track.ArtistName</div>
+                            <div class="activity-time">@track.PlayedAt</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="activity-section">
+                <h2 class="section-title">Recently Played</h2>
+                <div class="empty-state">
+                    <div class="empty-state-title">No listening history yet</div>
+                    <p class="empty-state-text">Start exploring music to build your personalized experience and see your recent tracks here.</p>
+                    <button class="empty-state-button" onclick="window.location.href='/player'">Browse Music</button>
+                </div>
+            </div>
+        }
     </div>
 }
 else
 {
     <div class="landing-page">
-        <!-- Header -->
         <header class="header">
             <div class="logo">
                 <a href="/">
-                    <img src="./images/piece_logo_black.png" alt="Piece logo">
+                    <img src="/images/piece_logo_white.png" alt="Piece logo">
                 </a>
             </div>
             <div class="auth-buttons">
@@ -519,25 +1050,25 @@ else
 
         <!-- Hero Section -->
         <section class="hero">
-            <h1 class="hero-title">Discover Music From Every Corner of the World</h1>
+            <h1 class="hero-title"><span class="highlight">Discover</span> Music From Every Corner of the World</h1>
             <p class="hero-subtitle">500,000+ tracks. Real-time visualizers. Global discovery.</p>
 
             <div class="stats-row">
                 <div class="stat-box">
-                    <div class="stat-number">0.5M+</div>
-                    <div class="stat-label">Total Tracks</div>
+                    <div class="landing-stat-number">0.5M+</div>
+                    <div class="landing-stat-label">Total Tracks</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">@totalGenres</div>
-                    <div class="stat-label">Genres</div>
+                    <div class="landing-stat-number">@totalGenres</div>
+                    <div class="landing-stat-label">Genres</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">@totalPlays.ToString("N0")</div>
-                    <div class="stat-label">Plays Today</div>
+                    <div class="landing-stat-number">@totalPlays.ToString("N0")</div>
+                    <div class="landing-stat-label">Plays Today</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">@continentCount</div>
-                    <div class="stat-label">Continents</div>
+                    <div class="landing-stat-number">@continentCount</div>
+                    <div class="landing-stat-label">Continents</div>
                 </div>
             </div>
 
@@ -546,8 +1077,8 @@ else
 
         <!-- Trending Tracks -->
         <section class="section">
-            <div class="section-header">
-                <h2 class="section-title">Trending Now</h2>
+            <div class="section-header-row">
+                <h2 class="landing-section-title">Trending Now</h2>
             </div>
             <div class="tracks-scroll">
                 @for (int i = 0; i < trendingTracks.Count && i < 10; i++)
@@ -562,7 +1093,7 @@ else
                             }
                             else
                             {
-                                <span>🎵</span>
+                                <img src="/images/default-album-cover.png" alt="Default album" />
                             }
                         </div>
                         <div class="track-title">@track.Title</div>
@@ -578,7 +1109,7 @@ else
         <!-- Interactive Logo Section -->
         <section class="logo-section">
             <div class="logo-container" onclick="rotatePuzzleLogo()">
-                <img src="./images/piece_logo_black.png"
+                <img src="/images/piece_logo_white.png"
                      alt="Piece - Interactive Music Discovery"
                      class="interactive-logo"
                      id="puzzleLogo">
@@ -588,8 +1119,8 @@ else
 
         <!-- Fresh Uploads -->
         <section class="section">
-            <div class="section-header">
-                <h2 class="section-title">Fresh Uploads</h2>
+            <div class="section-header-row">
+                <h2 class="landing-section-title">Fresh Uploads</h2>
             </div>
             <div class="tracks-scroll">
                 @foreach (var track in latestTracks.Take(10))
@@ -602,7 +1133,7 @@ else
                             }
                             else
                             {
-                                <span>🎵</span>
+                                <img src="/images/default-album-cover.png" alt="Default album" />
                             }
                         </div>
                         <div class="track-title">@track.Title</div>
@@ -617,8 +1148,8 @@ else
 
         <!-- Genre Spotlight -->
         <section class="section">
-            <div class="section-header">
-                <h2 class="section-title">Explore by Genre</h2>
+            <div class="section-header-row">
+                <h2 class="landing-section-title">Explore by Genre</h2>
             </div>
             <div class="genres-grid">
                 @foreach (var genre in genres)
@@ -635,8 +1166,8 @@ else
 
         <!-- Features -->
         <section class="section">
-            <div class="section-header">
-                <h2 class="section-title">Why Piece?</h2>
+            <div class="section-header-row">
+                <h2 class="landing-section-title">Why Piece?</h2>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
@@ -664,8 +1195,57 @@ else
 }
 
 <script>
-    let isRotating = false;
     let currentRotation = 0;
+    let isSpinning = false;
+    let selectedOption = -1;
+    const routes = ["/player", "/visualizer", "/playlists", "/liked-songs", null, "/admin/upload"];
+    let isRotating = false;
+
+    function spinDiscoveryWheel() {
+        if (isSpinning) return;
+
+        isSpinning = true;
+        const wheel = document.getElementById('discoveryWheel');
+        if (!wheel) return;
+
+        for (let i = 0; i < 6; i++) {
+            const option = document.getElementById('option' + i);
+            if (option) option.classList.remove('active');
+        }
+
+        const fullSpins = 5 + Math.floor(Math.random() * 4);
+        const segments = 6;
+        selectedOption = Math.floor(Math.random() * segments);
+        const degreesPerSegment = 360 / segments;
+
+        const extraDegrees = (selectedOption * degreesPerSegment) + (degreesPerSegment / 2);
+        currentRotation += (fullSpins * 360) + extraDegrees;
+
+        wheel.style.transition = 'transform 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+        setTimeout(() => {
+            isSpinning = false;
+
+            const activeOption = document.getElementById('option' + selectedOption);
+            if (activeOption) activeOption.classList.add('active');
+
+            const goButton = document.getElementById('goButton');
+            if (goButton) goButton.style.display = 'inline-block';
+        }, 3000);
+    }
+
+    function navigateToSelected(username) {
+        if (selectedOption === 4) {
+            window.location.href = '/profile/' + username;
+        } else if (selectedOption >= 0 && selectedOption < routes.length && routes[selectedOption] !== null) {
+            window.location.href = routes[selectedOption];
+        }
+    }
+
+    function playTrack(trackId) {
+        window.location.href = '/player?play=' + trackId;
+    }
 
     function rotatePuzzleLogo() {
         if (isRotating) return;
@@ -674,7 +1254,7 @@ else
         if (!logo) return;
 
         isRotating = true;
-        currentRotation += 90; // Quarter turn (90 degrees)
+        currentRotation += 90;
 
         logo.style.transition = 'transform 0.6s ease-in-out';
         logo.style.transform = `rotate(${currentRotation}deg)`;
@@ -687,39 +1267,108 @@ else
 
 @code {
     private bool isLoading = true;
+    private bool isLoggedIn = false;
+    private string userName = "";
+    private string? currentUserId;
+    private string loadingMessage = "Loading...";
+    private string pageTitle = "Piece";
 
-    // Stats
+    private UserStats userStats = new();
+    private List<RecentTrack> recentTracks = new();
+
     private int totalTracks = 0;
     private int totalGenres = 0;
     private int totalPlays = 0;
     private int continentCount = 6;
-
-    // Data
     private List<Track> trendingTracks = new();
     private List<Track> latestTracks = new();
     private List<Genre> genres = new();
 
     protected override async Task OnInitializedAsync()
     {
-        // Redirect logged-in users
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.Identity?.IsAuthenticated == true)
-        {
-            // Let them stay if they navigated here directly
-            // Navigation.NavigateTo("/player");
-        }
+        var user = authState.User;
 
-        await LoadData();
+        isLoggedIn = user.Identity?.IsAuthenticated == true;
+
+        if (isLoggedIn)
+        {
+            currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            // Fetch user's display name from database
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                using var context = await DbFactory.CreateDbContextAsync();
+                var currentUser = await context.Users.FindAsync(currentUserId);
+                userName = !string.IsNullOrEmpty(currentUser?.DisplayName)
+                    ? currentUser.DisplayName
+                    : user.Identity?.Name ?? "User";
+            }
+            else
+            {
+                userName = user.Identity?.Name ?? "User";
+            }
+            pageTitle = $"Home - Piece";
+            loadingMessage = "Loading your dashboard...";
+            await LoadUserDashboard();
+        }
+        else
+        {
+            loadingMessage = "Loading...";
+            await LoadLandingPageData();
+        }
     }
 
-    private async Task LoadData()
+    private async Task LoadUserDashboard()
     {
         isLoading = true;
         try
         {
             using var context = await DbFactory.CreateDbContextAsync();
 
-            // Load stats
+            var listeningHistory = await context.ListeningHistory
+                .Where(h => h.UserId == currentUserId)
+                .ToListAsync();
+
+            userStats.TotalPlays = listeningHistory.Count;
+            userStats.UniqueTracksPlayed = listeningHistory.Select(h => h.TrackId).Distinct().Count();
+            userStats.TotalMinutes = (int)(listeningHistory.Sum(h => h.DurationListened) / 60.0);
+            userStats.PlaylistCount = await context.Playlists.Where(p => p.UserId == currentUserId).CountAsync();
+
+            var recentHistoryItems = await context.ListeningHistory
+                .Where(h => h.UserId == currentUserId)
+                .OrderByDescending(h => h.PlayedAt)
+                .Take(12)
+                .Include(h => h.Track)
+                .ToListAsync();
+
+            recentTracks = recentHistoryItems.Select(h => new RecentTrack
+                {
+                    Title = h.Track?.Title ?? "Unknown",
+                    ArtistName = h.Track?.ArtistName ?? "Unknown Artist",
+                    AlbumArt = h.Track != null && !string.IsNullOrEmpty(h.Track.CoverImageUrl)
+                                ? h.Track.CoverImageUrl
+                                : "/images/default-album-cover.png",
+                    PlayedAt = GetRelativeTime(h.PlayedAt),
+                    TrackId = h.TrackId
+                }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user dashboard: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadLandingPageData()
+    {
+        isLoading = true;
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
             var allTracks = await context.Tracks
                 .Include(t => t.Genre)
                 .Where(t => t.IsActive && t.Source == TrackSource.Local)
@@ -728,24 +1377,9 @@ else
             totalTracks = 500000;
             totalGenres = await context.Genres.CountAsync();
             totalPlays = allTracks.Sum(t => t.PlayCount);
-
-            // Trending tracks (most played)
-            trendingTracks = allTracks
-                .OrderByDescending(t => t.PlayCount)
-                .Take(10)
-                .ToList();
-
-            // Latest uploads
-            latestTracks = allTracks
-                .OrderByDescending(t => t.CreatedAt)
-                .Take(10)
-                .ToList();
-
-            // Genres
-            genres = await context.Genres
-                .Include(g => g.Tracks)
-                .OrderByDescending(g => g.Tracks.Count)
-                .ToListAsync();
+            trendingTracks = allTracks.OrderByDescending(t => t.PlayCount).Take(10).ToList();
+            latestTracks = allTracks.OrderByDescending(t => t.CreatedAt).Take(10).ToList();
+            genres = await context.Genres.Include(g => g.Tracks).OrderByDescending(g => g.Tracks.Count).ToListAsync();
         }
         catch (Exception ex)
         {
@@ -755,5 +1389,32 @@ else
         {
             isLoading = false;
         }
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+        if (timeSpan.TotalMinutes < 1) return "Just now";
+        if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays}d ago";
+        return dateTime.ToString("MMM d");
+    }
+
+    private class UserStats
+    {
+        public int TotalPlays { get; set; }
+        public int UniqueTracksPlayed { get; set; }
+        public int TotalMinutes { get; set; }
+        public int PlaylistCount { get; set; }
+    }
+
+    private class RecentTrack
+    {
+        public string Title { get; set; } = "";
+        public string ArtistName { get; set; } = "";
+        public string? AlbumArt { get; set; }
+        public string PlayedAt { get; set; } = "";
+        public int TrackId { get; set; }
     }
 }
