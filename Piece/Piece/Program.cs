@@ -7,6 +7,7 @@ using Piece.Components;
 using Piece.Components.Account;
 using Piece.Data;
 using Piece.Services;
+using Piece.Services.LastFm;
 using System.Threading.RateLimiting;
 
 
@@ -18,7 +19,6 @@ namespace Piece
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
-			// Add services to the container.
 			builder.Services.AddRazorComponents()
 				.AddInteractiveServerComponents()
 				.AddInteractiveWebAssemblyComponents();
@@ -38,6 +38,11 @@ namespace Piece
 			builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 			builder.Services.AddScoped<IProfanityFilter, ProfanityFilter>();
 			builder.Services.AddScoped<IInputSanitizer, InputSanitizer>();
+			builder.Services.AddScoped<CountryMusicService>();
+			builder.Services.AddHttpClient<MusicBrainzService>();
+			builder.Services.AddHttpClient<LastFmService>();
+			builder.Services.AddScoped<LastFmSeeder>();
+
 
 			builder.Services.AddAuthentication(options =>
 			{
@@ -61,7 +66,6 @@ namespace Piece
 			builder.Services.AddHttpClient<JamendoService>();
 			builder.Services.AddRateLimiter(options =>
 			{
-				// General API rate limit - 100 requests per minute
 				options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
 					RateLimitPartition.GetFixedWindowLimiter(
 						partitionKey: context.User.Identity?.Name ?? context.Request.Headers.Host.ToString(),
@@ -86,25 +90,35 @@ namespace Piece
 
 			var app = builder.Build();
 
-			using (var scope = app.Services.CreateScope())
+			var shouldSeed = builder.Configuration.GetValue<bool>("SeedDatabase");
+
+			if (shouldSeed)
 			{
+				using var scope = app.Services.CreateScope();
 				var services = scope.ServiceProvider;
+
+				Console.WriteLine("🌱 Database seeding enabled");
+
+				var context = services.GetRequiredService<ApplicationDbContext>();
+				await CountrySeeder.SeedCountriesAsync(context);
+
 				var seeder = services.GetRequiredService<DatabaseSeeder>();
 				await seeder.SeedAllAsync();
-			}
 
-			using (var scope = app.Services.CreateScope())
-			{
-				var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-				await Piece.Services.CountrySeeder.SeedCountriesAsync(context);
-			}
+				await seeder.SeedCountryMusicDataAsync();
 
-			using (var scope = app.Services.CreateScope())
-			{
-				var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-				var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+				var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+				var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 				await AdminSeeder.SeedAdminRoleAndUser(roleManager, userManager);
+
+				Console.WriteLine("✅ Database seeding finished");
 			}
+			else
+			{
+				Console.WriteLine("⏭️ Database seeding skipped");
+			}
+
+
 
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())

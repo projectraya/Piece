@@ -14,6 +14,9 @@ namespace Piece.Data.Models
 		[MaxLength(3)]
 		public string CountryCode { get; set; } = string.Empty;
 
+		[MaxLength(2)]
+		public string? ISO2Code { get; set; }
+
 		[MaxLength(2000)]
 		public string? Description { get; set; }
 

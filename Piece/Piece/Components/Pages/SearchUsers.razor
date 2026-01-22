@@ -13,6 +13,7 @@
         margin: 0 auto;
         padding: 40px 20px;
         color: #fff;
+        background-color: #000;
     }
 
     .search-header {
@@ -174,12 +175,11 @@
 
 <div class="search-container">
     <div class="search-header">
-        <h1 class="search-title">🔍 Search Users</h1>
+        <h1 class="search-title">Search artists or users</h1>
         <div class="search-box-wrapper">
-            <span class="search-icon">🔍</span>
             <input type="text"
                    class="search-input"
-                   placeholder="Search by username or display name..."
+                   placeholder="That one person..."
                    @bind="searchQuery"
                    @bind:event="oninput"
                    @onkeyup="HandleSearchKeyUp" />
@@ -233,8 +233,7 @@
         else
         {
             <div class="empty-state">
-                <div class="empty-icon">👥</div>
-                <h3>Find Piece Users</h3>
+                <h3>Find artists or Piece users</h3>
                 <p>Search for users by their username or display name</p>
             </div>
         }

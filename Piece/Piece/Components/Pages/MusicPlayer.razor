@@ -15,307 +15,307 @@
 
 <style>
     .filter-section {
-        display: flex;
-        align-items: center;
-        padding: 10px 0;
-        margin-top: 10px;
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    margin-top: 10px;
     }
     /* Dark Theme Styling */
     body {
-        background-color: #1a1a1a;
-        color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
     .player-container {
-        display: flex;
-        height: calc(100vh - 120px);
-        background-color: #1a1a1a;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
+    display: flex;
+    height: calc(100vh - 120px);
+    background-color: #1a1a1a;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
     }
 
     /* Main Content */
     .main-content {
-        flex: 1;
-        background-color: #1a1a1a;
-        padding: 30px;
-        overflow-y: auto;
+    flex: 1;
+    background-color: #1a1a1a;
+    padding: 30px;
+    overflow-y: auto;
     }
 
     /* Search Bar */
     .search-container {
-        margin-bottom: 30px;
-        position: sticky;
-        top: 0;
-        background-color: #1a1a1a;
-        padding: 20px 0;
-        z-index: 100;
+    margin-bottom: 30px;
+    position: sticky;
+    top: 0;
+    background-color: #1a1a1a;
+    padding: 20px 0;
+    z-index: 100;
     }
 
     .search-box {
-        display: flex;
-        align-items: center;
-        background-color: #2a2a2a;
-        border-radius: 24px;
-        padding: 12px 20px;
-        gap: 12px;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    background-color: #2a2a2a;
+    border-radius: 24px;
+    padding: 12px 20px;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
     }
 
-        .search-box:focus-within {
-            border-color: #FFD335;
-            background-color: #3a3a3a;
-        }
+    .search-box:focus-within {
+    border-color: #FFD335;
+    background-color: #3a3a3a;
+    }
 
     .search-icon {
-        font-size: 20px;
-        color: #888;
+    font-size: 20px;
+    color: #888;
     }
 
     .search-input {
-        flex: 1;
-        background: none;
-        border: none;
-        color: #ffffff;
-        font-size: 16px;
-        outline: none;
+    flex: 1;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 16px;
+    outline: none;
     }
 
-        .search-input::placeholder {
-            color: #666;
-        }
+    .search-input::placeholder {
+    color: #666;
+    }
 
     .search-clear {
-        background: none;
-        border: none;
-        color: #888;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        transition: color 0.3s;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s;
     }
 
-        .search-clear:hover {
-            color: #ffffff;
-        }
+    .search-clear:hover {
+    color: #ffffff;
+    }
 
     .search-tabs {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
     }
 
     .search-tab {
-        padding: 8px 16px;
-        background-color: #2a2a2a;
-        border: none;
-        border-radius: 20px;
-        color: #888;
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.3s ease;
+    padding: 8px 16px;
+    background-color: #2a2a2a;
+    border: none;
+    border-radius: 20px;
+    color: #888;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
     }
 
-        .search-tab.active {
-            background-color: #FFD335;
-            color: #1a1a1a;
-            font-weight: 600;
-        }
+    .search-tab.active {
+    background-color: #FFD335;
+    color: #1a1a1a;
+    font-weight: 600;
+    }
 
-        .search-tab:hover:not(.active) {
-            background-color: #3a3a3a;
-            color: #ffffff;
-        }
+    .search-tab:hover:not(.active) {
+    background-color: #3a3a3a;
+    color: #ffffff;
+    }
 
     .content-section {
-        margin-bottom: 40px;
+    margin-bottom: 40px;
     }
 
     .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
     }
 
     .section-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
     }
 
     .see-all {
-        color: #888;
-        font-size: 14px;
-        cursor: pointer;
-        transition: color 0.3s;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.3s;
     }
 
-        .see-all:hover {
-            color: #ffffff;
-        }
+    .see-all:hover {
+    color: #ffffff;
+    }
 
     /* Track Grid */
     .track-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
     }
 
     .track-card {
-        background-color: #2a2a2a;
-        border-radius: 12px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+    background-color: #2a2a2a;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
     }
 
-        .track-card:hover {
-            background-color: #3a3a3a;
-            transform: translateY(-5px);
-        }
+    .track-card:hover {
+    background-color: #3a3a3a;
+    transform: translateY(-5px);
+    }
 
-        .track-card.playing {
-            background-color: #4a4a4a;
-            border: 2px solid #FFD335;
-        }
+    .track-card.playing {
+    background-color: #4a4a4a;
+    border: 2px solid #FFD335;
+    }
 
     .track-art {
-        width: 100%;
-        aspect-ratio: 1;
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
-        border-radius: 8px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 48px;
-        overflow: hidden;
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    overflow: hidden;
     }
 
-        .track-art img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .track-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
 
     .track-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: #ffffff;
-        margin-bottom: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .track-artist {
-        font-size: 12px;
-        color: #888;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 12px;
+    color: #888;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .track-source-badge {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background-color: #FFD335;
-        backdrop-filter: blur(10px);
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 600;
-        color: #1a1a1a;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: #FFD335;
+    backdrop-filter: blur(10px);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #1a1a1a;
     }
 
     .track-genre-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        backdrop-filter: blur(10px);
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 600;
-        color: #ffffff;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    backdrop-filter: blur(10px);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #ffffff;
     }
 
     /* Loading State */
     .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        color: #888;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: #888;
     }
 
-    
+
 
     .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #3a3a3a;
-        border-top-color: #FFD335;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+    width: 50px;
+    height: 50px;
+    border: 4px solid #3a3a3a;
+    border-top-color: #FFD335;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
     }
 
     @@keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
+    to {
+    transform: rotate(360deg);
+    }
     }
 
     /* Empty State */
     .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #888;
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
     }
 
     .empty-state-icon {
-        font-size: 64px;
-        margin-bottom: 20px;
+    font-size: 64px;
+    margin-bottom: 20px;
     }
 
     /* Scrollbar Styling */
     .main-content::-webkit-scrollbar {
-        width: 8px;
+    width: 8px;
     }
 
     .main-content::-webkit-scrollbar-track {
-        background: #1a1a1a;
+    background: #1a1a1a;
     }
 
     .main-content::-webkit-scrollbar-thumb {
-        background: #3a3a3a;
-        border-radius: 4px;
+    background: #3a3a3a;
+    border-radius: 4px;
     }
 
-        .main-content::-webkit-scrollbar-thumb:hover {
-            background: #4a4a4a;
-        }
+    .main-content::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+    }
 
     /* Search Loading */
     .search-loading {
-        text-align: center;
-        padding: 40px 20px;
-        color: #888;
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
     }
 
-        .search-loading .spinner {
-            margin: 0 auto 20px;
-        }
+    .search-loading .spinner {
+    margin: 0 auto 20px;
+    }
 </style>
 
 @if (isLoading)
@@ -334,11 +334,11 @@ else
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
                     <input type="text"
-                           class="search-input"
-                           placeholder="Search the library or Jamendo..."
-                           @bind="searchQuery"
-                           @bind:event="oninput"
-                           @onkeyup="HandleSearchKeyUp" />
+                    class="search-input"
+                    placeholder="Search the library or Jamendo..."
+                    @bind="searchQuery"
+                    @bind:event="oninput"
+                    @onkeyup="HandleSearchKeyUp" />
                     @if (!string.IsNullOrEmpty(searchQuery))
                     {
                         <button class="search-clear" @onclick="ClearSearch">✕</button>
@@ -346,11 +346,11 @@ else
                 </div>
                 <div class="search-tabs">
                     <button class="search-tab @(activeTab == "library" ? "active" : "")"
-                            @onclick='() => SetActiveTab("library")'>
+                    @onclick='() => SetActiveTab("library")'>
                         Library
                     </button>
                     <button class="search-tab @(activeTab == "jamendo" ? "active" : "")"
-                            @onclick='() => SetActiveTab("jamendo")'>
+                    @onclick='() => SetActiveTab("jamendo")'>
                         Jamendo
                     </button>
                 </div>
@@ -359,7 +359,7 @@ else
                 <div class="filter-section">
                     <label style="color: #888; font-size: 12px; margin-right: 10px;">Filter by Genre:</label>
                     <select @bind="selectedGenre" @bind:after="ApplyFilters"
-                            style="background-color: #2a2a2a;
+                    style="background-color: #2a2a2a;
                    color: #ffffff;
                    border: 2px solid #3a3a3a;
                    border-radius: 8px;
@@ -376,7 +376,7 @@ else
                     @if (!string.IsNullOrEmpty(selectedGenre))
                     {
                         <button @onclick="ClearGenreFilter"
-                                style="background: none;
+                        style="background: none;
                        border: none;
                        color: #FFD335;
                        cursor: pointer;
@@ -394,11 +394,11 @@ else
                         <div class="form-group" style="flex: 1;">
                             <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">Search by Artist:</label>
                             <input type="text"
-                                   @bind="searchArtist"
-                                   @bind:event="oninput"
-                                   @onkeyup="ApplyFilters"
-                                   placeholder="Artist name..."
-                                   style="width: 100%;
+                            @bind="searchArtist"
+                            @bind:event="oninput"
+                            @onkeyup="ApplyFilters"
+                            placeholder="Artist name..."
+                            style="width: 100%;
                           padding: 8px 12px;
                           background-color: #2a2a2a;
                           color: #ffffff;
@@ -413,13 +413,13 @@ else
                             <div class="form-group" style="flex: 1;">
                                 <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">Year:</label>
                                 <input type="number"
-                                       @bind="searchYear"
-                                       @bind:event="oninput"
-                                       @onkeyup="ApplyFilters"
-                                       placeholder="e.g., 2024"
-                                       min="1900"
-                                       max="2100"
-                                       style="width: 100%;
+                                @bind="searchYear"
+                                @bind:event="oninput"
+                                @onkeyup="ApplyFilters"
+                                placeholder="e.g., 2024"
+                                min="1900"
+                                max="2100"
+                                style="width: 100%;
                               padding: 8px 12px;
                               background-color: #2a2a2a;
                               color: #ffffff;
@@ -432,7 +432,7 @@ else
                         @if (!string.IsNullOrEmpty(searchArtist) || searchYear.HasValue)
                         {
                             <button @onclick="ClearAdvancedFilters"
-                                    style="background: none;
+                            style="background: none;
                            border: none;
                            color: #FFD335;
                            cursor: pointer;
@@ -466,7 +466,7 @@ else
                             @foreach (var track in filteredTracks)
                             {
                                 <div class="track-card @(PlayerService.CurrentTrack?.Id == $"local-{track.Id}" ? "playing" : "")"
-                                     @onclick="() => PlayTrack(track)">
+                                @onclick="() => PlayTrack(track)">
                                     @if (track.Genre != null)
                                     {
                                         string color = track.Genre.Color;
@@ -532,7 +532,7 @@ else
                             @foreach (var track in filteredJamendoResults)
                             {
                                 <div class="track-card @(PlayerService.CurrentTrack?.Id == $"jamendo-{track.Id}" ? "playing" : "")"
-                                     @onclick="() => PlayJamendoTrack(track)">
+                                @onclick="() => PlayJamendoTrack(track)">
                                     <div class="track-source-badge">JAMENDO</div>
 
                                     @if (track.MusicInfo?.Tags?.Genres?.Any() ?? false)
@@ -649,7 +649,6 @@ else
             ).ToList();
             PlayerService.SetAvailableTracks(playableTracks);
 
-            // NEW: Load random Jamendo tracks for recommendations
             await LoadRandomJamendoTracks();
 
             isLoading = false;
@@ -672,7 +671,7 @@ else
 
             var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=20&offset={randomOffset}&include=musicinfo&audioformat=mp32&order=popularity_total";
 
-            Console.WriteLine($"[LoadRandomJamendoTracks] Fetching 20 random tracks...");
+            Console.WriteLine($"[LoadRandomJamendoTracks] Fetching 20 random tracks...");   
 
             var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
 
@@ -808,7 +807,7 @@ else
 
             var clientId = Configuration["Jamendo:ClientId"];
 
-            
+
             var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=200&include=musicinfo&tags=*&audioformat=mp32";
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
@@ -889,7 +888,7 @@ else
 
         if (tab == "jamendo")
         {
-            
+
             if (!string.IsNullOrEmpty(selectedGenre) && !jamendoResults.Any())
             {
                 await SearchJamendoByGenre(selectedGenre);
@@ -917,7 +916,7 @@ else
 
     private async Task ApplyFilters()
     {
-        
+
         var query = tracks.AsEnumerable();
 
         if (!string.IsNullOrEmpty(selectedGenre))
@@ -970,6 +969,7 @@ else
 
         StateHasChanged();
     }
+
     private async Task SearchJamendoByArtist(string artistName)
     {
         try
@@ -1021,8 +1021,6 @@ else
         selectedGenre = "";
         _ = ApplyFilters();
     }
-
-    
 
     public void Dispose()
     {

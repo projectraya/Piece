@@ -20,6 +20,8 @@ namespace Piece.Data.Models
 		[MaxLength(100)]
 		public string Genre { get; set; } = string.Empty;
 
+		public int Popularity { get; set; }
+
 		// Geographic data - CRITICAL for map feature
 		public int CountryId { get; set; }
 		public Country Country { get; set; } = null!;

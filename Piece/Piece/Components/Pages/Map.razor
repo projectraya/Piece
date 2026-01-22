@@ -2,10 +2,12 @@
 @rendermode InteractiveServer
 @using Piece.Data
 @using Piece.Data.Models
+@using Piece.Services
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject CountryMusicService CountryMusicService
 
 <PageTitle>World Music Map - Piece</PageTitle>
 
@@ -64,7 +66,7 @@
         position: fixed;
         top: 0;
         right: 0;
-        width: 450px;
+        width: 500px;
         height: 100vh;
         background: linear-gradient(to left, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95));
         backdrop-filter: blur(20px);
@@ -75,6 +77,8 @@
         padding: 30px;
         overflow-y: auto;
         pointer-events: auto;
+        display: flex;
+        flex-direction: column;
     }
 
         .info-panel.active {
@@ -116,21 +120,73 @@
             background: rgba(139, 92, 246, 0.3);
         }
 
-    .tracks-grid {
+    .country-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .stat-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: #8B5CF6;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 4px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 16px;
+    }
+
+    .genres-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .genre-tag {
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 12px;
+        color: #A78BFA;
+        font-weight: 600;
+    }
+
+    .tracks-list {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
+        margin-bottom: 24px;
     }
 
     .track-item {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        padding: 16px;
+        padding: 12px;
         cursor: pointer;
         transition: all 0.3s;
         display: flex;
-        gap: 16px;
+        gap: 12px;
         align-items: center;
     }
 
@@ -140,9 +196,14 @@
             transform: translateX(-4px);
         }
 
+        .track-item.playing {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
     .track-cover {
-        width: 80px;
-        height: 80px;
+        width: 60px;
+        height: 60px;
         border-radius: 8px;
         background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
         object-fit: cover;
@@ -172,9 +233,35 @@
         white-space: nowrap;
     }
 
-    .no-tracks {
+    .play-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(139, 92, 246, 0.2);
+        border: 2px solid rgba(139, 92, 246, 0.5);
+        color: #8B5CF6;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        flex-shrink: 0;
+    }
+
+        .play-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+            transform: scale(1.1);
+        }
+
+        .play-btn.playing {
+            background: #8B5CF6;
+            color: white;
+        }
+
+    .no-data {
         text-align: center;
-        padding: 60px 20px;
+        padding: 40px 20px;
         color: rgba(255, 255, 255, 0.5);
     }
 
@@ -193,37 +280,129 @@
         font-size: 18px;
     }
 
-    .track-cover-wrapper {
-        position: relative;
-        width: 80px;
-        height: 80px;
-        flex-shrink: 0;
+    .mini-player {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 500px;
+        background: linear-gradient(to top, rgba(15, 15, 15, 0.98), rgba(15, 15, 15, 0.95));
+        border-top: 2px solid rgba(139, 92, 246, 0.5);
+        border-left: 2px solid rgba(139, 92, 246, 0.5);
+        padding: 20px;
+        z-index: 1600;
+        transform: translateY(100%);
+        transition: transform 0.4s;
     }
 
-    .play-icon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 24px;
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none;
-        color: white;
-    }
+        .mini-player.active {
+            transform: translateY(0);
+        }
 
-    .track-item:hover .play-icon {
-        opacity: 0.9;
-    }
-
-    .track-count {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.5);
+    .player-track-info {
+        display: flex;
+        gap: 16px;
+        align-items: center;
         margin-bottom: 16px;
     }
+
+    .player-cover {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
+        object-fit: cover;
+    }
+
+    .player-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .player-track-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .player-artist-name {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .player-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .control-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(139, 92, 246, 0.2);
+        border: 2px solid rgba(139, 92, 246, 0.5);
+        color: white;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .control-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+            transform: scale(1.05);
+        }
+
+        .control-btn.primary {
+            background: #8B5CF6;
+            width: 56px;
+            height: 56px;
+        }
+
+            .control-btn.primary:hover {
+                background: #7C3AED;
+            }
+
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        margin-top: 16px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8B5CF6, #10B981);
+        width: 0%;
+        transition: width 0.3s;
+    }
+
+    .country-tooltip {
+        background: rgba(139, 92, 246, 0.95) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 8px 12px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+
+        .country-tooltip::before {
+            border-top-color: rgba(139, 92, 246, 0.95) !important;
+        }
 </style>
 
-<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <div class="map-page">
@@ -238,58 +417,107 @@
 
     <div id="map"></div>
 
-    <div class="info-panel @(selectedCountryName != null ? "active" : "")">
-        @if (selectedCountryName != null)
+    <div class="info-panel @(countryData != null ? "active" : "")">
+        @if (countryData != null)
         {
             <div class="panel-header">
-                <h2 class="country-name">@selectedCountryName</h2>
+                <h2 class="country-name">@countryData.CountryName</h2>
                 <button class="close-btn" @onclick="ClosePanel">×</button>
             </div>
 
-            @if (countryTracks.Any())
+            @if (countryData.Artists.Any())
             {
-                <div class="track-count">@countryTracks.Count tracks found</div>
-                <div class="tracks-grid">
-                    @foreach (var artistTrack in countryTracks)
-                    {
-                        <div class="track-item" @onclick="() => PlayTrack(artistTrack)">
-                            @if (!string.IsNullOrEmpty(artistTrack.AlbumArtUrl))
-                            {
-                                <div class="track-cover-wrapper">
-                                    <img src="@artistTrack.AlbumArtUrl" class="track-cover" alt="@artistTrack.TrackName" />
-                                    <div class="play-icon">▶</div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="track-cover"></div>
-                            }
-                            <div class="track-info">
-                                <div class="track-name">@artistTrack.TrackName</div>
-                                <div class="track-artist">@artistTrack.Artist.Name</div>
-                            </div>
+                <h3 class="section-title">Artists from @countryData.CountryName</h3>
+
+                @foreach (var artist in countryData.Artists)
+                {
+                    <div style="margin-bottom: 24px;">
+                        <div style="font-size: 16px; font-weight: 700; color: #8B5CF6; margin-bottom: 8px;">
+                            @artist.ArtistName
                         </div>
-                    }
-                </div>
+
+                        @if (artist.TopTracks.Any())
+                        {
+                            <div class="tracks-list">
+                                @foreach (var track in artist.TopTracks)
+                                {
+                                    <div class="track-item @(currentTrack?.Id == track.Id ? "playing" : "")"
+                                         @onclick="() => SelectTrack(track)">
+                                        <div class="track-cover"></div>
+
+                                        <div class="track-info">
+                                            <div class="track-name">@track.TrackName</div>
+                                            <div class="track-artist">@artist.ArtistName</div>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(track.PreviewUrl))
+                                        {
+                                            <div class="play-btn @(currentTrack?.Id == track.Id && isPlaying ? "playing" : "")">
+                                                @(currentTrack?.Id == track.Id && isPlaying ? "⏸" : "▶")
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="no-data" style="font-size: 12px; color: rgba(255,255,255,0.4); padding: 8px;">
+                                Track previews coming soon
+                            </div>
+                        }
+                    </div>
+                }
             }
             else
             {
-                <div class="no-tracks">
-                    <p>No music from @selectedCountryName yet</p>
+                <div class="no-data">
+                    <p>No artist data available for @countryData.CountryName</p>
                 </div>
             }
+
+        }
+    </div>
+
+    <div class="mini-player @(currentTrack != null ? "active" : "")">
+        @if (currentTrack != null)
+        {
+            <div class="player-track-info">
+                @if (!string.IsNullOrEmpty(currentTrack.AlbumArtUrl))
+                {
+                    <img src="@currentTrack.AlbumArtUrl" class="player-cover" alt="@currentTrack.TrackName" />
+                }
+                else
+                {
+                    <div class="player-cover"></div>
+                }
+                <div class="player-details">
+                    <div class="player-track-name">@currentTrack.TrackName</div>
+                    <div class="player-artist-name">@currentTrack.ArtistName</div>
+                </div>
+            </div>
+
+            <div class="player-controls">
+                <button class="control-btn primary" @onclick="TogglePlayPause">
+                    @(isPlaying ? "⏸" : "▶")
+                </button>
+                <button class="control-btn" @onclick="StopPlayback">⏹</button>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: @progressPercent%"></div>
+            </div>
         }
     </div>
 </div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
     window.pieceMapInstance = null;
     window.pieceMapComponentRef = null;
+    window.currentAudio = null;
 
-    // Wait for Leaflet to load before initializing
     window.waitForLeaflet = function() {
         return new Promise((resolve) => {
             if (typeof L !== 'undefined') {
@@ -308,17 +536,14 @@
     window.initializeWorldMap = async function (dotNetRef) {
         console.log('Initializing world map...');
 
-        // Wait for Leaflet to be available
         await window.waitForLeaflet();
 
         window.pieceMapComponentRef = dotNetRef;
 
-        // Clear existing map if any
         if (window.pieceMapInstance) {
             window.pieceMapInstance.remove();
         }
 
-        // Create map centered on world view
         const map = L.map('map', {
             minZoom: 2,
             maxZoom: 6,
@@ -326,7 +551,6 @@
             maxBoundsViscosity: 1.0
         }).setView([20, 0], 2);
 
-        // Dark tile layer (CartoDB Dark Matter)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap contributors © CARTO',
             subdomains: 'abcd',
@@ -338,7 +562,6 @@
     };
 
     window.addCountryMarkers = async function (countries) {
-        // Wait for Leaflet to be available
         await window.waitForLeaflet();
 
         if (!window.pieceMapInstance) {
@@ -349,7 +572,6 @@
         console.log(`Adding ${countries.length} country markers...`);
 
         countries.forEach(country => {
-            // Custom marker with purple/aqua styling
             const marker = L.circleMarker([country.latitude, country.longitude], {
                 radius: 8,
                 fillColor: '#8B5CF6',
@@ -359,7 +581,6 @@
                 fillOpacity: 0.6
             });
 
-            // Hover effects
             marker.on('mouseover', function () {
                 this.setStyle({
                     fillColor: '#10B981',
@@ -376,19 +597,15 @@
                 });
             });
 
-            // Click handler
             marker.on('click', function () {
                 console.log(`Clicked: ${country.name}`);
                 if (window.pieceMapComponentRef) {
-                    window.pieceMapComponentRef.invokeMethodAsync('SelectCountryFromJS', country.name)
+                    window.pieceMapComponentRef.invokeMethodAsync('SelectCountryFromJS', country.name, country.countryCode)
                         .then(() => console.log('Country selected'))
                         .catch(err => console.error('Error selecting country:', err));
-                } else {
-                    console.error('Component reference not found');
                 }
             });
 
-            // Tooltip
             marker.bindTooltip(country.name, {
                 permanent: false,
                 direction: 'top',
@@ -400,31 +617,58 @@
 
         console.log('Markers added');
     };
-</script>
 
-<style>
-    /* Custom Leaflet tooltip styling */
-    .country-tooltip {
-        background: rgba(139, 92, 246, 0.95) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        color: white !important;
-        font-weight: 600 !important;
-        padding: 8px 12px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    }
-
-        .country-tooltip::before {
-            border-top-color: rgba(139, 92, 246, 0.95) !important;
+    window.playAudioPreview = function (url) {
+        if (window.currentAudio) {
+            window.currentAudio.pause();
+            window.currentAudio = null;
         }
-</style>
+
+        window.currentAudio = new Audio(url);
+        window.currentAudio.play();
+
+        window.currentAudio.addEventListener('timeupdate', () => {
+            if (window.pieceMapComponentRef && window.currentAudio) {
+                const progress = (window.currentAudio.currentTime / window.currentAudio.duration) * 100;
+                window.pieceMapComponentRef.invokeMethodAsync('UpdateProgress', progress);
+            }
+        });
+
+        window.currentAudio.addEventListener('ended', () => {
+            window.pieceMapComponentRef.invokeMethodAsync('OnPlaybackEnded');
+        });
+    };
+
+    window.pauseAudio = function () {
+        if (window.currentAudio) {
+            window.currentAudio.pause();
+        }
+    };
+
+    window.resumeAudio = function () {
+        if (window.currentAudio) {
+            window.currentAudio.play();
+        }
+    };
+
+    window.stopAudio = function () {
+        if (window.currentAudio) {
+            window.currentAudio.pause();
+            window.currentAudio.currentTime = 0;
+            window.currentAudio = null;
+        }
+    };
+</script>
 
 @code {
     private bool isLoading = true;
-    private string? selectedCountryName = null;
-    private List<ArtistTrack> countryTracks = new();
+    private CountryMusicData? countryData = null;
     private List<Country> countries = new();
     private DotNetObjectReference<Map>? objRef;
+
+    private CountryTrackInfo? currentTrack = null;
+    private bool isPlaying = false;
+    private double progressPercent = 0;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -432,17 +676,11 @@
         {
             try
             {
-                // Create object reference for JS interop
                 objRef = DotNetObjectReference.Create(this);
-
                 await LoadCountries();
-
-                // Add a small delay to ensure Leaflet script is loaded
                 await Task.Delay(500);
-
                 await JS.InvokeVoidAsync("initializeWorldMap", objRef);
 
-                // Pass countries to JS with proper data structure
                 var countryData = countries.Select(c => new
                 {
                     name = c.Name,
@@ -483,82 +721,85 @@
     }
 
     [JSInvokable("SelectCountryFromJS")]
-    public async Task SelectCountryFromJS(string countryName)
+    public async Task SelectCountryFromJS(string countryName, string countryCode)
     {
-        Console.WriteLine($"JS invoked SelectCountryFromJS: {countryName}");
-        selectedCountryName = countryName;
-        await LoadCountryTracks(countryName);
+        Console.WriteLine($"[Map] Received: countryName='{countryName}', countryCode='{countryCode}'");
+        countryData = await CountryMusicService.GetCountryMusicData(countryCode);
+        Console.WriteLine($"[Map] countryData.Artists.Count = {countryData?.Artists?.Count ?? 0}");
         await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task LoadCountryTracks(string countryName)
-    {
-        try
-        {
-            using var context = await DbFactory.CreateDbContextAsync();
-
-            // Find country with artists and their tracks
-            var country = await context.Countries
-                .Include(c => c.Artists)
-                .ThenInclude(a => a.ArtistTracks)
-                .FirstOrDefaultAsync(c => c.Name == countryName);
-
-            if (country != null && country.Artists.Any())
-            {
-                // Get all artist tracks from artists in this country
-                var tracksList = country.Artists
-                    .SelectMany(a => a.ArtistTracks)
-                    .OrderByDescending(at => at.Popularity)
-                    .Take(20)
-                    .ToList();
-
-                // Re-fetch with artist navigation property populated
-                var trackIds = tracksList.Select(t => t.Id).ToList();
-                countryTracks = await context.Set<ArtistTrack>()
-                    .Include(at => at.Artist)
-                    .Where(at => trackIds.Contains(at.Id))
-                    .ToListAsync();
-
-                Console.WriteLine($"Found {countryTracks.Count} tracks for {countryName}");
-            }
-            else
-            {
-                countryTracks = new List<ArtistTrack>();
-                Console.WriteLine($"No artists found for {countryName}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading tracks: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            countryTracks = new();
-        }
     }
 
     private void ClosePanel()
     {
-        selectedCountryName = null;
-        countryTracks.Clear();
+        countryData = null;
+        StopPlayback();
         StateHasChanged();
     }
 
-    private async Task PlayTrack(ArtistTrack artistTrack)
+    private async Task SelectTrack(CountryTrackInfo track)
     {
-        if (!string.IsNullOrEmpty(artistTrack.PreviewUrl))
+        if (string.IsNullOrEmpty(track.PreviewUrl))
         {
-            // Play the preview URL
-            await JS.InvokeVoidAsync("eval", $"new Audio('{artistTrack.PreviewUrl}').play()");
-            Console.WriteLine($"Playing: {artistTrack.TrackName}");
+            Console.WriteLine("No preview available");
+            return;
+        }
+
+        if (currentTrack?.Id == track.Id)
+        {
+            await TogglePlayPause();
         }
         else
         {
-            Console.WriteLine($"No preview available for {artistTrack.TrackName}");
+            currentTrack = track;
+            isPlaying = true;
+            progressPercent = 0;
+            await JS.InvokeVoidAsync("playAudioPreview", track.PreviewUrl);
+            StateHasChanged();
         }
+    }
+
+    private async Task TogglePlayPause()
+    {
+        if (isPlaying)
+        {
+            await JS.InvokeVoidAsync("pauseAudio");
+            isPlaying = false;
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("resumeAudio");
+            isPlaying = true;
+        }
+        StateHasChanged();
+    }
+
+    private async Task StopPlayback()
+    {
+        await JS.InvokeVoidAsync("stopAudio");
+        currentTrack = null;
+        isPlaying = false;
+        progressPercent = 0;
+        StateHasChanged();
+    }
+
+    [JSInvokable("UpdateProgress")]
+    public async Task UpdateProgress(double progress)
+    {
+        progressPercent = progress;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable("OnPlaybackEnded")]
+    public async Task OnPlaybackEnded()
+    {
+        isPlaying = false;
+        progressPercent = 0;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void GoBack()
     {
-        Console.WriteLine("GoBack clicked");
+        StopPlayback();
         Navigation.NavigateTo("/");
     }
 

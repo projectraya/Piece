@@ -4,6 +4,7 @@
 	{
 		MusicBrainz = 0,
 		Spotify = 1,
-		Manual = 2
+		Manual = 2,
+		LastFm = 3
 	}
 }

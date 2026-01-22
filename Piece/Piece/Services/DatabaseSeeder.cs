@@ -3,14 +3,19 @@ using Piece.Data.Models;
 using Piece.Data;
 using Microsoft.EntityFrameworkCore;
 using Piece.Services;
+using Microsoft.EntityFrameworkCore.Internal;
+using Piece.Services.LastFm;
 
 public class DatabaseSeeder
 {
 	private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
+	private readonly LastFmSeeder _lastFmSeeder;
 
-	public DatabaseSeeder(IDbContextFactory<ApplicationDbContext> dbFactory)
+
+	public DatabaseSeeder(IDbContextFactory<ApplicationDbContext> dbFactory, LastFmSeeder lastFmSeeder)
 	{
 		_dbFactory = dbFactory;
+		_lastFmSeeder = lastFmSeeder;
 	}
 
 	public async Task SeedAllAsync()
@@ -26,6 +31,10 @@ public class DatabaseSeeder
 		if (!await context.Tracks.AnyAsync())
 		{
 			await SeedLocalTracksAsync();
+		}
+		if (!await context.Artists.AnyAsync())
+		{
+			await _lastFmSeeder.SeedCountryTracksAsync();
 		}
 
 		await context.SaveChangesAsync();
@@ -279,5 +288,22 @@ public class DatabaseSeeder
 		await context.SaveChangesAsync();
 
 		Console.WriteLine($"[Seeder] Seeded {tracks.Count} tracks with file hashes!");
+	}
+
+	private readonly MusicBrainzService _musicBrainz;
+
+	public DatabaseSeeder(
+		IDbContextFactory<ApplicationDbContext> dbFactory,
+		LastFmSeeder lastFmSeeder,
+		MusicBrainzService musicBrainz)
+	{
+		_dbFactory = dbFactory;
+		_lastFmSeeder = lastFmSeeder;
+		_musicBrainz = musicBrainz;
+	}
+	public async Task SeedCountryMusicDataAsync()
+	{
+		await _lastFmSeeder.SeedCountryArtistsAsync();
+		await _lastFmSeeder.SeedCountryTracksAsync();
 	}
 }
