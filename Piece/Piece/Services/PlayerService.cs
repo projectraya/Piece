@@ -66,11 +66,13 @@ namespace Piece.Services
 
 		public void PlayNext()
 		{
+			// Add current track to history
 			if (_currentTrack != null && (_history.Count == 0 || _history.Last().Id != _currentTrack.Id))
 			{
 				_history.Add(_currentTrack);
 			}
 
+			// If we have tracks in queue, play the next one
 			if (_queue.Any() && _currentIndex < _queue.Count - 1)
 			{
 				_currentIndex++;
@@ -78,12 +80,14 @@ namespace Piece.Services
 				IsPlaying = true;
 				Console.WriteLine($"[PlayerService] Playing next track from queue: {_currentTrack.Title}");
 			}
+			// If we're at the end of queue but have available tracks, play random
 			else if (_allAvailableTracks.Any())
 			{
 				var random = new Random();
 				var randomTrack = _allAvailableTracks[random.Next(_allAvailableTracks.Count)];
 				_currentTrack = randomTrack;
 
+				// Add to queue if not already there
 				if (!_queue.Any(t => t.Id == randomTrack.Id))
 				{
 					_queue.Add(randomTrack);
@@ -97,6 +101,7 @@ namespace Piece.Services
 				IsPlaying = true;
 				Console.WriteLine($"[PlayerService] Playing random track: {_currentTrack.Title}");
 			}
+			// Otherwise loop back to start of queue
 			else if (_queue.Any())
 			{
 				_currentIndex = 0;
@@ -111,6 +116,7 @@ namespace Piece.Services
 
 		public void PlayPrevious()
 		{
+			// If we have history, play the last track from history
 			if (_history.Any())
 			{
 				var previousTrack = _history.Last();
@@ -119,15 +125,17 @@ namespace Piece.Services
 				_currentTrack = previousTrack;
 				_currentIndex = _queue.FindIndex(t => t.Id == previousTrack.Id);
 
+				// If track not in queue, add it
 				if (_currentIndex == -1)
 				{
-					_queue.Insert(0, previousTrack); 
+					_queue.Insert(0, previousTrack); // Add at beginning
 					_currentIndex = 0;
 				}
 
 				IsPlaying = true;
 				Console.WriteLine($"[PlayerService] Playing previous track from history: {_currentTrack.Title}");
 			}
+			// If no history but we're not at the start of queue, go back in queue
 			else if (_queue.Any() && _currentIndex > 0)
 			{
 				_currentIndex--;
@@ -135,6 +143,7 @@ namespace Piece.Services
 				IsPlaying = true;
 				Console.WriteLine($"[PlayerService] Playing previous track from queue: {_currentTrack.Title}");
 			}
+			// Otherwise, wrap to end of queue
 			else if (_queue.Any())
 			{
 				_currentIndex = _queue.Count - 1;
@@ -166,18 +175,14 @@ namespace Piece.Services
 			}
 		}
 
+		// QUEUE MANAGEMENT METHODS
+
 		public void AddToQueue(PlayableTrack track)
 		{
-			if (!_queue.Any(t => t.Id == track.Id))
-			{
-				_queue.Add(track);
-				Console.WriteLine($"[PlayerService] Added to queue: {track.Title}");
-				NotifyStateChanged();
-			}
-			else
-			{
-				Console.WriteLine($"[PlayerService] Track already in queue: {track.Title}");
-			}
+			// Always add to queue, even if it's a duplicate
+			_queue.Add(track);
+			Console.WriteLine($"[PlayerService] Added to queue: {track.Title} (Queue now has {_queue.Count} tracks)");
+			NotifyStateChanged();
 		}
 
 		public void RemoveFromQueue(int index)
@@ -187,12 +192,14 @@ namespace Piece.Services
 				var track = _queue[index];
 				_queue.RemoveAt(index);
 
+				// Adjust current index if needed
 				if (index < _currentIndex)
 				{
 					_currentIndex--;
 				}
 				else if (index == _currentIndex && _currentTrack?.Id == track.Id)
 				{
+					// If we removed the current track, play next one or stop
 					if (_queue.Any())
 					{
 						_currentIndex = Math.Min(_currentIndex, _queue.Count - 1);
@@ -223,6 +230,7 @@ namespace Piece.Services
 				_queue.RemoveAt(fromIndex);
 				_queue.Insert(toIndex, track);
 
+				// Update current index if needed
 				if (_currentTrack != null)
 				{
 					_currentIndex = _queue.FindIndex(t => t.Id == _currentTrack.Id);
