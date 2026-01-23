@@ -1,5 +1,132 @@
-﻿<h3>QueuePanel</h3>
+﻿@using Piece.DTOs
+@using Piece.Services
+@inject PlayerService PlayerService
+@implements IDisposable
+
+<button style="position: fixed; right: 24px; bottom: 140px; width: 56px; height: 56px; background: #FFD335; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 9999;" @onclick="ToggleQueue">
+    Q
+    @if (queue.Any())
+    {
+        <span style="position: absolute; top: -4px; right: -4px; background: red; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px;">@queue.Count</span>
+    }
+</button>
+
+@if (isOpen)
+{
+    <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #FFD335; z-index: 9998; padding: 20px; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
+            <h3>Queue (@queue.Count)</h3>
+            <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 6px; width: 36px; height: 36px; color: white; cursor: pointer;" @onclick="ToggleQueue">✕</button>
+        </div>
+
+        @if (!queue.Any())
+        {
+            <p style="color: #666; text-align: center; padding: 40px;">No tracks in queue</p>
+        }
+        else
+        {
+            @for (int i = 0; i < queue.Count; i++)
+            {
+                var track = queue[i];
+                var index = i;
+                var isCurrentTrack = PlayerService.CurrentTrack?.Id == track.Id;
+
+                <div style="background: @(isCurrentTrack ? "#3a3a3a" : "#2a2a2a"); border: 2px solid @(isCurrentTrack ? "#FFD335" : "transparent"); border-radius: 10px; padding: 12px; margin-bottom: 8px; color: white; cursor: pointer;"
+                     @onclick="() => PlayFromQueue(track)">
+
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #FFD335, #764ba2); border-radius: 6px; flex-shrink: 0;">
+                            @if (!string.IsNullOrEmpty(track.AlbumImage))
+                            {
+                                <img src="@track.AlbumImage" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
+                            }
+                        </div>
+
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                @if (isCurrentTrack)
+                                {
+                                    <span style="color: #FFD335;">▶ </span>
+                                }
+                                @track.Title
+                            </div>
+                            <div style="font-size: 12px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                @track.ArtistName
+                            </div>
+                        </div>
+
+                        <button style="background: rgba(255,0,0,0.2); border: none; border-radius: 50%; width: 28px; height: 28px; color: white; cursor: pointer;"
+                                @onclick="() => RemoveFromQueue(index)"
+                                @onclick:stopPropagation="true">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <button style="background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px;"
+                    @onclick="ClearQueue">
+                Clear
+            </button>
+        }
+    </div>
+}
 
 @code {
+    private bool isOpen = false;
+    private List<PlayableTrack> queue = new();
 
+    protected override void OnInitialized()
+    {
+        PlayerService.OnChange += HandlePlayerStateChanged;
+        UpdateQueue();
+        Console.WriteLine($"[QueuePanel] Initialized with {queue.Count} tracks");
+    }
+
+    private void HandlePlayerStateChanged()
+    {
+        UpdateQueue();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateQueue()
+    {
+        queue = PlayerService.Queue.ToList();
+        Console.WriteLine($"[QueuePanel] Queue updated: {queue.Count} tracks");
+    }
+
+    private void ToggleQueue()
+    {
+        isOpen = !isOpen;
+        Console.WriteLine($"[QueuePanel] Toggle: {isOpen}");
+        StateHasChanged();
+    }
+
+    private void RemoveFromQueue(int index)
+    {
+        Console.WriteLine($"[QueuePanel] Remove track at index: {index}");
+        PlayerService.RemoveFromQueue(index);
+        UpdateQueue();
+        StateHasChanged();
+    }
+
+    private void ClearQueue()
+    {
+        Console.WriteLine($"[QueuePanel] Clear queue");
+        PlayerService.ClearQueue();
+        UpdateQueue();
+        StateHasChanged();
+    }
+
+    private void PlayFromQueue(PlayableTrack track)
+    {
+        Console.WriteLine($"[QueuePanel] Play from queue: {track.Title}");
+        PlayerService.PlayTrack(track);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        PlayerService.OnChange -= HandlePlayerStateChanged;
+    }
 }

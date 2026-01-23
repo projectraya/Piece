@@ -66,38 +66,47 @@ namespace Piece.Services
 
 		public void PlayNext()
 		{
-			if (_currentTrack != null)
+			if (_currentTrack != null && (_history.Count == 0 || _history.Last().Id != _currentTrack.Id))
 			{
 				_history.Add(_currentTrack);
 			}
 
-			if (_allAvailableTracks.Any())
+			if (_queue.Any() && _currentIndex < _queue.Count - 1)
+			{
+				_currentIndex++;
+				_currentTrack = _queue[_currentIndex];
+				IsPlaying = true;
+				Console.WriteLine($"[PlayerService] Playing next track from queue: {_currentTrack.Title}");
+			}
+			else if (_allAvailableTracks.Any())
 			{
 				var random = new Random();
 				var randomTrack = _allAvailableTracks[random.Next(_allAvailableTracks.Count)];
-
 				_currentTrack = randomTrack;
 
 				if (!_queue.Any(t => t.Id == randomTrack.Id))
 				{
 					_queue.Add(randomTrack);
+					_currentIndex = _queue.Count - 1;
 				}
-				_currentIndex = _queue.FindIndex(t => t.Id == randomTrack.Id);
+				else
+				{
+					_currentIndex = _queue.FindIndex(t => t.Id == randomTrack.Id);
+				}
 
 				IsPlaying = true;
-				NotifyTrackChanged();
-				NotifyStateChanged();
 				Console.WriteLine($"[PlayerService] Playing random track: {_currentTrack.Title}");
 			}
 			else if (_queue.Any())
 			{
-				var random = new Random();
-				_currentIndex = random.Next(_queue.Count);
+				_currentIndex = 0;
 				_currentTrack = _queue[_currentIndex];
 				IsPlaying = true;
-				NotifyTrackChanged();
-				NotifyStateChanged();
+				Console.WriteLine($"[PlayerService] Looping back to start of queue: {_currentTrack.Title}");
 			}
+
+			NotifyTrackChanged();
+			NotifyStateChanged();
 		}
 
 		public void PlayPrevious()
@@ -109,21 +118,37 @@ namespace Piece.Services
 
 				_currentTrack = previousTrack;
 				_currentIndex = _queue.FindIndex(t => t.Id == previousTrack.Id);
+
 				if (_currentIndex == -1)
 				{
-					_queue.Add(previousTrack);
-					_currentIndex = _queue.Count - 1;
+					_queue.Insert(0, previousTrack); 
+					_currentIndex = 0;
 				}
 
 				IsPlaying = true;
-				NotifyTrackChanged();
-				NotifyStateChanged();
-				Console.WriteLine($"[PlayerService] Playing previous track: {_currentTrack.Title}");
+				Console.WriteLine($"[PlayerService] Playing previous track from history: {_currentTrack.Title}");
+			}
+			else if (_queue.Any() && _currentIndex > 0)
+			{
+				_currentIndex--;
+				_currentTrack = _queue[_currentIndex];
+				IsPlaying = true;
+				Console.WriteLine($"[PlayerService] Playing previous track from queue: {_currentTrack.Title}");
+			}
+			else if (_queue.Any())
+			{
+				_currentIndex = _queue.Count - 1;
+				_currentTrack = _queue[_currentIndex];
+				IsPlaying = true;
+				Console.WriteLine($"[PlayerService] Wrapping to end of queue: {_currentTrack.Title}");
 			}
 			else
 			{
-				Console.WriteLine("[PlayerService] No previous track in history");
+				Console.WriteLine("[PlayerService] No previous track available");
 			}
+
+			NotifyTrackChanged();
+			NotifyStateChanged();
 		}
 
 		public void TogglePlayPause()
@@ -139,6 +164,85 @@ namespace Piece.Services
 				_currentTrack.IsFavorite = isFavorite;
 				NotifyStateChanged();
 			}
+		}
+
+		public void AddToQueue(PlayableTrack track)
+		{
+			if (!_queue.Any(t => t.Id == track.Id))
+			{
+				_queue.Add(track);
+				Console.WriteLine($"[PlayerService] Added to queue: {track.Title}");
+				NotifyStateChanged();
+			}
+			else
+			{
+				Console.WriteLine($"[PlayerService] Track already in queue: {track.Title}");
+			}
+		}
+
+		public void RemoveFromQueue(int index)
+		{
+			if (index >= 0 && index < _queue.Count)
+			{
+				var track = _queue[index];
+				_queue.RemoveAt(index);
+
+				if (index < _currentIndex)
+				{
+					_currentIndex--;
+				}
+				else if (index == _currentIndex && _currentTrack?.Id == track.Id)
+				{
+					if (_queue.Any())
+					{
+						_currentIndex = Math.Min(_currentIndex, _queue.Count - 1);
+						_currentTrack = _queue[_currentIndex];
+						NotifyTrackChanged();
+					}
+					else
+					{
+						_currentTrack = null;
+						IsPlaying = false;
+						_currentIndex = 0;
+						NotifyTrackChanged();
+					}
+				}
+
+				Console.WriteLine($"[PlayerService] Removed from queue: {track.Title}");
+				NotifyStateChanged();
+			}
+		}
+
+		public void ReorderQueue(int fromIndex, int toIndex)
+		{
+			if (fromIndex >= 0 && fromIndex < _queue.Count &&
+				toIndex >= 0 && toIndex < _queue.Count &&
+				fromIndex != toIndex)
+			{
+				var track = _queue[fromIndex];
+				_queue.RemoveAt(fromIndex);
+				_queue.Insert(toIndex, track);
+
+				if (_currentTrack != null)
+				{
+					_currentIndex = _queue.FindIndex(t => t.Id == _currentTrack.Id);
+				}
+
+				Console.WriteLine($"[PlayerService] Reordered queue: moved '{track.Title}' from {fromIndex} to {toIndex}");
+				NotifyStateChanged();
+			}
+		}
+
+		public void ClearQueue()
+		{
+			_queue.Clear();
+			_currentTrack = null;
+			_currentIndex = 0;
+			_history.Clear();
+			IsPlaying = false;
+			Console.WriteLine("[PlayerService] Queue cleared");
+			NotifyTrackChanged();
+			NotifyStateChanged();
 		}
 
 		private void NotifyStateChanged() => OnChange?.Invoke();
