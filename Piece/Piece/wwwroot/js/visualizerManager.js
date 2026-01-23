@@ -17,8 +17,8 @@
         this.drawMini = true;
         this.drawFull = false;
 
-        this.miniColor = '#667eea';
-        this.miniLighterColor = '#a5b4fc';
+        this.miniColor = '#8B5CF6';
+        this.miniLighterColor = '#9B6AF5';
     }
 
     async initialize(audioElementId) {
@@ -134,8 +134,8 @@
         const barCount = 24;
         const barWidth = this.miniCanvas.width / barCount;
 
-        const baseColor = this.miniColor || '#667eea';
-        const lighterColor = this.miniLighterColor || '#a5b4fc';
+        const baseColor = this.miniColor || '#8B5CF6';
+        const lighterColor = this.miniLighterColor || '#9B6AF5';
 
         for (let i = 0; i < barCount; i++) {
             const logIndex = Math.pow(i / barCount, 1.5);
@@ -160,8 +160,8 @@
     }
 
     updateMiniColors(baseColor, lighterColor) {
-        this.miniColor = baseColor || '#667eea';
-        this.miniLighterColor = lighterColor || '#a5b4fc';
+        this.miniColor = baseColor || '#8B5CF6';
+        this.miniLighterColor = lighterColor || '#9B6AF5';
         console.log('[VisualizerManager] Updated mini colors:', this.miniColor, '→', this.miniLighterColor);
     }
 

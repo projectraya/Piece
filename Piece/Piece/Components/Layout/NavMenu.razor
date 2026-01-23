@@ -203,13 +203,14 @@
 </div>
 
 <style>
+    /* ===== Sidebar ===== */
     .nav-menu {
         width: 250px;
         height: 100vh;
         background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
         display: flex;
         flex-direction: column;
-        border-right: 1px solid rgba(255, 211, 53, 0.1);
+        border-right: 1px solid rgba(139, 92, 246, 0.15);
         position: fixed;
         left: 0;
         top: 0;
@@ -219,12 +220,11 @@
         padding-bottom: 120px;
     }
 
-
         .nav-menu.collapsed {
             width: 80px;
         }
 
-        /* Custom Scrollbar */
+        /* ===== Scrollbar (PURPLE) ===== */
         .nav-menu::-webkit-scrollbar {
             width: 6px;
         }
@@ -234,18 +234,18 @@
         }
 
         .nav-menu::-webkit-scrollbar-thumb {
-            background: rgba(255, 211, 53, 0.3);
+            background: rgba(139, 92, 246, 0.45);
             border-radius: 3px;
         }
 
             .nav-menu::-webkit-scrollbar-thumb:hover {
-                background: rgba(255, 211, 53, 0.5);
+                background: rgba(139, 92, 246, 0.75);
             }
 
-    /* Header */
+    /* ===== Header ===== */
     .nav-header {
         padding: 25px 20px;
-        border-bottom: 1px solid rgba(255, 211, 53, 0.1);
+        border-bottom: 1px solid rgba(139, 92, 246, 0.15);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -266,18 +266,18 @@
         }
 
             .app-logo:hover .logo-icon {
-                filter: drop-shadow(0 0 12px rgba(255, 211, 53, 0.8));
+                filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8));
                 transform: rotate(90deg);
             }
 
             .app-logo:hover .logo-text {
-                color: #FFD335;
+                color: #8B5CF6;
             }
 
     .logo-icon {
         font-size: 28px;
-        color: #FFD335;
-        filter: drop-shadow(0 0 8px rgba(255, 211, 53, 0.6));
+        color: #8B5CF6;
+        filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
         transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -293,10 +293,11 @@
         display: none;
     }
 
+    /* ===== Toggle Button ===== */
     .toggle-btn {
-        background: rgba(255, 211, 53, 0.1);
-        border: 1px solid rgba(255, 211, 53, 0.3);
-        color: #FFD335;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        color: #8B5CF6;
         width: 32px;
         height: 32px;
         border-radius: 6px;
@@ -306,14 +307,11 @@
         justify-content: center;
         font-size: 16px;
         transition: all 0.3s;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 10;
     }
 
         .toggle-btn:hover {
-            background: rgba(255, 211, 53, 0.2);
-            border-color: #FFD335;
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8B5CF6;
             transform: scale(1.05);
         }
 
@@ -321,6 +319,7 @@
             transform: scale(0.95);
         }
 
+    /* ===== Nav Items ===== */
     .nav-items {
         flex: 1;
         padding: 20px 0;
@@ -338,6 +337,7 @@
         letter-spacing: 1px;
     }
 
+    /* ===== Nav Links ===== */
     .nav-link {
         display: flex;
         align-items: center;
@@ -345,7 +345,7 @@
         padding: 12px 20px;
         color: #ccc;
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: all 0.25s ease;
         position: relative;
         border-left: 3px solid transparent;
     }
@@ -355,21 +355,23 @@
         padding: 12px 0;
     }
 
-    .nav-link:hover {
-        background: rgba(255, 211, 53, 0.1);
-        color: #FFD335;
-        border-left-color: rgba(255, 211, 53, 0.3);
+    /* Hover → TURQUOISE */
+    .nav-link:not(.active):hover {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10B981;
+        border-left-color: #10B981;
     }
 
+    /* Active → PURPLE */
     .nav-link.active {
-        background: rgba(255, 211, 53, 0.15);
-        color: #FFD335;
-        border-left-color: #FFD335;
+        background: rgba(139, 92, 246, 0.18);
+        color: #8B5CF6;
+        border-left-color: #8B5CF6;
         font-weight: 600;
     }
 
         .nav-link.active .nav-icon {
-            filter: drop-shadow(0 0 8px rgba(255, 211, 53, 0.6));
+            filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.7));
         }
 
     .nav-icon {
@@ -385,10 +387,10 @@
         white-space: nowrap;
     }
 
-    /* Footer */
+    /* ===== Footer ===== */
     .nav-footer {
         padding: 20px;
-        border-top: 1px solid rgba(255, 211, 53, 0.1);
+        border-top: 1px solid rgba(139, 92, 246, 0.15);
     }
 
     .logout-form {
@@ -401,10 +403,10 @@
         gap: 12px;
         width: 100%;
         padding: 12px 20px;
-        background: rgba(255, 211, 53, 0.1);
-        border: 1px solid rgba(255, 211, 53, 0.3);
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
         border-radius: 8px;
-        color: #FFD335;
+        color: #8B5CF6;
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
@@ -417,8 +419,8 @@
     }
 
     .logout-btn:hover {
-        background: rgba(255, 211, 53, 0.2);
-        border-color: #FFD335;
+        background: rgba(139, 92, 246, 0.2);
+        border-color: #8B5CF6;
         transform: translateY(-2px);
     }
 
@@ -426,30 +428,36 @@
         transform: translateY(0);
     }
 
+    /* ===== Responsive ===== */
     @@media (max-width: 768px) {
-        .nav-menu {
-            width: 70px;
-        }
+        .nav-menu
 
-            .nav-menu.collapsed {
-                width: 70px;
-            }
+    {
+        width: 70px;
+    }
 
-        .logo-text,
-        .nav-text,
-        .section-label {
-            display: none;
-        }
+    .nav-menu.collapsed {
+        width: 70px;
+    }
 
-        .nav-link {
-            justify-content: center;
-        }
+    .logo-text,
+    .nav-text,
+    .section-label {
+        display: none;
+    }
 
-        .toggle-btn {
-            display: none;
-        }
+    .nav-link {
+        justify-content: center;
+    }
+
+    .toggle-btn {
+        display: none;
+    }
+
     }
 </style>
+
+
 
 @code {
     private bool isCollapsed = false;

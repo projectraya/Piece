@@ -110,7 +110,7 @@
                 else
                 {
                     Console.WriteLine($"[MiniVisualizer] No genre/color found, using defaults");
-                    currentColor = "#ffef00";
+                    currentColor = "#8B5CF6";
                     lighterColor = "#fff";
                     await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
                 }
@@ -118,7 +118,7 @@
             else
             {
                 Console.WriteLine($"[MiniVisualizer] External track or parse failed, using defaults");
-                currentColor = "#ffef00";
+                currentColor = "#8B5CF6";
                 lighterColor = "#fff";
                 await JSRuntime.InvokeVoidAsync("visualizerManager.updateMiniColors", currentColor, lighterColor);
             }
