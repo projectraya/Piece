@@ -16,6 +16,7 @@ namespace Piece.Services
 		public PlayableTrack? CurrentTrack => _currentTrack;
 		public List<PlayableTrack> Queue => _queue;
 		public bool IsPlaying { get; private set; }
+		public bool IsShuffleOn { get; private set; } = false;
 
 		public void SetAvailableTracks(List<PlayableTrack> tracks)
 		{
@@ -163,6 +164,12 @@ namespace Piece.Services
 		public void TogglePlayPause()
 		{
 			IsPlaying = !IsPlaying;
+			NotifyStateChanged();
+		}
+
+		public void ToggleShuffle()
+		{
+			IsShuffleOn = !IsShuffleOn;
 			NotifyStateChanged();
 		}
 

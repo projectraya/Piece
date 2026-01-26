@@ -25,22 +25,22 @@
         gap: 30px;
         margin-bottom: 40px;
         padding: 40px;
-        background: linear-gradient(135deg, rgba(255, 211, 53, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);
+        background: linear-gradient(135deg, #643CD2 0%, rgba(138, 43, 226, 0.1) 100%);
         border-radius: 20px;
-        border: 1px solid rgba(255, 211, 53, 0.2);
+        border: 1px solid #643CD2;
     }
 
     .profile-avatar {
         width: 150px;
         height: 150px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #FFD335 0%, #8a2be2 100%);
+        background: #000;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 60px;
         font-weight: bold;
-        color: #1a1a1a;
+        color: #643CD2;
         flex-shrink: 0;
     }
 
@@ -52,7 +52,7 @@
         font-size: 36px;
         font-weight: 700;
         margin-bottom: 10px;
-        color: #FFD335;
+        color: #ffffff;
     }
 
     .profile-email {
@@ -81,7 +81,7 @@
     .stat-value {
         font-size: 28px;
         font-weight: 700;
-        color: #FFD335;
+        color: #ffffff;
         display: block;
     }
 
@@ -100,7 +100,7 @@
 
     .btn-edit {
         padding: 12px 24px;
-        background: #FFD335;
+        background: #ffffff;
         border: none;
         border-radius: 8px;
         color: #1a1a1a;
@@ -110,7 +110,7 @@
     }
 
         .btn-edit:hover {
-            background: #ffd000;
+            background: #10B981;
             transform: translateY(-2px);
         }
 
@@ -147,7 +147,7 @@
     .playlist-cover {
         width: 100%;
         aspect-ratio: 1;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10B981 0%, #764ba2 100%);
         border-radius: 8px;
         margin-bottom: 15px;
         display: flex;
@@ -187,7 +187,7 @@
         border-radius: 12px;
         padding: 20px;
         text-align: center;
-        color: #FFD335;
+        color: #ffffff;
     }
 </style>
 
@@ -213,7 +213,7 @@ else if (!user.IsProfilePublic && !isOwnProfile)
 {
     <div class="profile-container">
         <div class="private-message">
-            <h2>🔒 Private Profile</h2>
+            <h2>Private Profile</h2>
             <p>This user's profile is set to private.</p>
         </div>
     </div>
@@ -262,7 +262,7 @@ else
         @if (user.ShowListeningHistory && topGenres.Any())
         {
             <div class="colors-section">
-                <h2 class="section-title">🎨 Top Genres</h2>
+                <h2 class="section-title">Top Genres</h2>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     @foreach (var genre in topGenres.Take(5))
                     {
@@ -280,12 +280,12 @@ else
         @if (user.ShowPlaylists && publicPlaylists.Any())
         {
             <div>
-                <h2 class="section-title">🎵 Public Playlists</h2>
+                <h2 class="section-title">Public Playlists</h2>
                 <div class="playlists-grid">
                     @foreach (var playlist in publicPlaylists)
                     {
                         <div class="playlist-card" @onclick="() => ViewPlaylist(playlist.Id)">
-                            <div class="playlist-cover">🎵</div>
+                            <div class="playlist-cover">꩜</div>
                             <div class="playlist-name">@playlist.Name</div>
                             <div class="playlist-tracks">@playlist.PlaylistTracks.Count tracks</div>
                         </div>

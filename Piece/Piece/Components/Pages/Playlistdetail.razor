@@ -30,7 +30,7 @@
     .playlist-cover-large {
         width: 240px;
         height: 240px;
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        background: #8B5CF6;
         border-radius: 16px;
         display: flex;
         align-items: center;
@@ -38,7 +38,51 @@
         font-size: 96px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease;
     }
+
+        .playlist-cover-large:hover {
+            transform: scale(1.02);
+        }
+
+        .playlist-cover-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .playlist-cover-large .cover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            gap: 8px;
+        }
+
+        .playlist-cover-large:hover .cover-overlay {
+            opacity: 1;
+        }
+
+        .playlist-cover-large .cover-overlay-icon {
+            font-size: 48px;
+        }
+
+        .playlist-cover-large .cover-overlay-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
 
     .playlist-info-header {
         flex: 1;
@@ -82,9 +126,9 @@
     }
 
     .btn-play {
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        background: none;
+        border: 2px solid #3a3a3a;
         color: #ffffff;
-        border: none;
         padding: 14px 32px;
         border-radius: 24px;
         font-size: 16px;
@@ -97,30 +141,42 @@
     }
 
         .btn-play:hover {
+            border-color: #10B981;
+            color: #10B981;
             transform: scale(1.05);
-            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
         }
 
-    .btn-icon-large {
+    .btn-shuffle {
         background: none;
         border: 2px solid #3a3a3a;
         color: #ffffff;
-        font-size: 24px;
+        padding: 14px 32px;
+        border-radius: 24px;
+        font-size: 16px;
+        font-weight: 600;
         cursor: pointer;
-        padding: 12px;
-        border-radius: 50%;
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
+        gap: 8px;
     }
 
-        .btn-icon-large:hover {
-            border-color: #ffffff;
-            transform: scale(1.1);
+        .btn-shuffle:hover {
+            border-color: #10B981;
+            color: #10B981;
+            transform: scale(1.05);
         }
+
+        .btn-shuffle.active {
+            background: #8B5CF6;
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+            .btn-shuffle.active:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+            }
 
     .tracks-section {
         margin-top: 40px;
@@ -178,7 +234,8 @@
         }
 
         .track-row.playing {
-            background-color: #3a3a3a;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border-left: 3px solid #10B981;
         }
 
     .track-number {
@@ -196,20 +253,20 @@
     .track-art-small {
         width: 50px;
         height: 50px;
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10B981 0%, #764ba2 100%);
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 20px;
         overflow: hidden;
-        flex-shrink: 0; /* Prevents it from growing */
+        flex-shrink: 0;
     }
 
         .track-art-small img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Makes sure image fits nicely */
+            object-fit: cover;
         }
 
     .track-text {
@@ -436,6 +493,11 @@
         .back-button:hover {
             color: #ffffff;
         }
+
+    /* Hidden file input */
+    .hidden-file-input {
+        display: none;
+    }
 </style>
 
 <div class="playlist-detail-container">
@@ -454,7 +516,6 @@
     else if (playlist == null)
     {
         <div class="empty-state">
-            <div class="empty-state-icon">❌</div>
             <h3>Playlist not found</h3>
             <p>This playlist may have been deleted</p>
         </div>
@@ -462,16 +523,32 @@
     else
     {
         <div class="playlist-header">
-            <div class="playlist-cover-large">📂</div>
+            <div class="playlist-cover-large" @onclick="OpenCoverUpload">
+                @if (!string.IsNullOrEmpty(playlist.CoverImageUrl))
+                {
+                    <img src="@playlist.CoverImageUrl" alt="@playlist.Name" />
+                }
+                else
+                {
+                    <span>꩜</span>
+                }
+                @if (!isViewingOtherUsersPlaylist)
+                {
+                    <div class="cover-overlay">
+                        <div class="cover-overlay-icon">📷</div>
+                        <div class="cover-overlay-text">Change Cover</div>
+                    </div>
+                }
+            </div>
             <div class="playlist-info-header">
                 <div class="playlist-type">Playlist</div>
                 <h1 class="playlist-title">@playlist.Name</h1>
                 @if (playlist != null && playlist.UserId != currentUserId)
                 {
-                    <div style="background: rgba(255, 211, 53, 0.1); border: 1px solid rgba(255, 211, 53, 0.3);
-                border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-                        <div style="color: #FFD335; font-size: 13px; font-weight: 600;">
-                            🛡️ Admin View - This playlist belongs to another user
+                    <div style="background: none; border: none;
+                border-radius: 8px; padding: 0px; margin-bottom: 10px;">
+                        <div style="color: #8B5CF6; font-size: 13px; font-weight: 600;">
+                            Admin View - This playlist belongs to another user
                         </div>
                     </div>
                 }
@@ -484,10 +561,13 @@
                 </div>
                 <div class="playlist-actions-header">
                     <button class="btn-play" @onclick="PlayPlaylist">
-                        <span>▶</span>
                         <span>Play</span>
                     </button>
-                    <button class="btn-icon-large" title="Shuffle">🔀</button>
+                    <button class="btn-shuffle @(PlayerService.IsShuffleOn ? "active" : "")"
+                            title="@(PlayerService.IsShuffleOn ? "Shuffle On" : "Shuffle Off")"
+                            @onclick="ToggleShuffle">
+                        <span>Shuffle</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -496,7 +576,6 @@
             <div class="tracks-header">
                 <h2 class="tracks-title">Tracks</h2>
                 <button class="btn-add-tracks" @onclick="OpenAddTracksModal">
-                    <span>➕</span>
                     <span>Add Tracks</span>
                 </button>
             </div>
@@ -520,7 +599,7 @@
                                     }
                                     else
                                     {
-                                        <span>🎵</span>
+                                        <span>꩜</span>
                                     }
                                 </div>
                                 <div class="track-text">
@@ -545,7 +624,7 @@
             else
             {
                 <div class="empty-state">
-                    <div class="empty-state-icon">🎵</div>
+                    <div class="empty-state-icon">꩜</div>
                     <h3>No tracks yet</h3>
                     <p>Add some tracks to get started</p>
                 </div>
@@ -563,48 +642,141 @@
                 <button class="btn-close" @onclick="CloseAddTracksModal">×</button>
             </div>
 
-            <div class="search-box-modal">
-                <span>🔍</span>
-                <input type="text"
-                       class="search-input-modal"
-                       @bind="searchQuery"
-                       @bind:event="oninput"
-                       placeholder="Search your library..." />
-            </div>
+            @if (isViewingOtherUsersPlaylist)
+            {
+                <div style="background: rgba(139, 92, 246, 0.1);
+                            border: 1px solid rgba(139, 92, 246, 0.3);
+                            border-radius: 12px;
+                            padding: 20px;
+                            margin-bottom: 20px;
+                            text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
+                    <div style="color: #8B5CF6; font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+                        Admin View Only
+                    </div>
+                    <div style="color: #aaa; font-size: 14px; line-height: 1.5;">
+                        You're viewing another user's playlist as an administrator.
+                        <br />You cannot modify playlists that belong to other users.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="search-box-modal">
+                    <span>🔍</span>
+                    <input type="text"
+                           class="search-input-modal"
+                           @bind="searchQuery"
+                           @bind:event="oninput"
+                           placeholder="Search your library..." />
+                </div>
 
-            <div class="available-tracks">
-                @foreach (var track in FilteredAvailableTracks)
-                {
-                    var isInPlaylist = playlistTracks.Any(t => t.Id == track.Id);
-                    <div class="available-track-row @(isInPlaylist ? "disabled" : "")"
-                         @onclick="() => AddTrackToPlaylist(track.Id)">
-                        <div class="track-art-small">
-                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                <div class="available-tracks">
+                    @foreach (var track in FilteredAvailableTracks)
+                    {
+                        var isInPlaylist = playlistTracks.Any(t => t.Id == track.Id);
+                        <div class="available-track-row @(isInPlaylist ? "disabled" : "")"
+                             @onclick="() => AddTrackToPlaylist(track.Id)">
+                            <div class="track-art-small">
+                                @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                {
+                                    <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                }
+                                else
+                                {
+                                    <span>🎵</span>
+                                }
+                            </div>
+                            <div class="track-text" style="flex: 1;">
+                                <div class="track-name">@track.Title</div>
+                                <div class="track-artist-small">@track.ArtistName</div>
+                            </div>
+                            @if (isInPlaylist)
                             {
-                                <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                <span style="color: #8B5CF6; font-size: 12px;">✓ Added</span>
                             }
                             else
                             {
-                                <span>🎵</span>
+                                <span style="color: #888;">➕</span>
                             }
                         </div>
-                        <div class="track-text" style="flex: 1;">
-                            <div class="track-name">@track.Title</div>
-                            <div class="track-artist-small">@track.ArtistName</div>
-                        </div>
-                        @if (isInPlaylist)
-                        {
-                            <span style="color: #FFD335; font-size: 12px;">✓ Added</span>
-                        }
-                        else
-                        {
-                            <span style="color: #888;">➕</span>
-                        }
-                    </div>
-                }
-            </div>
+                    }
+                </div>
+            }
         </div>
     </div>
 }
 
+<!-- Toast Notification -->
+@if (showToast)
+{
+    <div class="toast @toastType">
+        <div class="toast-content">
+            <span class="toast-icon">@(toastType == "success" ? "✓" : "⚠")</span>
+            <span class="toast-message">@toastMessage</span>
+        </div>
+    </div>
+}
 
+<style>
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        background-color: #2a2a2a;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .toast.success {
+        border-left: 4px solid #10B981;
+    }
+
+    .toast.error {
+        border-left: 4px solid #ff4444;
+    }
+
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .toast-icon {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .toast.success .toast-icon {
+        color: #10B981;
+    }
+
+    .toast.error .toast-icon {
+        color: #ff4444;
+    }
+
+    .toast-message {
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 500;
+    }
+</style>
+
+<!-- Hidden file input for cover image upload -->
+<InputFile OnChange="HandleCoverImageUpload" class="hidden-file-input" accept="image/*" @ref="coverImageInput" />
