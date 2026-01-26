@@ -15,7 +15,7 @@
 {
     <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #8B5CF6; z-index: 9998; padding: 20px; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
-            <h3>Queue (@queue.Count)</h3>
+            <h3>@queue.Count track/s in queue</h3>
             <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 6px; width: 36px; height: 36px; color: white; cursor: pointer;" @onclick="ToggleQueue">✕</button>
         </div>
 
@@ -31,7 +31,7 @@
                 var index = i;
                 var isCurrentTrack = PlayerService.CurrentTrack?.Id == track.Id;
 
-                <div style="background: @(isCurrentTrack ? "#3a3a3a" : "#2a2a2a"); border: 2px solid @(isCurrentTrack ? "#FFD335" : "transparent"); border-radius: 10px; padding: 12px; margin-bottom: 8px; color: white; cursor: pointer;"
+                <div style="background: @(isCurrentTrack ? "#3a3a3a" : "#2a2a2a"); border: 2px solid @(isCurrentTrack ? "#8B5CF6" : "transparent"); border-radius: 10px; padding: 12px; margin-bottom: 8px; color: white; cursor: pointer;"
                      @onclick="() => PlayFromQueue(track)">
 
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -55,7 +55,7 @@
                             </div>
                         </div>
 
-                        <button style="background: rgba(255,0,0,0.2); border: none; border-radius: 50%; width: 28px; height: 28px; color: white; cursor: pointer;"
+                        <button style="background: none; border: none; border-radius: 50%; width: 28px; height: 28px; color: white; cursor: pointer;"
                                 @onclick="() => RemoveFromQueue(index)"
                                 @onclick:stopPropagation="true">
                             ✕
@@ -64,7 +64,7 @@
                 </div>
             }
 
-            <button style="background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px;"
+            <button style="background: none; border: 1px solid #fff; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px;"
                     @onclick="ClearQueue">
                 Clear
             </button>

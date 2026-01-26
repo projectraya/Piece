@@ -21,6 +21,273 @@
 
 <PageTitle>Upload Music - Admin</PageTitle>
 
+<style>
+    body {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    .upload-page-container {
+        min-height: 100vh;
+        background: #1a1a1a;
+        padding: 40px;
+    }
+
+    .upload-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 40px;
+    }
+
+    .upload-form-container {
+        background: #2a2a2a;
+        border-radius: 16px;
+        padding: 32px;
+    }
+
+    .info-note {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        color: #8B5CF6;
+        font-size: 14px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        background-color: #1a1a1a;
+        border: 2px solid #3a3a3a;
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #8B5CF6;
+        }
+
+    .file-input {
+        width: 100%;
+        padding: 12px 16px;
+        background-color: #1a1a1a;
+        border: 2px solid #3a3a3a;
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        cursor: pointer;
+        transition: border-color 0.3s ease;
+    }
+
+        .file-input:hover {
+            border-color: #8B5CF6;
+        }
+
+    .file-selected {
+        color: #888;
+        margin-top: 8px;
+        display: block;
+        font-size: 13px;
+    }
+
+    .validation-message {
+        color: #ff4444;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .upload-status {
+        text-align: center;
+        padding: 24px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #3a3a3a;
+        border-top-color: #8B5CF6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 12px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .upload-message {
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-size: 14px;
+    }
+
+        .upload-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10B981;
+        }
+
+        .upload-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 14px 32px;
+        border-radius: 24px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #3a3a3a;
+    }
+
+    .btn-primary {
+        background: #8B5CF6;
+        color: #ffffff;
+        border-color: #8B5CF6;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #7c3aed;
+            transform: scale(1.05);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            background: #7c3aed;
+        }
+
+    .btn-secondary {
+        background: none;
+        color: #ffffff;
+        border-color: #3a3a3a;
+    }
+
+        .btn-secondary:hover {
+            border-color: #10B981;
+            color: #10B981;
+            transform: scale(1.05);
+        }
+
+    /* Toast Notification */
+    .notification-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #2a2a2a;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+        max-width: 400px;
+        border-left: 4px solid #10B981;
+    }
+
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .toast-icon {
+        font-size: 24px;
+        font-weight: 700;
+        color: #10B981;
+    }
+
+    .toast-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .toast-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .toast-message {
+        font-size: 14px;
+        color: #aaa;
+    }
+
+    .toast-close {
+        background: transparent;
+        border: none;
+        color: #888;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+        line-height: 1;
+    }
+
+        .toast-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+</style>
+
 @if (confirmation)
 {
     <div class="notification-toast">
@@ -34,133 +301,98 @@
 }
 
 <div class="upload-page-container">
-    <div style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="margin-bottom: 30px; color: #000; font-size: 28px;
-        font-weight: 600;">
-            Upload tracks
-        </h2>
+    <div class="upload-content">
+        <h1 class="page-title">Upload Music</h1>
 
-        <div style="background: #9a9a9a; border-radius: 12px; padding: 30px;">
+        <div class="upload-form-container">
             <EditForm Model="@uploadModel" OnValidSubmit="HandleUpload">
                 <DataAnnotationsValidator />
 
                 <!-- Info Note -->
-                <div style="background: rgba(255, 211, 53, 0.1); border: 2px solid rgba(255, 211, 53, 0.3);
-                        border-radius: 8px; padding: 15px; margin-bottom: 20px; color: #FFD335;">
-                    <strong>💡 Note:</strong> Duration will be automatically extracted from the MP3 file.
+                <div class="info-note">
+                    <strong>Note:</strong> Duration will be automatically extracted from the MP3 file.
                 </div>
 
                 <!-- File Upload -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Audio File (MP3) *</label>
-                    <InputFile OnChange="OnFileSelected" accept=".mp3"
-                    style="display: block; padding: 10px; background: #5a5a5a;
-                                 border: 2px solid #3a3a3a; border-radius: 8px;
-                                 color: #000; width: 100%;" />
+                <div class="form-group">
+                    <label class="form-label">Audio File (MP3) *</label>
+                    <InputFile OnChange="OnFileSelected" accept=".mp3" class="file-input" />
                     @if (!string.IsNullOrEmpty(selectedFileName))
                     {
-                        <small style="color: #000; margin-top: 5px; display: block;">Selected: @selectedFileName</small>
+                        <small class="file-selected">Selected: @selectedFileName</small>
                     }
                 </div>
 
                 <!-- Cover Image Upload -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Cover Image (Optional)</label>
-                    <InputFile OnChange="OnImageSelected" accept=".jpg,.jpeg,.png"
-                    style="display: block; padding: 10px; background: #5a5a5a;
-                     border: 2px solid #3a3a3a; border-radius: 8px;
-                     color: #000; width: 100%;" />
+                <div class="form-group">
+                    <label class="form-label">Cover Image (Optional)</label>
+                    <InputFile OnChange="OnImageSelected" accept=".jpg,.jpeg,.png" class="file-input" />
                     @if (!string.IsNullOrEmpty(selectedImageName))
                     {
-                        <small style="color: #888; margin-top: 5px; display: block;">Selected: @selectedImageName</small>
+                        <small class="file-selected">Selected: @selectedImageName</small>
                     }
                 </div>
 
                 <!-- Title -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Title *</label>
-                    <InputText @bind-Value="uploadModel.Title"
-                    style="width: 100%; padding: 12px; background: #5a5a5a;
-                                 border: 2px solid #3a3a3a; border-radius: 8px;
-                                 color: #000;" />
-                    <ValidationMessage For="@(() => uploadModel.Title)" />
+                <div class="form-group">
+                    <label class="form-label">Title *</label>
+                    <InputText @bind-Value="uploadModel.Title" class="form-input" />
+                    <ValidationMessage For="@(() => uploadModel.Title)" class="validation-message" />
                 </div>
 
                 <!-- Artist -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Artist *</label>
-                    <InputText @bind-Value="uploadModel.ArtistName"
-                    style="width: 100%; padding: 12px; background: #5a5a5a;
-                                 border: 2px solid #3a3a3a; border-radius: 8px;
-                                 color: #000;" />
-                    <ValidationMessage For="@(() => uploadModel.ArtistName)" />
+                <div class="form-group">
+                    <label class="form-label">Artist *</label>
+                    <InputText @bind-Value="uploadModel.ArtistName" class="form-input" />
+                    <ValidationMessage For="@(() => uploadModel.ArtistName)" class="validation-message" />
                 </div>
 
                 <!-- Album -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Album (Optional)</label>
-                    <InputText @bind-Value="uploadModel.AlbumName"
-                    style="width: 100%; padding: 12px; background: #5a5a5a;
-                                 border: 2px solid #3a3a3a; border-radius: 8px;
-                                 color: #000;" />
+                <div class="form-group">
+                    <label class="form-label">Album (Optional)</label>
+                    <InputText @bind-Value="uploadModel.AlbumName" class="form-input" />
                 </div>
 
                 <!-- Genre -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Genre *</label>
-                    <InputSelect @bind-Value="uploadModel.GenreId"
-                    style="width: 100%; padding: 12px; background: #5a5a5a;
-                                   border: 2px solid #3a3a3a; border-radius: 8px;
-                                   color: #000;">
+                <div class="form-group">
+                    <label class="form-label">Genre *</label>
+                    <InputSelect @bind-Value="uploadModel.GenreId" class="form-select">
                         <option value="">Select a genre...</option>
                         @foreach (var genre in genres)
                         {
                             <option value="@genre.Id">@genre.Name</option>
                         }
                     </InputSelect>
-                    <ValidationMessage For="@(() => uploadModel.GenreId)" />
+                    <ValidationMessage For="@(() => uploadModel.GenreId)" class="validation-message" />
                 </div>
 
                 <!-- Year -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #000;">Year Published (Optional)</label>
-                    <InputNumber @bind-Value="uploadModel.YearPublished"
-                    style="width: 100%; padding: 12px; background: #5a5a5a;
-                                   border: 2px solid #3a3a3a; border-radius: 8px;
-                                   color: #000;" />
+                <div class="form-group">
+                    <label class="form-label">Year Published (Optional)</label>
+                    <InputNumber @bind-Value="uploadModel.YearPublished" class="form-input" />
                 </div>
 
                 <!-- Upload Status -->
                 @if (isUploading)
                 {
-                    <div style="text-align: center; padding: 20px; color: #FFD335;">
-                        <div class="spinner" style="margin: 0 auto 10px; width: 40px; height: 40px;
-                                               border: 4px solid #3a3a3a; border-top-color: #FFD335;
-                                               border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                        <p>Uploading and processing...</p>
+                    <div class="upload-status">
+                        <div class="spinner"></div>
+                        <p style="color: #8B5CF6; margin: 0;">Uploading and processing...</p>
                     </div>
                 }
                 else if (!string.IsNullOrEmpty(uploadMessage))
                 {
-                    <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px;
-                           background: @(uploadSuccess ? "#1a4d2e" : "#4d1a1a");
-                           color: @(uploadSuccess ? "#4ade80" : "#ff6b6b");">
+                    <div class="upload-message @(uploadSuccess ? "success" : "error")">
                         @uploadMessage
                     </div>
                 }
 
                 <!-- Buttons -->
-                <div style="display: flex; gap: 15px;">
-                    <button type="submit" disabled="@(isUploading || selectedFile == null)"
-                    style="flex: 1; padding: 15px; background: #FFD335; border: none;
-                              border-radius: 8px; color: #5a5a5a; font-weight: 600;
-                              font-size: 16px; cursor: pointer; transition: all 0.3s;">
+                <div class="form-actions">
+                    <button type="submit" disabled="@(isUploading || selectedFile == null)" class="btn btn-primary">
                         Upload Track
                     </button>
-                    <button type="button" @onclick="Cancel"
-                    style="flex: 1; padding: 15px; background: #3a3a3a; border: none;
-                              border-radius: 8px; color: #000; font-weight: 600;
-                              font-size: 16px; cursor: pointer; transition: all 0.3s;">
+                    <button type="button" @onclick="Cancel" class="btn btn-secondary">
                         Cancel
                     </button>
                 </div>
@@ -168,102 +400,6 @@
         </div>
     </div>
 </div>
-
-
-<style>
-    .notification-toast {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-        color: white;
-        padding: 20px 24px;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(76, 175, 80, 0.3);
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        z-index: 10000;
-        animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        max-width: 400px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    @@keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    .toast-icon {
-        width: 40px;
-        height: 40px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    .toast-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .toast-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: white;
-    }
-
-    .toast-message {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.9);
-    }
-
-    .toast-close {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 28px;
-        cursor: pointer;
-        padding: 0;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        transition: background 0.2s;
-        line-height: 1;
-        flex-shrink: 0;
-    }
-
-        .toast-close:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-    .upload-page-container {
-    min-height: 100vh;
-    background: #fff;
-    padding: 20px;
-    }
-    @@keyframes spin {
-    to {
-    transform: rotate(360deg);
-    }
-    }
-</style>
 
 @code {
     private UploadModel uploadModel = new();
@@ -491,8 +627,8 @@
                     Title = InputSanitizer.SanitizeString(uploadModel.Title.Trim(), 200),
                     ArtistName = InputSanitizer.SanitizeString(uploadModel.ArtistName.Trim(), 200),
                     AlbumName = string.IsNullOrWhiteSpace(uploadModel.AlbumName?.Trim())
-                                ? null
-                                    : InputSanitizer.SanitizeString(uploadModel.AlbumName?.Trim(), 200),
+                                    ? null
+                                        : InputSanitizer.SanitizeString(uploadModel.AlbumName?.Trim(), 200),
                     GenreId = uploadModel.GenreId,
                     YearPublished = uploadModel.YearPublished,
                     DurationSeconds = durationSeconds,
@@ -558,7 +694,7 @@
 
     private void Cancel()
     {
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/admin/dashboard");
     }
 
     private void ShowSuccesfullUploadModal()

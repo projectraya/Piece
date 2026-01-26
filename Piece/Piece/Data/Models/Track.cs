@@ -17,7 +17,7 @@ namespace Piece.Data.Models
 		public string ArtistName { get; set; } = string.Empty;
 
 		[MaxLength(200)]
-		public string AlbumName { get; set; } = string.Empty;
+		public string? AlbumName { get; set; } = string.Empty;
 
 		// Genre relationship
 		public int? GenreId { get; set; }
