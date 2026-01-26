@@ -3,7 +3,7 @@
 @inject PlayerService PlayerService
 @implements IDisposable
 
-<button style="position: fixed; right: 24px; bottom: 140px; width: 56px; height: 56px; background: #FFD335; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 9999;" @onclick="ToggleQueue">
+<button style="position: fixed; right: 24px; bottom: 140px; width: 56px; height: 56px; background: #8B5CF6; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 9999;" @onclick="ToggleQueue">
     Q
     @if (queue.Any())
     {
@@ -13,7 +13,7 @@
 
 @if (isOpen)
 {
-    <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #FFD335; z-index: 9998; padding: 20px; overflow-y: auto;">
+    <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #8B5CF6; z-index: 9998; padding: 20px; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
             <h3>Queue (@queue.Count)</h3>
             <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 6px; width: 36px; height: 36px; color: white; cursor: pointer;" @onclick="ToggleQueue">✕</button>
@@ -35,7 +35,7 @@
                      @onclick="() => PlayFromQueue(track)">
 
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #FFD335, #764ba2); border-radius: 6px; flex-shrink: 0;">
+                        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8B5CF6, #764ba2); border-radius: 6px; flex-shrink: 0;">
                             @if (!string.IsNullOrEmpty(track.AlbumImage))
                             {
                                 <img src="@track.AlbumImage" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
@@ -46,7 +46,7 @@
                             <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 @if (isCurrentTrack)
                                 {
-                                    <span style="color: #FFD335;">▶ </span>
+                                    <span style="color: #8B5CF6;">▶ </span>
                                 }
                                 @track.Title
                             </div>

@@ -151,8 +151,8 @@ namespace Piece
 					"style-src 'self' 'unsafe-inline' https://unpkg.com; " +
 					"img-src 'self' data: https: blob:; " +
 					"font-src 'self' data:; " +
-					"connect-src 'self' https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com ws://localhost:* wss://localhost:*; " +
-					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com; " +
+					"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; " +
+					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com https://prod-1.storage.jamendo.com https://storage.jamendo.com; " +
 					"frame-src 'none';");
 
 				// Control referrer information

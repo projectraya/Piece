@@ -774,11 +774,19 @@ else
     private void PlayJamendoTrack(JamendoTrack track)
     {
         bool isFavorite = favoriteJamendoIds.Contains(track.Id);
+
+        // Construct Jamendo audio URL if not present
+        string audioUrl = !string.IsNullOrEmpty(track.AudioUrl)
+            ? track.AudioUrl
+            : $"https://mp3l.jamendo.com/?trackid={track.Id}&format=mp32";
+
+        Console.WriteLine($"[PlayJamendoTrack] Playing: {track.Name} with URL: {audioUrl}");
+
         var playableTrack = PlayableTrack.FromJamendoTrack(
             track.Id,
             track.Name,
             track.ArtistName,
-            track.AudioUrl,
+            audioUrl,
             track.AlbumImage,
             isFavorite
         );
