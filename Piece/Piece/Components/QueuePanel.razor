@@ -1,86 +1,299 @@
 ﻿@using Piece.DTOs
 @using Piece.Services
 @inject PlayerService PlayerService
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
-<button style="position: fixed; right: 24px; bottom: 140px; width: 56px; height: 56px; background: #8B5CF6; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 9999;" @onclick="ToggleQueue">
+<button style="position: fixed; right: 24px; bottom: 140px; width: 56px; height: 56px; background: #8B5CF6; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 9999; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: all 0.3s ease;"
+        @onclick="ToggleQueue"
+        onmouseover="this.style.transform='scale(1.1)'"
+        onmouseout="this.style.transform='scale(1)'">
     Q
     @if (queue.Any())
     {
-        <span style="position: absolute; top: -4px; right: -4px; background: red; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px;">@queue.Count</span>
+        <span style="position: absolute; top: -4px; right: -4px; background: #10B981; color: white; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px;">@queue.Count</span>
     }
 </button>
 
 @if (isOpen)
 {
-    <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #8B5CF6; z-index: 9998; padding: 20px; overflow-y: auto;">
+    <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #8B5CF6; z-index: 9998; padding: 20px; overflow-y: auto; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
-            <h3>@queue.Count track/s in queue</h3>
-            <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 6px; width: 36px; height: 36px; color: white; cursor: pointer;" @onclick="ToggleQueue">✕</button>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700;">@queue.Count @(queue.Count == 1 ? "track" : "tracks") in queue</h3>
+            <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 36px; height: 36px; color: white; cursor: pointer; font-size: 20px; transition: all 0.2s;"
+                    @onclick="ToggleQueue"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                ✕
+            </button>
         </div>
 
         @if (!queue.Any())
         {
-            <p style="color: #666; text-align: center; padding: 40px;">No tracks in queue</p>
+            <div style="text-align: center; padding: 60px 20px; color: #666;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🎵</div>
+                <p style="margin: 0;">No tracks in queue</p>
+            </div>
         }
         else
         {
-            @for (int i = 0; i < queue.Count; i++)
-            {
-                var track = queue[i];
-                var index = i;
-                var isCurrentTrack = PlayerService.CurrentTrack?.Id == track.Id;
+            <div id="queue-container" style="user-select: none;">
+                @for (int i = 0; i < queue.Count; i++)
+                {
+                    var track = queue[i];
+                    var index = i;
+                    var isCurrentTrack = PlayerService.CurrentTrack?.Id == track.Id;
 
-                <div style="background: @(isCurrentTrack ? "#3a3a3a" : "#2a2a2a"); border: 2px solid @(isCurrentTrack ? "#8B5CF6" : "transparent"); border-radius: 10px; padding: 12px; margin-bottom: 8px; color: white; cursor: pointer;"
-                     @onclick="() => PlayFromQueue(track)">
+                    <div class="queue-item"
+                         data-index="@index"
+                         data-current="@isCurrentTrack.ToString().ToLower()"
+                         style="background: @(isCurrentTrack ? "#3a3a3a" : "#2a2a2a");
+                                border: 2px solid @(isCurrentTrack ? "#8B5CF6" : "transparent");
+                                border-radius: 12px;
+                                padding: 12px;
+                                margin-bottom: 8px;
+                                color: white;
+                                transition: all 0.2s ease;">
 
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8B5CF6, #764ba2); border-radius: 6px; flex-shrink: 0;">
-                            @if (!string.IsNullOrEmpty(track.AlbumImage))
-                            {
-                                <img src="@track.AlbumImage" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
-                            }
-                        </div>
-
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @if (isCurrentTrack)
-                                {
-                                    <span style="color: #8B5CF6;">▶ </span>
-                                }
-                                @track.Title
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <!-- Drag Handle -->
+                            <div class="drag-handle"
+                                 style="color: #666;
+                                        font-size: 20px;
+                                        cursor: grab;
+                                        padding: 8px;
+                                        margin: -8px 0;
+                                        user-select: none;
+                                        -webkit-user-select: none;">
+                                ⋮⋮
                             </div>
-                            <div style="font-size: 12px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @track.ArtistName
-                            </div>
-                        </div>
 
-                        <button style="background: none; border: none; border-radius: 50%; width: 28px; height: 28px; color: white; cursor: pointer;"
-                                @onclick="() => RemoveFromQueue(index)"
-                                @onclick:stopPropagation="true">
-                            ✕
-                        </button>
+                            <!-- Track Content (clickable) -->
+                            <div @onclick="() => PlayFromQueue(track)"
+                                 style="display: flex;
+                                        align-items: center;
+                                        gap: 12px;
+                                        flex: 1;
+                                        cursor: pointer;
+                                        min-width: 0;">
+
+                                <!-- Album Art -->
+                                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8B5CF6, #764ba2); border-radius: 8px; flex-shrink: 0; overflow: hidden;">
+                                    @if (!string.IsNullOrEmpty(track.AlbumImage))
+                                    {
+                                        <img src="@track.AlbumImage" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" alt="@track.Title" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                            ꩜
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Track Info -->
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @if (isCurrentTrack)
+                                        {
+                                            <span style="color: #8B5CF6;">▶ </span>
+                                        }
+                                        @track.Title
+                                    </div>
+                                    <div style="font-size: 12px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @track.ArtistName
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Remove Button -->
+                            <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 50%; width: 32px; height: 32px; color: #888; cursor: pointer; font-size: 16px; transition: all 0.2s; flex-shrink: 0;"
+                                    @onclick="() => RemoveFromQueue(index)"
+                                    @onclick:stopPropagation="true"
+                                    onmouseover="this.style.background='rgba(239,68,68,0.2)'; this.style.color='#ef4444'"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#888'">
+                                ✕
+                            </button>
+                        </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
 
-            <button style="background: none; border: 1px solid #fff; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px;"
-                    @onclick="ClearQueue">
-                Clear
+            <button style="background: none; border: 2px solid #3a3a3a; color: white; padding: 12px 20px; border-radius: 24px; cursor: pointer; width: 100%; margin-top: 16px; font-weight: 600; font-size: 14px; transition: all 0.3s;"
+                    @onclick="ClearQueue"
+                    onmouseover="this.style.borderColor='#10B981'; this.style.color='#10B981'; this.style.transform='scale(1.02)'"
+                    onmouseout="this.style.borderColor='#3a3a3a'; this.style.color='white'; this.style.transform='scale(1)'">
+                Clear Queue
             </button>
         }
     </div>
 }
 
+<script>
+    window.queueDragState = {
+        initialized: false,
+        cleanup: null
+    };
+
+    window.initQueueDragDrop = (dotNetHelper) => {
+        // Cleanup previous listeners
+        if (window.queueDragState.cleanup) {
+            window.queueDragState.cleanup();
+        }
+
+        const container = document.getElementById('queue-container');
+        if (!container) return;
+
+        let draggedElement = null;
+        let draggedIndex = null;
+        let isDragging = false;
+        let startY = 0;
+        let startX = 0;
+
+        const handleMouseDown = (e) => {
+            const handle = e.target.closest('.drag-handle');
+            if (!handle) return;
+
+            const item = handle.closest('.queue-item');
+            if (!item) return;
+
+            e.preventDefault();
+            isDragging = false;
+            startY = e.clientY;
+            startX = e.clientX;
+            draggedElement = item;
+            draggedIndex = parseInt(item.getAttribute('data-index'));
+
+            handle.style.cursor = 'grabbing';
+        };
+
+        const handleMouseMove = (e) => {
+            if (!draggedElement) return;
+
+            const deltaY = Math.abs(e.clientY - startY);
+            const deltaX = Math.abs(e.clientX - startX);
+
+            // Only start dragging if moved more than 5px
+            if (!isDragging && (deltaY > 5 || deltaX > 5)) {
+                isDragging = true;
+                draggedElement.style.opacity = '0.5';
+                draggedElement.style.transform = 'scale(0.98)';
+            }
+
+            if (!isDragging) return;
+
+            // Highlight all items the mouse is over
+            const items = container.querySelectorAll('.queue-item');
+            items.forEach(item => {
+                const rect = item.getBoundingClientRect();
+                if (e.clientY >= rect.top && e.clientY <= rect.bottom &&
+                    e.clientX >= rect.left && e.clientX <= rect.right) {
+                    if (item !== draggedElement) {
+                        const isCurrent = item.getAttribute('data-current') === 'true';
+                        item.style.borderColor = '#10B981';
+                    }
+                } else {
+                    const isCurrent = item.getAttribute('data-current') === 'true';
+                    item.style.borderColor = isCurrent ? '#8B5CF6' : 'transparent';
+                }
+            });
+        };
+
+        const handleMouseUp = (e) => {
+            if (!draggedElement) return;
+
+            if (isDragging) {
+                // Find which item we're dropping on
+                const items = container.querySelectorAll('.queue-item');
+                let targetIndex = null;
+
+                items.forEach(item => {
+                    const rect = item.getBoundingClientRect();
+                    if (e.clientY >= rect.top && e.clientY <= rect.bottom &&
+                        e.clientX >= rect.left && e.clientX <= rect.right) {
+                        targetIndex = parseInt(item.getAttribute('data-index'));
+                    }
+                });
+
+                if (targetIndex !== null && targetIndex !== draggedIndex) {
+                    console.log(`Reordering from ${draggedIndex} to ${targetIndex}`);
+                    dotNetHelper.invokeMethodAsync('ReorderQueueFromJS', draggedIndex, targetIndex);
+                }
+
+                // Reset styles
+                draggedElement.style.opacity = '1';
+                draggedElement.style.transform = 'scale(1)';
+
+                // Reset all borders
+                items.forEach(i => {
+                    const isCurrent = i.getAttribute('data-current') === 'true';
+                    i.style.borderColor = isCurrent ? '#8B5CF6' : 'transparent';
+                });
+            }
+
+            // Reset handle cursor
+            const handles = container.querySelectorAll('.drag-handle');
+            handles.forEach(h => h.style.cursor = 'grab');
+
+            draggedElement = null;
+            draggedIndex = null;
+            isDragging = false;
+        };
+
+        container.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // Store cleanup function
+        window.queueDragState.cleanup = () => {
+            container.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        window.queueDragState.initialized = true;
+    };
+</script>
+
 @code {
     private bool isOpen = false;
     private List<PlayableTrack> queue = new();
+    private DotNetObjectReference<object>? dotNetHelper;
 
     protected override void OnInitialized()
     {
         PlayerService.OnChange += HandlePlayerStateChanged;
         UpdateQueue();
         Console.WriteLine($"[QueuePanel] Initialized with {queue.Count} tracks");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (isOpen && queue.Any())
+        {
+            try
+            {
+                if (dotNetHelper == null)
+                {
+                    dotNetHelper = DotNetObjectReference.Create<object>(this);
+                }
+                await JSRuntime.InvokeVoidAsync("initQueueDragDrop", dotNetHelper);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[QueuePanel] Error initializing drag-drop: {ex.Message}");
+            }
+        }
+    }
+
+    [JSInvokable]
+    public async Task ReorderQueueFromJS(int fromIndex, int toIndex)
+    {
+        Console.WriteLine($"[QueuePanel] JS callback: Moving track from {fromIndex} to {toIndex}");
+
+        PlayerService.ReorderQueue(fromIndex, toIndex);
+        UpdateQueue();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void HandlePlayerStateChanged()
@@ -128,5 +341,6 @@
     public void Dispose()
     {
         PlayerService.OnChange -= HandlePlayerStateChanged;
+        dotNetHelper?.Dispose();
     }
 }
