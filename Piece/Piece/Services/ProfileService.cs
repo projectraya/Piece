@@ -13,6 +13,7 @@ namespace Piece.Services
 		Task<List<ApplicationUser>> SearchUsersAsync(string searchQuery, int limit = 20);
 		Task<List<Playlist>> GetUserPublicPlaylistsAsync(string userId);
 		Task UpdateLastActiveAsync(string userId);
+		Task<bool> UpdateProfileAsync(string userId, string? displayName, string? bio, bool isProfilePublic, bool showListeningHistory, bool showPlaylists, string? profilePictureUrl = null);
 	}
 
 	public class ProfileService : IProfileService
@@ -107,6 +108,34 @@ namespace Piece.Services
 			{
 				user.LastActiveAt = DateTime.UtcNow;
 				await context.SaveChangesAsync();
+			}
+		}
+
+		public async Task<bool> UpdateProfileAsync(string userId, string? displayName, string? bio, bool isProfilePublic, bool showListeningHistory, bool showPlaylists, string? profilePictureUrl = null)
+		{
+			using var context = await _dbFactory.CreateDbContextAsync();
+			try
+			{
+				var user = await context.Users.FindAsync(userId);
+				if (user == null) return false;
+
+				user.DisplayName = displayName;
+				user.Bio = bio;
+				user.IsProfilePublic = isProfilePublic;
+				user.ShowListeningHistory = showListeningHistory;
+				user.ShowPlaylists = showPlaylists;
+
+				if (profilePictureUrl != null)
+				{
+					user.ProfilePictureUrl = profilePictureUrl;
+				}
+
+				await context.SaveChangesAsync();
+				return true;
+			}
+			catch
+			{
+				return false;
 			}
 		}
 	}

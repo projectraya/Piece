@@ -4,10 +4,18 @@
 @using Piece.Data.Models
 @using Piece.Services
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
 @inject IProfileService ProfileService
 @inject IListeningHistoryService ListeningHistoryService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject IInputSanitizer InputSanitizer
+@inject IProfanityFilter ProfanityFilter
+@inject IWebHostEnvironment Environment
+@inject IJSRuntime JSRuntime
 
 <PageTitle>@(user?.DisplayName ?? user?.Email ?? "User Profile") - Piece</PageTitle>
 
@@ -42,12 +50,6 @@
         flex: 1;
     }
 
-    .profile-right {
-        min-width: 280px;
-        display: flex;
-        flex-direction: column;
-    }
-
     .profile-avatar {
         width: 150px;
         height: 150px;
@@ -60,7 +62,15 @@
         font-weight: bold;
         color: #ffffff;
         flex-shrink: 0;
+        overflow: hidden;
+        position: relative;
     }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .profile-info {
         flex: 1;
@@ -135,6 +145,11 @@
             transform: scale(1.05);
         }
 
+    .profile-right {
+        min-width: 280px;
+        display: flex;
+        flex-direction: column;
+    }
 
     .genres-section-header {
         padding: 0;
@@ -305,6 +320,323 @@
             transform: rotate(360deg);
         }
     }
+
+    /* Edit Profile Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-large {
+        background-color: #2a2a2a;
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 32px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.3s;
+    }
+
+        .btn-close:hover {
+            color: #ffffff;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-textarea {
+        width: 100%;
+        background-color: #1a1a1a;
+        border: 2px solid #3a3a3a;
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: #ffffff;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #8B5CF6;
+        }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .char-counter {
+        font-size: 12px;
+        color: #888;
+        text-align: right;
+        margin-top: 4px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background-color: #1a1a1a;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+        .checkbox-item:hover {
+            background-color: #3a3a3a;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #8B5CF6;
+        }
+
+    .checkbox-label {
+        font-size: 14px;
+        color: #ffffff;
+        cursor: pointer;
+        user-select: none;
+        flex: 1;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+    }
+
+    .btn-secondary {
+        background-color: #3a3a3a;
+        color: #ffffff;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 24px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-secondary:hover {
+            background-color: #4a4a4a;
+        }
+
+    .btn-primary {
+        background: #8B5CF6;
+        color: #ffffff;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 24px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background: #7c3aed;
+            transform: scale(1.05);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10B981;
+    }
+
+    .alert-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .alert-warning {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        color: #8B5CF6;
+    }
+
+    .avatar-upload {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #8B5CF6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: #ffffff;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+        .avatar-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .avatar-upload-btn {
+        background: none;
+        border: 2px solid #3a3a3a;
+        color: #ffffff;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .avatar-upload-btn:hover {
+            border-color: #8B5CF6;
+            color: #8B5CF6;
+        }
+
+    .hidden-file-input {
+        display: none;
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        background-color: #2a2a2a;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .toast.success {
+        border-left: 4px solid #10B981;
+    }
+
+    .toast.error {
+        border-left: 4px solid #ff4444;
+    }
+
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .toast-icon {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .toast.success .toast-icon {
+        color: #10B981;
+    }
+
+    .toast.error .toast-icon {
+        color: #ff4444;
+    }
+
+    .toast-message {
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 500;
+    }
 </style>
 
 @if (isLoading)
@@ -341,7 +673,14 @@ else
         <div class="profile-header">
             <div class="profile-left">
                 <div class="profile-avatar">
-                    @GetInitials(user.DisplayName ?? user.Email ?? "U")
+                    @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                    {
+                        <img src="@user.ProfilePictureUrl" alt="@user.DisplayName" />
+                    }
+                    else
+                    {
+                        <span>@GetInitials(user.DisplayName ?? user.Email ?? "U")</span>
+                    }
                 </div>
                 <div class="profile-info">
                     <h1 class="profile-name">@(user.DisplayName ?? "Piece User")</h1>
@@ -369,7 +708,7 @@ else
                     @if (isOwnProfile)
                     {
                         <div class="profile-actions">
-                            <button class="btn-edit" @onclick="EditProfile">Edit Profile</button>
+                            <button class="btn-edit" @onclick="OpenEditModal">Edit Profile</button>
                         </div>
                     }
                 </div>
@@ -382,7 +721,7 @@ else
                     <div class="genres-section-header">
                         <h3 class="genres-section-title">Top Genres</h3>
                         <div class="genres-grid">
-                            @foreach (var genre in topGenres.Take(4))
+                            @foreach (var genre in topGenres.Take(5))
                             {
                                 <div class="genre-badge" style="background: @genre.Value.Color;">
                                     <span>@genre.Key</span>
@@ -431,6 +770,128 @@ else
     </div>
 }
 
+<!-- Edit Profile Modal -->
+@if (showEditModal)
+{
+    <div class="modal-overlay" @onclick="CloseEditModal">
+        <div class="modal-large" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Profile</h2>
+                <button class="btn-close" @onclick="CloseEditModal">×</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(modalMessage))
+            {
+                <div class="alert @(modalIsSuccess ? "alert-success" : "alert-error")">
+                    @modalMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(warningMessage))
+            {
+                <div class="alert alert-warning">
+                    @warningMessage
+                </div>
+            }
+
+            <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync">
+                <DataAnnotationsValidator />
+
+                <!-- Avatar Upload -->
+                <div class="avatar-upload">
+                    <div class="avatar-preview" @onclick="OpenAvatarUpload">
+                        @if (!string.IsNullOrEmpty(previewAvatarUrl) && previewAvatarUrl != "REMOVED")
+                        {
+                            <img src="@previewAvatarUrl" alt="Avatar" />
+                        }
+                        else if (previewAvatarUrl == "REMOVED")
+                        {
+                            <span>@GetInitials(Input.DisplayName ?? user?.Email ?? "U")</span>
+                        }
+                        else if (!string.IsNullOrEmpty(user?.ProfilePictureUrl))
+                        {
+                            <img src="@user.ProfilePictureUrl" alt="Avatar" />
+                        }
+                        else
+                        {
+                            <span>@GetInitials(Input.DisplayName ?? user?.Email ?? "U")</span>
+                        }
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="avatar-upload-btn" @onclick="OpenAvatarUpload">
+                            Change Avatar
+                        </button>
+                        @if ((previewAvatarUrl != null && previewAvatarUrl != "REMOVED") || (!string.IsNullOrEmpty(user?.ProfilePictureUrl) && previewAvatarUrl != "REMOVED"))
+                        {
+                            <button type="button" class="avatar-upload-btn" style="border-color: #ff4444; color: #ff4444;" @onclick="RemoveAvatar">
+                                Remove Avatar
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Display Name -->
+                <div class="form-group">
+                    <label class="form-label">Display Name</label>
+                    <InputText @bind-Value="Input.DisplayName" class="form-input" placeholder="How you want to be called" />
+                    <ValidationMessage For="() => Input.DisplayName" class="text-danger" />
+                </div>
+
+                <!-- Bio -->
+                <div class="form-group">
+                    <label class="form-label">Bio</label>
+                    <InputTextArea @bind-Value="Input.Bio" class="form-input form-textarea"
+                                   placeholder="Tell us about your music taste..."
+                                   @oninput="UpdateBioCharCount" />
+                    <div class="char-counter">@bioCharCount / 500 characters</div>
+                    <ValidationMessage For="() => Input.Bio" class="text-danger" />
+                </div>
+
+                <!-- Privacy Settings -->
+                <div class="form-group">
+                    <label class="form-label">Privacy Settings</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <InputCheckbox @bind-Value="Input.IsProfilePublic" />
+                            <span class="checkbox-label">Public Profile - Anyone can view your profile</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <InputCheckbox @bind-Value="Input.ShowPlaylists" />
+                            <span class="checkbox-label">Show Public Playlists - Display your playlists on your profile</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <InputCheckbox @bind-Value="Input.ShowListeningHistory" />
+                            <span class="checkbox-label">Show Listening Colors - Display your top genres and listening stats</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" @onclick="CloseEditModal">Cancel</button>
+                    <button type="submit" class="btn-primary" disabled="@modalIsLoading">
+                        @(modalIsLoading ? "Saving..." : "Save Changes")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Toast Notification -->
+@if (showToast)
+{
+    <div class="toast @toastType">
+        <div class="toast-content">
+            <span class="toast-icon">@(toastType == "success" ? "✓" : "⚠")</span>
+            <span class="toast-message">@toastMessage</span>
+        </div>
+    </div>
+}
+
+<!-- Hidden file input for avatar upload -->
+<InputFile OnChange="HandleAvatarUpload" class="hidden-file-input" accept="image/*" @ref="avatarInput" />
+
 @code {
     [Parameter] public string Username { get; set; } = "";
 
@@ -441,6 +902,24 @@ else
     private bool isLoading = true;
     private bool isOwnProfile = false;
     private string? currentUserId;
+
+    // Edit modal
+    private bool showEditModal = false;
+    private bool modalIsLoading = false;
+    private string? modalMessage;
+    private bool modalIsSuccess;
+    private string? warningMessage = "Input is sanitized automatically. Inappropriate language may result in account suspension.";
+    private int bioCharCount = 0;
+    private InputModel Input { get; set; } = new();
+
+    // Avatar upload
+    private InputFile? avatarInput;
+    private string? previewAvatarUrl;
+
+    // Toast
+    private string? toastMessage;
+    private string toastType = "error";
+    private bool showToast = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -469,18 +948,11 @@ else
                 return;
             }
 
-            Console.WriteLine($"[Profile] User found: {user.Email}");
-            Console.WriteLine($"[Profile] IsProfilePublic: {user.IsProfilePublic}");
-            Console.WriteLine($"[Profile] ShowPlaylists: {user.ShowPlaylists}");
-
             isOwnProfile = currentUserId == user.Id;
-            Console.WriteLine($"[Profile] IsOwnProfile: {isOwnProfile}");
 
             if (user.IsProfilePublic || isOwnProfile)
             {
                 publicPlaylists = await ProfileService.GetUserPublicPlaylistsAsync(user.Id);
-                Console.WriteLine($"[Profile] Public playlists loaded: {publicPlaylists.Count}");
-
                 totalTracks = publicPlaylists.Sum(p => p.PlaylistTracks.Count);
 
                 if (user.ShowListeningHistory || isOwnProfile)
@@ -510,13 +982,241 @@ else
         return name[0].ToString().ToUpper();
     }
 
-    private void EditProfile()
+    private void OpenEditModal()
     {
-        Navigation.NavigateTo("/Account/Manage/EditProfile");
+        if (user == null) return;
+
+        Input.DisplayName = user.DisplayName ?? "";
+        Input.Bio = user.Bio ?? "";
+        Input.IsProfilePublic = user.IsProfilePublic;
+        Input.ShowPlaylists = user.ShowPlaylists;
+        Input.ShowListeningHistory = user.ShowListeningHistory;
+
+        bioCharCount = Input.Bio?.Length ?? 0;
+        previewAvatarUrl = null;
+        shouldRemoveAvatar = false;
+        modalMessage = null;
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        modalMessage = null;
+        previewAvatarUrl = null;
+    }
+
+    private void UpdateBioCharCount(ChangeEventArgs e)
+    {
+        bioCharCount = e.Value?.ToString()?.Length ?? 0;
+    }
+
+    private async Task OpenAvatarUpload()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.hidden-file-input').click()");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error opening file picker: {ex.Message}");
+        }
+    }
+
+    private async Task HandleAvatarUpload(InputFileChangeEventArgs e)
+    {
+        if (user == null) return;
+
+        var file = e.File;
+        if (file == null) return;
+
+        try
+        {
+            // Validate file type
+            var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
+            if (!allowedTypes.Contains(file.ContentType.ToLower()))
+            {
+                ShowToast("Invalid file type. Please upload a JPEG, PNG, or WebP image.", "error");
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.Size > 5 * 1024 * 1024)
+            {
+                ShowToast("File size too large. Maximum size is 5MB.", "error");
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var base64 = Convert.ToBase64String(memoryStream.ToArray());
+            previewAvatarUrl = $"data:{file.ContentType};base64,{base64}";
+            shouldRemoveAvatar = false; 
+            StateHasChanged();
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error previewing avatar: {ex.Message}");
+            ShowToast("Failed to preview avatar. Please try again.", "error");
+        }
+    }
+
+    private bool shouldRemoveAvatar = false;
+
+    private void RemoveAvatar()
+    {
+        previewAvatarUrl = "REMOVED";
+        shouldRemoveAvatar = true;
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (user == null) return;
+
+        // Check for profanity
+        if (ProfanityFilter.ContainsProfanity(Input.DisplayName ?? ""))
+        {
+            modalMessage = "Display name contains inappropriate language. Please choose a different name.";
+            modalIsSuccess = false;
+            return;
+        }
+
+        if (ProfanityFilter.ContainsProfanity(Input.Bio ?? ""))
+        {
+            modalMessage = "Bio contains inappropriate language. Please revise your bio.";
+            modalIsSuccess = false;
+            return;
+        }
+
+        modalIsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Sanitize inputs
+            var sanitizedDisplayName = InputSanitizer.SanitizeString(Input.DisplayName ?? "", 100);
+            var sanitizedBio = InputSanitizer.SanitizeString(Input.Bio ?? "", 500);
+
+            // Handle avatar changes
+            string? newAvatarUrl = user.ProfilePictureUrl;
+
+            if (shouldRemoveAvatar)
+            {
+                // Delete old avatar if exists
+                if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                {
+                    var oldFilePath = Path.Combine(Environment.WebRootPath, user.ProfilePictureUrl.TrimStart('/'));
+                    if (File.Exists(oldFilePath))
+                    {
+                        File.Delete(oldFilePath);
+                    }
+                }
+                newAvatarUrl = null;
+            }
+            else if (!string.IsNullOrEmpty(previewAvatarUrl) && previewAvatarUrl.StartsWith("data:"))
+            {
+                // Save the new avatar
+                var uploadsPath = Path.Combine(Environment.WebRootPath, "uploads", "avatars");
+                Directory.CreateDirectory(uploadsPath);
+
+                var extension = ".jpg";
+                var fileName = $"avatar_{user.Id}_{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                // Convert base64 to file
+                var base64Data = previewAvatarUrl.Split(',')[1];
+                var bytes = Convert.FromBase64String(base64Data);
+                await File.WriteAllBytesAsync(filePath, bytes);
+
+                // Delete old avatar if exists
+                if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                {
+                    var oldFilePath = Path.Combine(Environment.WebRootPath, user.ProfilePictureUrl.TrimStart('/'));
+                    if (File.Exists(oldFilePath))
+                    {
+                        File.Delete(oldFilePath);
+                    }
+                }
+
+                newAvatarUrl = $"/uploads/avatars/{fileName}";
+            }
+
+            var success = await ProfileService.UpdateProfileAsync(
+                user.Id,
+                sanitizedDisplayName,
+                sanitizedBio,
+                Input.IsProfilePublic,
+                Input.ShowListeningHistory,
+                Input.ShowPlaylists,
+                newAvatarUrl
+            );
+
+            if (success)
+            {
+                modalMessage = "Profile updated successfully!";
+                modalIsSuccess = true;
+
+                // Update local user object
+                user.DisplayName = sanitizedDisplayName;
+                user.Bio = sanitizedBio;
+                user.IsProfilePublic = Input.IsProfilePublic;
+                user.ShowPlaylists = Input.ShowPlaylists;
+                user.ShowListeningHistory = Input.ShowListeningHistory;
+                user.ProfilePictureUrl = newAvatarUrl;
+
+                // Close modal after a short delay
+                await Task.Delay(1500);
+                CloseEditModal();
+                await LoadProfile();
+            }
+            else
+            {
+                modalMessage = "Could not update profile. Please try again.";
+                modalIsSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            modalMessage = $"Error: {ex.Message}";
+            modalIsSuccess = false;
+        }
+        finally
+        {
+            modalIsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void ShowToast(string message, string type)
+    {
+        toastMessage = message;
+        toastType = type;
+        showToast = true;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+        showToast = false;
+        StateHasChanged();
     }
 
     private void ViewPlaylist(int playlistId)
     {
         Navigation.NavigateTo($"/playlist/{playlistId}");
+    }
+
+    private sealed class InputModel
+    {
+        [StringLength(100, ErrorMessage = "Display name must be less than 100 characters.")]
+        public string? DisplayName { get; set; }
+
+        [StringLength(500, ErrorMessage = "Bio must be less than 500 characters.")]
+        public string? Bio { get; set; }
+
+        public bool IsProfilePublic { get; set; } = true;
+        public bool ShowPlaylists { get; set; } = true;
+        public bool ShowListeningHistory { get; set; } = true;
     }
 }

@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Statistics"
+﻿@page "/statistics"
 @rendermode InteractiveServer
 @using Piece.DTOs
 @using Piece.Services
@@ -10,12 +10,28 @@
 <PageTitle>Listening Statistics</PageTitle>
 
 <style>
-    .stats-container {
-        margin-top: 20px;
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
     }
 
+    .page-title {
+        font-size: 48px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+    }
+    .stats-container {
+        padding: 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+
     .stats-section {
-        background-color: #2a2a2a;
+        background: none;
         border-radius: 16px;
         padding: 30px;
         margin-bottom: 30px;
@@ -138,7 +154,7 @@
     .track-rank {
         font-size: 24px;
         font-weight: 700;
-        color: #FFD335;
+        color: #8B5CF6;
         text-align: center;
     }
 
@@ -151,7 +167,7 @@
     .track-art-small {
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, #FFD335 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10B981 0%, #764ba2 100%);
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -199,16 +215,34 @@
         font-size: 14px;
         color: #888;
     }
+
+    .dual-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
+    }
+
+    @@media (max-width: 1100px) {
+        .dual-stats-grid
+        {
+            grid-template-columns: 1fr;
+        }
+
+    }
 </style>
 
 <div class="stats-container">
+    <div class="page-header">
+        <h1 class="page-title">Statistics</h1>
+    </div>
     @if (isLoading)
     {
         <p style="color: #888;">Loading statistics...</p>
     }
     else
     {
-       
+
         <!-- Genre Heatmap -->
         <div class="stats-section">
             <h2 class="section-title">Listening History (Last 90 Days)</h2>
@@ -261,84 +295,91 @@
                 }
             </div>
         </div>
-        <!-- Most Played Tracks -->
-        <div class="stats-section">
-            <h2 class="section-title">Most Played Tracks (All Time)</h2>
-            @if (mostPlayedTracks.Any())
-            {
-                <div class="track-list">
-                    @foreach (var (track, index) in mostPlayedTracks.Select((t, i) => (t, i + 1)))
-                    {
-                        <div class="stat-track-card" @onclick="() => PlayTrack(track)">
-                            <div class="track-rank">#@index</div>
-                            <div class="track-art-small">
-                                @if (!string.IsNullOrEmpty(track.CoverImageUrl))
-                                {
-                                    <img src="@track.CoverImageUrl" alt="@track.Title" />
-                                }
-                                else
-                                {
-                                    <span>🎵</span>
-                                }
+        <div class="dual-stats-grid">
+
+            <!-- Most Played Tracks -->
+            <div class="stats-section">
+                <h2 class="section-title">Most Played Tracks (All Time)</h2>
+
+                @if (mostPlayedTracks.Any())
+                {
+                    <div class="track-list">
+                        @foreach (var (track, index) in mostPlayedTracks.Select((t, i) => (t, i + 1)))
+                        {
+                            <div class="stat-track-card" @onclick="() => PlayTrack(track)">
+                                <div class="track-rank">#@index</div>
+                                <div class="track-art-small">
+                                    @if (!string.IsNullOrEmpty(track.CoverImageUrl))
+                                    {
+                                        <img src="@track.CoverImageUrl" alt="@track.Title" />
+                                    }
+                                    else
+                                    {
+                                        <span>🎵</span>
+                                    }
+                                </div>
+                                <div class="track-details">
+                                    <div class="track-name">@track.Title</div>
+                                    <div class="track-artist">@track.ArtistName</div>
+                                </div>
+                                <div class="track-play-count">
+                                    <span style="font-size: 18px; font-weight: 700; color: #8B5CF6;">@track.PlayCount</span>
+                                    <span style="font-size: 12px; color: #666;">plays</span>
+                                </div>
                             </div>
-                            <div class="track-details">
-                                <div class="track-name">@track.Title</div>
-                                <div class="track-artist">@track.ArtistName</div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 40px; color: #888;">
+                        <p>No play history yet</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Recently Played -->
+            <div class="stats-section">
+                <h2 class="section-title">Recently Played</h2>
+
+                @if (recentlyPlayed.Any())
+                {
+                    <div class="track-list">
+                        @foreach (var history in recentlyPlayed)
+                        {
+                            <div class="stat-track-card" @onclick="() => PlayTrack(history.Track)">
+                                <div class="track-time">@GetTimeAgo(history.PlayedAt)</div>
+                                <div class="track-art-small">
+                                    @if (!string.IsNullOrEmpty(history.Track.CoverImageUrl))
+                                    {
+                                        <img src="@history.Track.CoverImageUrl" alt="@history.Track.Title" />
+                                    }
+                                    else
+                                    {
+                                        <span>🎵</span>
+                                    }
+                                </div>
+                                <div class="track-details">
+                                    <div class="track-name">@history.Track.Title</div>
+                                    <div class="track-artist">@history.Track.ArtistName</div>
+                                </div>
+                                <div class="track-duration">
+                                    @TimeSpan.FromSeconds(history.DurationListened).ToString(@"mm\:ss")
+                                </div>
                             </div>
-                            <div class="track-play-count">
-                                <span style="font-size: 18px; font-weight: 700; color: #FFD335;">@track.PlayCount</span>
-                                <span style="font-size: 12px; color: #666;">plays</span>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div style="text-align: center; padding: 40px; color: #888;">
-                    <p>No play history yet</p>
-                </div>
-            }
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 40px; color: #888;">
+                        <p>No recent plays</p>
+                    </div>
+                }
+            </div>
+
         </div>
 
-        <!-- Recently Played -->
-        <div class="stats-section">
-            <h2 class="section-title">Recently Played</h2>
-            @if (recentlyPlayed.Any())
-            {
-                <div class="track-list">
-                    @foreach (var history in recentlyPlayed)
-                    {
-                        <div class="stat-track-card" @onclick="() => PlayTrack(history.Track)">
-                            <div class="track-time">@GetTimeAgo(history.PlayedAt)</div>
-                            <div class="track-art-small">
-                                @if (!string.IsNullOrEmpty(history.Track.CoverImageUrl))
-                                {
-                                    <img src="@history.Track.CoverImageUrl" alt="@history.Track.Title" />
-                                }
-                                else
-                                {
-                                    <span>🎵</span>
-                                }
-                            </div>
-                            <div class="track-details">
-                                <div class="track-name">@history.Track.Title</div>
-                                <div class="track-artist">@history.Track.ArtistName</div>
-                            </div>
-                            <div class="track-duration">
-                                @TimeSpan.FromSeconds(history.DurationListened).ToString(@"mm\:ss")
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div style="text-align: center; padding: 40px; color: #888;">
-                    <p>No recent plays</p>
-                </div>
-            }
-        </div>
     }
 </div>
 
@@ -348,6 +389,9 @@
     private Dictionary<DateTime, List<(string Color, int Count)>> genreHistory = new();
     private List<Track> mostPlayedTracks = new();
     private List<ListeningHistory> recentlyPlayed = new();
+
+    private record UserTrackStat(Track Track, int PlayCount);
+
 
     private class DayData
     {
@@ -388,23 +432,51 @@
         topGenres = await ListeningHistoryService.GetTopGenresAsync(currentUserId!, 30);
         Console.WriteLine($"[Statistics] Loaded {topGenres.Count} top genres");
 
-        mostPlayedTracks = await context.Tracks
-            .Include(t => t.Genre)
-            .Where(t => t.Source == TrackSource.Local)
-            .OrderByDescending(t => t.PlayCount)
+        var mostPlayedRaw = await context.ListeningHistory
+            .Where(h => h.UserId == currentUserId &&
+                        h.Track.Source == TrackSource.Local)
+            .GroupBy(h => h.TrackId)
+            .Select(g => new
+            {
+                TrackId = g.Key,
+                PlayCount = g.Count()
+            })
+            .OrderByDescending(x => x.PlayCount)
             .Take(10)
             .ToListAsync();
+
+        var trackIds = mostPlayedRaw.Select(x => x.TrackId).ToList();
+
+        var tracks = await context.Tracks
+            .Include(t => t.Genre)
+            .Where(t => trackIds.Contains(t.Id))
+            .ToListAsync();
+
+
+        mostPlayedTracks = mostPlayedRaw
+            .Join(
+            tracks,
+            x => x.TrackId,
+            t => t.Id,
+            (x, t) =>
+            {
+                t.PlayCount = x.PlayCount; // safe now
+                return t;
+            })
+            .ToList();
+
+
 
         recentlyPlayed = await context.ListeningHistory
             .Include(h => h.Track)
                 .ThenInclude(t => t.Genre)
             .Where(h => h.UserId == currentUserId && h.Track.Source == TrackSource.Local)
             .OrderByDescending(h => h.PlayedAt)
-            .Take(20)
+            .Take(10)
             .ToListAsync();
     }
 
-   
+
 
     private Dictionary<string, List<DayData>> GetMonthsData()
     {
@@ -505,7 +577,7 @@
         return $"{day.Date:MMM dd, yyyy} - {genreInfo}";
     }
 
-    
 
-    
+
+
 }

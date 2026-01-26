@@ -19,6 +19,8 @@ namespace Piece.Data
 		public bool ShowListeningHistory { get; set; } = true;
 		public bool ShowPlaylists { get; set; } = true;
 
+		public string? ProfilePictureUrl { get; set; }
+
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 		public DateTime? LastActiveAt { get; set; }
 
