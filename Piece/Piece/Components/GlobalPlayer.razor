@@ -124,25 +124,113 @@
         </div>
 
         <!-- Right: Extra Controls -->
-        
         <div style="display: flex; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
             <div style="margin-right: 20px;">
                 <MiniVisualizer />
             </div>
             <button @onclick="ToggleFavorite"
                     style="background: none;
-                   border: none;
-                   color: @(PlayerService.CurrentTrack.IsFavorite ? "#ff4444" : "#888");
-                   font-size: 24px;
+                   border: 2px solid @(PlayerService.CurrentTrack.IsFavorite ? "#10B981" : "#3a3a3a");
+                   color: @(PlayerService.CurrentTrack.IsFavorite ? "#10B981" : "#888");
+                   width: 40px;
+                   height: 40px;
+                   border-radius: 50%;
+                   font-size: 18px;
                    cursor: pointer;
-                   transition: all 0.3s;">
-                @(PlayerService.CurrentTrack.IsFavorite ? "❤" : "🤍")
+                   transition: all 0.3s ease;
+                   display: flex;
+                   align-items: center;
+                   justify-content: center;"
+                    onmouseover="this.style.borderColor='#10B981'; this.style.transform='scale(1.1)'"
+                    onmouseout="this.style.borderColor=@(PlayerService.CurrentTrack.IsFavorite ? "'#10B981'" : "'#3a3a3a'"); this.style.transform='scale(1)'">
+                @if (PlayerService.CurrentTrack.IsFavorite)
+                {
+                    <span>♥</span>
+                }
+                else
+                {
+                    <span>♡</span>
+                }
             </button>
-            <button style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer;">🔊</button>
+
+            <!-- Volume Control - Always Visible Slider -->
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 140px;">
+                <!-- Volume Icon -->
+                <div style="color: @(volume == 0 ? "#ef4444" : "#888");
+                    font-size: 18px;
+                    transition: color 0.3s;">
+                    @if (volume == 0)
+                    {
+                        <span>🔇</span>
+                    }
+                    else if (volume < 0.3)
+                    {
+                        <span>🔈</span>
+                    }
+                    else if (volume < 0.7)
+                    {
+                        <span>🔉</span>
+                    }
+                    else
+                    {
+                        <span>🔊</span>
+                    }
+                </div>
+
+                <!-- Horizontal Volume Slider -->
+                <input type="range"
+                       min="0"
+                       max="100"
+                       value="@((int)(volume * 100))"
+                       @oninput="OnVolumeChange"
+                       style="flex: 1;
+                      height: 6px;
+                      -webkit-appearance: none;
+                      appearance: none;
+                      background: linear-gradient(to right, #8B5CF6 0%, #8B5CF6 @((int)(volume * 100))%, #3a3a3a @((int)(volume * 100))%, #3a3a3a 100%);
+                      border-radius: 3px;
+                      outline: none;
+                      cursor: pointer;" />
+            </div>
         </div>
     </div>
 }
 
+<style>
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #8B5CF6;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+        transition: all 0.2s ease;
+    }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+        }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #8B5CF6;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+        transition: all 0.2s ease;
+    }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+        }
+</style>
 @code {
     private ElementReference audioElement;
     private string currentTime = "0:00";
@@ -155,6 +243,25 @@
     [Inject] private IListeningHistoryService? ListeningHistoryService { get; set; }
     private DateTime trackStartTime;
     private string? lastTrackedTrackId;
+    private bool isMuted = false;
+    private double volume = 1.0; // Default volume 100%
+
+private async Task OnVolumeChange(ChangeEventArgs e)
+{
+    if (double.TryParse(e.Value?.ToString(), out double newVolume))
+    {
+        volume = newVolume / 100.0; // Convert from 0-100 to 0-1
+        
+        await JSRuntime.InvokeVoidAsync("eval", $@"
+            var audio = document.getElementById('globalAudioPlayer');
+            if (audio) {{
+                audio.volume = {volume.ToString(System.Globalization.CultureInfo.InvariantCulture)};
+            }}
+        ");
+        
+        StateHasChanged();
+    }
+}
 
     protected override async Task OnInitializedAsync()
     {
