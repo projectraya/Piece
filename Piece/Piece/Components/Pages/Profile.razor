@@ -675,11 +675,19 @@ else
                 <div class="profile-avatar">
                     @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
                     {
-                        <img src="@user.ProfilePictureUrl" alt="@user.DisplayName" />
+                        <img src="@user.ProfilePictureUrl"
+                             alt="@GetInitials(user.DisplayName ?? user.Email ?? "U")"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+                        <span style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; color: #ffffff;">
+                            @GetInitials(user.DisplayName ?? user.Email ?? "U")
+                        </span>
                     }
                     else
                     {
-                        <span>@GetInitials(user.DisplayName ?? user.Email ?? "U")</span>
+                        <span style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; color: #ffffff;">
+                            @GetInitials(user.DisplayName ?? user.Email ?? "U")
+                        </span>
                     }
                 </div>
                 <div class="profile-info">
@@ -802,7 +810,10 @@ else
                     <div class="avatar-preview" @onclick="OpenAvatarUpload">
                         @if (!string.IsNullOrEmpty(previewAvatarUrl) && previewAvatarUrl != "REMOVED")
                         {
-                            <img src="@previewAvatarUrl" alt="Avatar" />
+                            <img src="@previewAvatarUrl"
+                                 alt="@GetInitials(Input.DisplayName ?? user?.Email ?? "U")"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <span style="display: none;">@GetInitials(Input.DisplayName ?? user?.Email ?? "U")</span>
                         }
                         else if (previewAvatarUrl == "REMOVED")
                         {
@@ -810,7 +821,10 @@ else
                         }
                         else if (!string.IsNullOrEmpty(user?.ProfilePictureUrl))
                         {
-                            <img src="@user.ProfilePictureUrl" alt="Avatar" />
+                            <img src="@user.ProfilePictureUrl"
+                                 alt="@GetInitials(Input.DisplayName ?? user?.Email ?? "U")"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <span style="display: none;">@GetInitials(Input.DisplayName ?? user?.Email ?? "U")</span>
                         }
                         else
                         {
@@ -973,13 +987,18 @@ else
 
     private string GetInitials(string name)
     {
-        if (string.IsNullOrEmpty(name)) return "U";
+        if (string.IsNullOrWhiteSpace(name))
+            return "U";
 
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length >= 2)
-            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        return name[0].ToString().ToUpper();
+        if (parts.Length == 0)
+            return "U";
+
+        if (parts.Length == 1)
+            return parts[0][0].ToString().ToUpper();
+
+        return $"{parts[0][0]}{parts[1][0]}".ToUpper();
     }
 
     private void OpenEditModal()
@@ -1032,7 +1051,6 @@ else
 
         try
         {
-            // Validate file type
             var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
             if (!allowedTypes.Contains(file.ContentType.ToLower()))
             {
@@ -1040,7 +1058,6 @@ else
                 return;
             }
 
-            // Validate file size (max 5MB)
             if (file.Size > 5 * 1024 * 1024)
             {
                 ShowToast("File size too large. Maximum size is 5MB.", "error");
@@ -1076,7 +1093,6 @@ else
     {
         if (user == null) return;
 
-        // Check for profanity
         if (ProfanityFilter.ContainsProfanity(Input.DisplayName ?? ""))
         {
             modalMessage = "Display name contains inappropriate language. Please choose a different name.";
@@ -1096,16 +1112,13 @@ else
 
         try
         {
-            // Sanitize inputs
             var sanitizedDisplayName = InputSanitizer.SanitizeString(Input.DisplayName ?? "", 100);
             var sanitizedBio = InputSanitizer.SanitizeString(Input.Bio ?? "", 500);
 
-            // Handle avatar changes
             string? newAvatarUrl = user.ProfilePictureUrl;
 
             if (shouldRemoveAvatar)
             {
-                // Delete old avatar if exists
                 if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
                 {
                     var oldFilePath = Path.Combine(Environment.WebRootPath, user.ProfilePictureUrl.TrimStart('/'));
@@ -1116,9 +1129,8 @@ else
                 }
                 newAvatarUrl = null;
             }
-            else if (!string.IsNullOrEmpty(previewAvatarUrl) && previewAvatarUrl.StartsWith("data:"))
+            else if (!string.IsNullOrEmpty(previewAvatarUrl) && previewAvatarUrl != "REMOVED" && previewAvatarUrl.StartsWith("data:"))
             {
-                // Save the new avatar
                 var uploadsPath = Path.Combine(Environment.WebRootPath, "uploads", "avatars");
                 Directory.CreateDirectory(uploadsPath);
 
@@ -1126,12 +1138,10 @@ else
                 var fileName = $"avatar_{user.Id}_{Guid.NewGuid()}{extension}";
                 var filePath = Path.Combine(uploadsPath, fileName);
 
-                // Convert base64 to file
                 var base64Data = previewAvatarUrl.Split(',')[1];
                 var bytes = Convert.FromBase64String(base64Data);
                 await File.WriteAllBytesAsync(filePath, bytes);
 
-                // Delete old avatar if exists
                 if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
                 {
                     var oldFilePath = Path.Combine(Environment.WebRootPath, user.ProfilePictureUrl.TrimStart('/'));
@@ -1159,18 +1169,19 @@ else
                 modalMessage = "Profile updated successfully!";
                 modalIsSuccess = true;
 
-                // Update local user object
                 user.DisplayName = sanitizedDisplayName;
                 user.Bio = sanitizedBio;
                 user.IsProfilePublic = Input.IsProfilePublic;
                 user.ShowPlaylists = Input.ShowPlaylists;
                 user.ShowListeningHistory = Input.ShowListeningHistory;
-                user.ProfilePictureUrl = newAvatarUrl;
+                user.ProfilePictureUrl = newAvatarUrl; 
 
-                // Close modal after a short delay
+                previewAvatarUrl = null;
+                shouldRemoveAvatar = false;
+
                 await Task.Delay(1500);
                 CloseEditModal();
-                await LoadProfile();
+                StateHasChanged();
             }
             else
             {
