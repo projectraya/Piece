@@ -44,6 +44,7 @@ namespace Piece
 			builder.Services.AddScoped<LastFmSeeder>();
 			builder.Services.AddHttpClient();
 			builder.Services.AddScoped<CountryMusicService>();
+			builder.Services.AddHttpClient<DeezerService>();
 
 
 			builder.Services.AddAuthentication(options =>
@@ -154,7 +155,7 @@ namespace Piece
 					"img-src 'self' data: https: blob:; " +
 					"font-src 'self' data:; " +
 					"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; " +
-					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com https://prod-1.storage.jamendo.com https://storage.jamendo.com; " +
+					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com https://prod-1.storage.jamendo.com https://storage.jamendo.com https://*.dzcdn.net; "+
 					"frame-src 'none';");
 
 				// Control referrer information

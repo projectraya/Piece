@@ -10,14 +10,17 @@ namespace Piece.Services
 	{
 		private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 		private readonly HttpClient _httpClient;
+		private readonly DeezerService _deezerService;
 
 		public CountryMusicService(
 			IDbContextFactory<ApplicationDbContext> dbFactory,
-			IHttpClientFactory httpClientFactory)
+			IHttpClientFactory httpClientFactory,
+			DeezerService deezerService) 
 		{
 			_dbFactory = dbFactory;
 			_httpClient = httpClientFactory.CreateClient();
 			_httpClient.DefaultRequestHeaders.Add("User-Agent", "Piece/1.0 (music-discovery-app)");
+			_deezerService = deezerService; 
 		}
 
 		public async Task<CountryMusicData> GetCountryMusicData(string countryCode)
@@ -37,13 +40,12 @@ namespace Piece.Services
 
 			Console.WriteLine($"[CountryMusicService] Found country: {country.Name}");
 
-			// First, try to get artists FROM this country from MusicBrainz
 			var artistsFromCountry = await GetArtistsFromCountryViaMusicBrainz(country.Name);
 
 			if (artistsFromCountry.Count == 0)
 			{
 				Console.WriteLine($"[CountryMusicService] No MusicBrainz artists found, falling back to local database");
-				// Fallback to local database (LastFm seeded data)
+				
 				return await GetCountryMusicDataFromDatabase(context, country);
 			}
 
@@ -72,14 +74,11 @@ namespace Piece.Services
 		{
 			try
 			{
-				// MusicBrainz API - search for artists FROM this country
-				// Add tag filter for music-related types only
 				var encodedCountry = Uri.EscapeDataString(countryName);
 				var url = $"https://musicbrainz.org/ws/2/artist?query=area:\"{encodedCountry}\" AND (type:person OR type:group) AND NOT type:character&limit=100&fmt=json";
 
 				Console.WriteLine($"[CountryMusicService] MusicBrainz query: {url}");
 
-				// Respect MusicBrainz rate limit (1 request per second)
 				await Task.Delay(1100);
 
 				var response = await _httpClient.GetFromJsonAsync<MusicBrainzResponse>(url);
@@ -90,27 +89,61 @@ namespace Piece.Services
 					return new List<CountryArtistInfo>();
 				}
 
-				// Filter out non-musicians by checking if they have valid music-related tags
-				var artists = response.Artists
+				var filteredArtists = response.Artists
 					.Where(a => !string.IsNullOrEmpty(a.Name) && IsLikelyMusician(a))
-					.Select((a, index) => new CountryArtistInfo
-					{
-						Id = index,
-						Name = a.Name ?? "Unknown Artist",
-						ArtistName = a.Name ?? "Unknown Artist",
-						Bio = a.Disambiguation,
-						ImageUrl = null,
-						Genre = GetGenreFromType(a.Type) ?? GetGenreFromTags(a.Tags),
-						TrackCount = 0,
-						AveragePopularity = 100 - (index * 2),
-						TopTracks = new List<CountryTrackInfo>()
-					})
-					.OrderByDescending(a => a.AveragePopularity)
 					.Take(20)
 					.ToList();
 
-				Console.WriteLine($"[CountryMusicService] Processed {artists.Count} musicians from MusicBrainz");
-				return artists;
+				Console.WriteLine($"[CountryMusicService] Filtered to {filteredArtists.Count} musicians from MusicBrainz");
+
+				var artistsList = new List<CountryArtistInfo>();
+				int index = 0;
+
+				foreach (var mbArtist in filteredArtists)
+				{
+					Console.WriteLine($"[CountryMusicService] Fetching Deezer tracks for: {mbArtist.Name}");
+
+					var deezerTracks = await _deezerService.GetArtistTopTracksAsync(mbArtist.Name!, 3);
+
+					if (!deezerTracks.Any())
+					{
+						Console.WriteLine($"[CountryMusicService] No Deezer tracks for {mbArtist.Name}, skipping");
+						continue;
+					}
+
+					var artist = new CountryArtistInfo
+					{
+						Id = index,
+						Name = mbArtist.Name ?? "Unknown Artist",
+						ArtistName = mbArtist.Name ?? "Unknown Artist",
+						Bio = mbArtist.Disambiguation,
+						ImageUrl = deezerTracks.FirstOrDefault()?.Album?.CoverBig, 
+						Genre = GetGenreFromType(mbArtist.Type) ?? GetGenreFromTags(mbArtist.Tags),
+						TrackCount = deezerTracks.Count,
+						AveragePopularity = 100 - (index * 2),
+						TopTracks = deezerTracks.Select(dt => new CountryTrackInfo
+						{
+							Id = 0,
+							TrackName = dt.Title,
+							AlbumName = dt.Album?.Title ?? "",
+							ArtistName = mbArtist.Name ?? "Unknown Artist",
+							PreviewUrl = dt.Preview, 
+							AlbumArtUrl = dt.Album?.CoverMedium,
+							DurationSeconds = dt.Duration,
+							Popularity = 0
+						}).ToList()
+					};
+
+					artistsList.Add(artist);
+					index++;
+
+					Console.WriteLine($"[CountryMusicService] ✓ Added {mbArtist.Name} with {deezerTracks.Count} preview tracks");
+
+					await Task.Delay(200);
+				}
+
+				Console.WriteLine($"[CountryMusicService] Final result: {artistsList.Count} artists with Deezer previews");
+				return artistsList;
 			}
 			catch (Exception ex)
 			{
@@ -141,13 +174,11 @@ namespace Piece.Services
 				}
 			}
 
-			// If type is Group or Person, assume musician unless proven otherwise
 			return artist.Type == "Group" || artist.Type == "Person";
 		}
 
 		private async Task<CountryMusicData> GetCountryMusicDataFromDatabase(ApplicationDbContext context, Country country)
 		{
-			// Fallback: use local database (LastFm seeded artists)
 			var artists = await context.Artists
 				.Where(a => a.CountryId == country.Id)
 				.Include(a => a.ArtistTracks)
@@ -248,7 +279,6 @@ namespace Piece.Services
 			return genreTags?.Name?.Trim() ?? "Various";
 		}
 
-		// MusicBrainz API Models
 		private class MusicBrainzResponse
 		{
 			[JsonPropertyName("artists")]
