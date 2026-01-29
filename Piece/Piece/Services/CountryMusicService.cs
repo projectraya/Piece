@@ -1,16 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Piece.Data;
 using Piece.Data.Models;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 namespace Piece.Services
 {
 	public class CountryMusicService
 	{
 		private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
+		private readonly HttpClient _httpClient;
 
-		public CountryMusicService(IDbContextFactory<ApplicationDbContext> dbFactory)
+		public CountryMusicService(
+			IDbContextFactory<ApplicationDbContext> dbFactory,
+			IHttpClientFactory httpClientFactory)
 		{
 			_dbFactory = dbFactory;
+			_httpClient = httpClientFactory.CreateClient();
+			_httpClient.DefaultRequestHeaders.Add("User-Agent", "Piece/1.0 (music-discovery-app)");
 		}
 
 		public async Task<CountryMusicData> GetCountryMusicData(string countryCode)
@@ -20,8 +27,6 @@ namespace Piece.Services
 			using var context = await _dbFactory.CreateDbContextAsync();
 
 			var country = await context.Countries
-				.Include(c => c.Artists)
-				.ThenInclude(a => a.ArtistTracks)
 				.FirstOrDefaultAsync(c => c.CountryCode == countryCode);
 
 			if (country == null)
@@ -30,14 +35,126 @@ namespace Piece.Services
 				return new CountryMusicData { CountryName = countryCode };
 			}
 
-			Console.WriteLine($"[CountryMusicService] Found country: {country.Name} with {country.Artists.Count} artists");
+			Console.WriteLine($"[CountryMusicService] Found country: {country.Name}");
 
-			var artists = country.Artists.ToList();
+			// First, try to get artists FROM this country from MusicBrainz
+			var artistsFromCountry = await GetArtistsFromCountryViaMusicBrainz(country.Name);
+
+			if (artistsFromCountry.Count == 0)
+			{
+				Console.WriteLine($"[CountryMusicService] No MusicBrainz artists found, falling back to local database");
+				// Fallback to local database (LastFm seeded data)
+				return await GetCountryMusicDataFromDatabase(context, country);
+			}
+
+			Console.WriteLine($"[CountryMusicService] Returning {artistsFromCountry.Count} artists from MusicBrainz");
+
+			return new CountryMusicData
+			{
+				CountryName = country.Name,
+				CountryCode = country.CountryCode,
+				TotalArtists = artistsFromCountry.Count,
+				TotalTracks = 0,
+				TopTracks = new List<CountryTrackInfo>(),
+				FeaturedArtists = artistsFromCountry,
+				Artists = artistsFromCountry,
+				TopGenres = artistsFromCountry
+					.Where(a => !string.IsNullOrEmpty(a.Genre))
+					.GroupBy(a => a.Genre)
+					.OrderByDescending(g => g.Count())
+					.Take(3)
+					.Select(g => g.Key!)
+					.ToList()
+			};
+		}
+
+		private async Task<List<CountryArtistInfo>> GetArtistsFromCountryViaMusicBrainz(string countryName)
+		{
+			try
+			{
+				// MusicBrainz API - search for artists FROM this country
+				// Add tag filter for music-related types only
+				var encodedCountry = Uri.EscapeDataString(countryName);
+				var url = $"https://musicbrainz.org/ws/2/artist?query=area:\"{encodedCountry}\" AND (type:person OR type:group) AND NOT type:character&limit=100&fmt=json";
+
+				Console.WriteLine($"[CountryMusicService] MusicBrainz query: {url}");
+
+				// Respect MusicBrainz rate limit (1 request per second)
+				await Task.Delay(1100);
+
+				var response = await _httpClient.GetFromJsonAsync<MusicBrainzResponse>(url);
+
+				if (response?.Artists == null || !response.Artists.Any())
+				{
+					Console.WriteLine($"[CountryMusicService] No artists found for: {countryName}");
+					return new List<CountryArtistInfo>();
+				}
+
+				// Filter out non-musicians by checking if they have valid music-related tags
+				var artists = response.Artists
+					.Where(a => !string.IsNullOrEmpty(a.Name) && IsLikelyMusician(a))
+					.Select((a, index) => new CountryArtistInfo
+					{
+						Id = index,
+						Name = a.Name ?? "Unknown Artist",
+						ArtistName = a.Name ?? "Unknown Artist",
+						Bio = a.Disambiguation,
+						ImageUrl = null,
+						Genre = GetGenreFromType(a.Type) ?? GetGenreFromTags(a.Tags),
+						TrackCount = 0,
+						AveragePopularity = 100 - (index * 2),
+						TopTracks = new List<CountryTrackInfo>()
+					})
+					.OrderByDescending(a => a.AveragePopularity)
+					.Take(20)
+					.ToList();
+
+				Console.WriteLine($"[CountryMusicService] Processed {artists.Count} musicians from MusicBrainz");
+				return artists;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[CountryMusicService] Error fetching from MusicBrainz: {ex.Message}");
+				return new List<CountryArtistInfo>();
+			}
+		}
+
+		private bool IsLikelyMusician(MusicBrainzArtist artist)
+		{
+			// Filter out non-musicians based on tags and disambiguation
+			var disambiguation = artist.Disambiguation?.ToLower() ?? "";
+
+			// Exclude writers, authors, producers (unless music producer)
+			var excludeKeywords = new[] { "writer", "author", "novelist", "poet", "journalist", "actor", "director" };
+			if (excludeKeywords.Any(keyword => disambiguation.Contains(keyword)))
+			{
+				return false;
+			}
+
+			// If they have music-related tags, they're likely a musician
+			if (artist.Tags != null && artist.Tags.Any())
+			{
+				var musicTags = new[] { "rock", "pop", "jazz", "classical", "hip hop", "electronic", "metal", "folk", "country", "blues", "soul", "r&b", "rap", "punk", "indie" };
+				if (artist.Tags.Any(tag => musicTags.Any(mt => tag.Name?.ToLower().Contains(mt) == true)))
+				{
+					return true;
+				}
+			}
+
+			// If type is Group or Person, assume musician unless proven otherwise
+			return artist.Type == "Group" || artist.Type == "Person";
+		}
+
+		private async Task<CountryMusicData> GetCountryMusicDataFromDatabase(ApplicationDbContext context, Country country)
+		{
+			// Fallback: use local database (LastFm seeded artists)
+			var artists = await context.Artists
+				.Where(a => a.CountryId == country.Id)
+				.Include(a => a.ArtistTracks)
+				.ToListAsync();
+
 			var allTracks = artists.SelectMany(a => a.ArtistTracks).ToList();
 
-			Console.WriteLine($"[CountryMusicService] Total tracks: {allTracks.Count}");
-
-			// Get top tracks this week (by popularity) - only if tracks exist
 			var topTracks = allTracks
 				.OrderByDescending(t => t.Popularity)
 				.Take(10)
@@ -54,7 +171,6 @@ namespace Piece.Services
 				})
 				.ToList();
 
-			// Get all artists ranked by popularity
 			var featuredArtists = artists
 				.Select(a => new CountryArtistInfo
 				{
@@ -85,18 +201,10 @@ namespace Piece.Services
 						.ToList()
 				})
 				.OrderByDescending(a => a.AveragePopularity)
-				.ThenByDescending(a => a.TrackCount)
-				.ThenBy(a => a.Name)
 				.Take(10)
 				.ToList();
 
-			Console.WriteLine($"[CountryMusicService] Featured artists: {featuredArtists.Count}");
-			foreach (var artist in featuredArtists)
-			{
-				Console.WriteLine($"  - {artist.Name}: {artist.TopTracks.Count} tracks");
-			}
-
-			var result = new CountryMusicData
+			return new CountryMusicData
 			{
 				CountryName = country.Name,
 				CountryCode = country.CountryCode,
@@ -104,7 +212,7 @@ namespace Piece.Services
 				TotalTracks = allTracks.Count,
 				TopTracks = topTracks,
 				FeaturedArtists = featuredArtists,
-				Artists = featuredArtists, 
+				Artists = featuredArtists,
 				TopGenres = artists
 					.Where(a => !string.IsNullOrEmpty(a.Genre))
 					.GroupBy(a => a.Genre)
@@ -113,10 +221,71 @@ namespace Piece.Services
 					.Select(g => g.Key!)
 					.ToList()
 			};
+		}
 
-			Console.WriteLine($"[CountryMusicService] Returning data with {result.Artists.Count} artists");
+		private string? GetGenreFromType(string? type)
+		{
+			return type switch
+			{
+				"Person" => "Solo Artist",
+				"Group" => "Band",
+				"Orchestra" => "Classical",
+				"Choir" => "Choral",
+				_ => null
+			};
+		}
 
-			return result;
+		private string GetGenreFromTags(List<MusicBrainzTag>? tags)
+		{
+			if (tags == null || !tags.Any())
+				return "Various";
+
+			var genreTags = tags
+				.Where(t => !string.IsNullOrEmpty(t.Name))
+				.OrderByDescending(t => t.Count)
+				.FirstOrDefault();
+
+			return genreTags?.Name?.Trim() ?? "Various";
+		}
+
+		// MusicBrainz API Models
+		private class MusicBrainzResponse
+		{
+			[JsonPropertyName("artists")]
+			public List<MusicBrainzArtist>? Artists { get; set; }
+		}
+
+		private class MusicBrainzArtist
+		{
+			[JsonPropertyName("id")]
+			public string? Id { get; set; }
+
+			[JsonPropertyName("name")]
+			public string? Name { get; set; }
+
+			[JsonPropertyName("type")]
+			public string? Type { get; set; }
+
+			[JsonPropertyName("country")]
+			public string? Country { get; set; }
+
+			[JsonPropertyName("disambiguation")]
+			public string? Disambiguation { get; set; }
+
+			[JsonPropertyName("score")]
+			public int? Score { get; set; }
+
+			[JsonPropertyName("tags")]
+			public List<MusicBrainzTag>? Tags { get; set; }
+		}
+
+		private class MusicBrainzTag
+		{
+			[JsonPropertyName("name")]
+			public string? Name { get; set; }
+
+			[JsonPropertyName("count")]
+			public int Count { get; set; }
 		}
 	}
 
@@ -124,7 +293,7 @@ namespace Piece.Services
 	{
 		public string CountryName { get; set; } = string.Empty;
 		public string CountryCode { get; set; } = string.Empty;
-		public List<CountryArtistInfo> Artists { get; set; } = new(); 
+		public List<CountryArtistInfo> Artists { get; set; } = new();
 		public int TotalArtists { get; set; }
 		public int TotalTracks { get; set; }
 		public List<CountryTrackInfo> TopTracks { get; set; } = new();
@@ -147,13 +316,13 @@ namespace Piece.Services
 	public class CountryArtistInfo
 	{
 		public int Id { get; set; }
-		public string ArtistName { get; set; } = ""; // For Map.razor
+		public string ArtistName { get; set; } = "";
 		public string Name { get; set; } = string.Empty;
 		public string? Bio { get; set; }
 		public string? ImageUrl { get; set; }
 		public string Genre { get; set; } = string.Empty;
 		public int TrackCount { get; set; }
 		public int AveragePopularity { get; set; }
-		public List<CountryTrackInfo> TopTracks { get; set; } = new(); // Populated with artist's top tracks
+		public List<CountryTrackInfo> TopTracks { get; set; } = new();
 	}
 }

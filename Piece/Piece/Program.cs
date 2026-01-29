@@ -42,6 +42,8 @@ namespace Piece
 			builder.Services.AddHttpClient<MusicBrainzService>();
 			builder.Services.AddHttpClient<LastFmService>();
 			builder.Services.AddScoped<LastFmSeeder>();
+			builder.Services.AddHttpClient();
+			builder.Services.AddScoped<CountryMusicService>();
 
 
 			builder.Services.AddAuthentication(options =>
