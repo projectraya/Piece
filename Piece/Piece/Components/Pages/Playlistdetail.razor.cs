@@ -204,15 +204,34 @@ namespace Piece.Components.Pages
 		{
 			Console.WriteLine($"PlaylistDetail: Playing track {track.Title}");
 
-			// Check if track is favorited
 			bool isFavorite = false;
 			if (!string.IsNullOrEmpty(currentUserId))
 			{
 				isFavorite = await FavoriteService.IsFavoriteAsync(currentUserId, track.Id);
 			}
 
-			var playableTrack = PlayableTrack.FromLocalTrack(track, isFavorite);
-			PlayerService.PlayTrack(playableTrack);
+			var trackIndex = playlistTracks.FindIndex(t => t.Id == track.Id);
+
+			var playableTracks = playlistTracks
+				.Select(t => PlayableTrack.FromLocalTrack(t, t.Id == track.Id ? isFavorite : false))
+				.ToList();
+
+			if (PlayerService.IsShuffleOn)
+			{
+				var random = new Random();
+				var clickedTrack = playableTracks[trackIndex];
+				var otherTracks = playableTracks.Where((t, i) => i != trackIndex).OrderBy(_ => random.Next()).ToList();
+
+				playableTracks = new List<PlayableTrack> { clickedTrack };
+				playableTracks.AddRange(otherTracks);
+
+				PlayerService.PlayPlaylist(playableTracks, 0);
+			}
+			else
+			{
+				PlayerService.PlayPlaylist(playableTracks, trackIndex);
+			}
+
 			track.PlayCount++;
 			StateHasChanged();
 		}
@@ -225,7 +244,6 @@ namespace Piece.Components.Pages
 					.Select(t => PlayableTrack.FromLocalTrack(t))
 					.ToList();
 
-				// If shuffle is on, randomize the tracks
 				if (PlayerService.IsShuffleOn)
 				{
 					var random = new Random();
@@ -235,6 +253,7 @@ namespace Piece.Components.Pages
 				PlayerService.PlayPlaylist(playableTracks, 0);
 			}
 		}
+
 
 		public void ToggleShuffle()
 		{
@@ -246,7 +265,6 @@ namespace Piece.Components.Pages
 			if (isViewingOtherUsersPlaylist)
 				return;
 
-			// Trigger the hidden file input click using a more reliable method
 			try
 			{
 				await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.hidden-file-input').click()");
@@ -272,7 +290,6 @@ namespace Piece.Components.Pages
 
 			try
 			{
-				// Validate file type
 				var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
 				if (!allowedTypes.Contains(file.ContentType.ToLower()))
 				{

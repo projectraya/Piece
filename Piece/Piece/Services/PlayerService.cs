@@ -170,6 +170,35 @@ namespace Piece.Services
 		public void ToggleShuffle()
 		{
 			IsShuffleOn = !IsShuffleOn;
+			Console.WriteLine($"[PlayerService] Shuffle toggled: {IsShuffleOn}");
+
+			if (IsShuffleOn && _queue.Count > 1)
+			{
+				var currentTrack = _currentTrack;
+
+				var queueWithoutCurrent = _queue.Where(t => t.Id != currentTrack?.Id).ToList();
+
+				var random = new Random();
+				var shuffledQueue = queueWithoutCurrent.OrderBy(_ => random.Next()).ToList();
+
+				_queue.Clear();
+				if (currentTrack != null)
+				{
+					_queue.Add(currentTrack);
+				}
+				_queue.AddRange(shuffledQueue);
+
+				_currentIndex = 0;
+
+				Console.WriteLine($"[PlayerService] Queue shuffled! Now has {_queue.Count} tracks");
+			}
+			else if (!IsShuffleOn && _queue.Count > 1)
+			{
+				// SHUFFLE OFF: We can't restore original order perfectly, so just keep current order
+				// The queue will be in the original order when the user clicks Play again
+				Console.WriteLine($"[PlayerService] Shuffle turned off. Queue order will be restored on next play.");
+			}
+
 			NotifyStateChanged();
 		}
 
