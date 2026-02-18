@@ -4,6 +4,7 @@
 @using Piece.Services
 @inject IProfileService ProfileService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Search Users - Piece</PageTitle>
 
@@ -226,7 +227,7 @@
         else if (!string.IsNullOrEmpty(searchQuery))
         {
             <div class="empty-state">
-                <div class="empty-icon">🔍</div>
+                <div class="empty-icon"><i data-lucide="search"></i></div>
                 <h3>No users found</h3>
                 <p>Try a different search term</p>
             </div>
@@ -257,6 +258,18 @@
                 await PerformSearch();
             });
         }, null, 500, Timeout.Infinite);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("lucide.createIcons");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MusicPlayer] Error initializing Lucide: {ex.Message}");
+        }
     }
 
     private async Task PerformSearch()

@@ -361,7 +361,7 @@ else
             <!-- Search Section -->
             <div class="search-container">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
+                    <span class="search-icon"><i data-lucide="search"></i></span>
                     <input type="text"
                     class="search-input"
                     placeholder="Search the library or Jamendo..."
@@ -511,7 +511,7 @@ else
                                         }
                                         else
                                         {
-                                            <span>🎵</span>
+                                            <span><i data-lucide="music-2"></i></span>
                                         }
                                     </div>
                                     <div class="track-title">@track.Title</div>
@@ -524,7 +524,7 @@ else
                 else
                 {
                     <div class="empty-state">
-                        <div class="empty-state-icon">🎵</div>
+                        <div class="empty-state-icon"><i data-lucide="music-2"></i></div>
                         <h3>No tracks found</h3>
                         <p>@(string.IsNullOrEmpty(selectedGenre) ? "Library is empty" : $"No tracks found in genre: {selectedGenre}")</p>
                     </div>
@@ -584,7 +584,7 @@ else
                                         }
                                         else
                                         {
-                                            <span>🎵</span>
+                                            <span><i data-lucide="music-2"></i></span>
                                         }
                                     </div>
                                     <div class="track-title">@track.Name</div>
@@ -597,7 +597,7 @@ else
                 else if (!string.IsNullOrEmpty(searchQuery))
                 {
                     <div class="empty-state">
-                        <div class="empty-state-icon">🔍</div>
+                        <div class="empty-state-icon"><i data-lucide="search"></i></div>
                         <h3>No Jamendo results found</h3>
                         <p>Try a different search term or genre</p>
                     </div>
@@ -605,7 +605,7 @@ else
                 else if (!string.IsNullOrEmpty(selectedGenre))
                 {
                     <div class="empty-state">
-                        <div class="empty-state-icon">🔍</div>
+                        <div class="empty-state-icon"><i data-lucide="search"></i></div>
                         <h3>No tracks found</h3>
                         <p>No Jamendo tracks found for genre: {selectedGenre}</p>
                     </div>
@@ -613,7 +613,7 @@ else
                 else
                 {
                     <div class="empty-state">
-                        <div class="empty-state-icon">🎵</div>
+                        <div class="empty-state-icon"><i data-lucide="music-2"></i></div>
                         <h3>Discover Jamendo Music</h3>
                         <p>Search for artists or songs, or select a genre to explore free music</p>
                     </div>
@@ -695,6 +695,18 @@ else
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("lucide.createIcons");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MusicPlayer] Error initializing Lucide: {ex.Message}");
+        }
+    }
+
     private async Task LoadRandomJamendoTracks()
     {
         try
@@ -702,7 +714,7 @@ else
             var clientId = Configuration["Jamendo:ClientId"];
 
             var random = new Random();
-            var randomOffset = random.Next(0, 1000);
+            var randomOffset = random.Next(0, 5000);
 
             var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=20&offset={randomOffset}&include=musicinfo&audioformat=mp32&order=popularity_total";
 
@@ -931,6 +943,10 @@ else
 
         if (tab == "jamendo")
         {
+            if (!jamendoResults.Any())
+            {
+                await LoadRandomJamendoTracks();
+            }
 
             if (!string.IsNullOrEmpty(selectedGenre) && !jamendoResults.Any())
             {
@@ -939,7 +955,10 @@ else
             else if (!string.IsNullOrEmpty(searchQuery))
             {
                 await SearchJamendo();
-                await ApplyFilters();
+            }
+            else
+            {
+                filteredJamendoResults = jamendoResults;
             }
         }
         else

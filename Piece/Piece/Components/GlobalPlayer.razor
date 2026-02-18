@@ -161,19 +161,19 @@
                     transition: color 0.3s;">
                     @if (volume == 0)
                     {
-                        <span>🔇</span>
+                        <span><i data-lucide="volume-off"></i></span>
                     }
                     else if (volume < 0.3)
                     {
-                        <span>🔈</span>
+						<span><i data-lucide="volume"></i></span>
                     }
                     else if (volume < 0.7)
                     {
-                        <span>🔉</span>
+						<span><i data-lucide="volume-1"></i></span>
                     }
                     else
                     {
-                        <span>🔊</span>
+						<span><i data-lucide="volume-2"></i></span>
                     }
                 </div>
 
@@ -283,6 +283,18 @@ private async Task OnVolumeChange(ChangeEventArgs e)
                 await UpdateProgress();
             });
         }, null, 0, 500); // Update every 500ms
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("lucide.createIcons");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GlobalPlayer] Error initializing Lucide: {ex.Message}");
+        }
     }
 
     private void OnTrackChanged()
