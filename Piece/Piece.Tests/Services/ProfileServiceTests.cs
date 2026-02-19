@@ -257,7 +257,7 @@ namespace Piece.Tests.Services
 			var user = await CreateTestUserAsync();
 			var oldTimestamp = user.LastActiveAt;
 
-			await Task.Delay(100); // Small delay to ensure timestamp difference
+			await Task.Delay(100);
 
 			// Act
 			await _service.UpdateLastActiveAsync(user.Id);

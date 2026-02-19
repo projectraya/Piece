@@ -33,7 +33,6 @@ namespace Piece.Tests.Services
                 }]
             }";
 
-			// Mock top tracks response
 			var tracksResponse = @"{
                 ""data"": [
                     {

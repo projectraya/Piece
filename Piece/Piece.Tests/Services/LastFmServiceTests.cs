@@ -118,7 +118,7 @@ namespace Piece.Tests.Services
 
 			// Assert
 			Assert.That(tracks.Count, Is.EqualTo(2));
-			// Note: Actual Track properties depend on LastFmTrack class definition
+			
 		}
 
 		[Test]
