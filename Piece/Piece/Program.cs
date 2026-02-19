@@ -55,8 +55,39 @@ namespace Piece
 				.AddIdentityCookies();
 
 			var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+
 			builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
-	options.UseSqlServer(connectionString));
+			{
+				var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+				// Check if we're on Railway (DATABASE_URL environment variable exists)
+				var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+				if (!string.IsNullOrEmpty(databaseUrl))
+				{
+					// Parse Railway's PostgreSQL URL
+					var uri = new Uri(databaseUrl);
+					var host = uri.Host;
+					var port = uri.Port;
+					var username = uri.UserInfo.Split(':')[0];
+					var password = uri.UserInfo.Split(':')[1];
+					var database = uri.LocalPath.TrimStart('/');
+
+					connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+
+					options.UseNpgsql(connectionString);
+					Console.WriteLine("Using PostgreSQL (Railway)");
+				}
+				else
+				{
+					// Local development with SQL Server
+					options.UseSqlServer(connectionString);
+					Console.WriteLine("Using SQL Server (Local)");
+				}
+			});
+
+
 			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 			builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -100,7 +131,7 @@ namespace Piece
 				using var scope = app.Services.CreateScope();
 				var services = scope.ServiceProvider;
 
-				Console.WriteLine("🌱 Database seeding enabled");
+				Console.WriteLine("Database seeding enabled");
 
 				var context = services.GetRequiredService<ApplicationDbContext>();
 				await CountrySeeder.SeedCountriesAsync(context);
@@ -114,11 +145,11 @@ namespace Piece
 				var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 				await AdminSeeder.SeedAdminRoleAndUser(roleManager, userManager);
 
-				Console.WriteLine("✅ Database seeding finished");
+				Console.WriteLine("Database seeding finished");
 			}
 			else
 			{
-				Console.WriteLine("⏭️ Database seeding skipped");
+				Console.WriteLine("Database seeding skipped");
 			}
 
 

@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "dotnet publish -c Release -o out"
+  },
+  "deploy": {
+    "startCommand": "cd out && dotnet Piece.dll",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
