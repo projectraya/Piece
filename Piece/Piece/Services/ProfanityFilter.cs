@@ -45,7 +45,6 @@
 
 				if (_profanityList.Contains(cleanWord))
 				{
-					// Replace with asterisks, keeping first letter
 					if (words[i].Length > 0)
 					{
 						words[i] = words[i][0] + new string(_replacementChar, words[i].Length - 1);

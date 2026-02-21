@@ -61,12 +61,10 @@ namespace Piece
 			{
 				var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-				// Check if we're on Railway (DATABASE_URL environment variable exists)
 				var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 				if (!string.IsNullOrEmpty(databaseUrl))
 				{
-					// Parse Railway's PostgreSQL URL
 					var uri = new Uri(databaseUrl);
 					var host = uri.Host;
 					var port = uri.Port;
@@ -81,7 +79,6 @@ namespace Piece
 				}
 				else
 				{
-					// Local development with SQL Server
 					options.UseSqlServer(connectionString);
 					Console.WriteLine("Using SQL Server (Local)");
 				}
@@ -123,6 +120,23 @@ namespace Piece
 			});
 
 			var app = builder.Build();
+
+			using (var scope = app.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
+				try
+				{
+					var context = services.GetRequiredService<ApplicationDbContext>();
+
+					await context.Database.MigrateAsync();
+
+					Console.WriteLine("Database migrations applied successfully!");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Error applying migrations: {ex.Message}");
+				}
+			}
 
 			var shouldSeed = builder.Configuration.GetValue<bool>("SeedDatabase");
 

@@ -12,18 +12,15 @@ namespace Piece.Services
 
 		private const int MaxFileNameLength = 255;
 
-		/// <summary>
-		/// Validates audio file extension only (magic bytes checked after file is saved)
-		/// </summary>
+		// Validates audio file extension only (magic bytes checked after file is saved)
+
 		public static bool IsValidAudioExtension(string fileName)
 		{
 			var extension = Path.GetExtension(fileName).ToLowerInvariant();
 			return AllowedAudioExtensions.Contains(extension);
 		}
 
-		/// <summary>
-		/// Validates audio file by checking magic bytes from saved file
-		/// </summary>
+		// Validates audio file by checking magic bytes from saved file
 		public static bool ValidateAudioFileMagicBytes(string filePath)
 		{
 			try

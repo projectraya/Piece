@@ -33,7 +33,6 @@ namespace Piece.Data
 		public string? BanReason { get; set; }
 		public bool ShowUnbanNotification { get; set; } = false;
 
-		// Navigation properties
 		public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
 		public ICollection<UserFavorites> LikedTracks { get; set; } = new List<UserFavorites>();
 		public ICollection<PlayHistory> PlayHistory { get; set; } = new List<PlayHistory>();

@@ -25,24 +25,22 @@ namespace Piece.Services
 		{
 			try
 			{
-				// MusicBrainz uses country NAME in area search, not code
-				// Also need to escape special characters and use proper query syntax
 				var encodedCountry = Uri.EscapeDataString(countryName);
 				var url = $"{BaseUrl}/artist?query=area:\"{encodedCountry}\"&limit={limit}&fmt=json";
 
-				Console.WriteLine($"   📡 MusicBrainz query: {url}");
+				Console.WriteLine($"MusicBrainz query: {url}");
 
-				await Task.Delay(1100); // MusicBrainz rate limit: 1 request per second (add buffer)
+				await Task.Delay(1100);
 
 				var response = await _httpClient.GetFromJsonAsync<MusicBrainzSearchResponse>(url);
 
 				if (response?.Artists == null || response.Artists.Count == 0)
 				{
-					Console.WriteLine($"   ⚠️ No artists found for area: {countryName}");
+					Console.WriteLine($"No artists found for area: {countryName}");
 					return new List<ArtistInfo>();
 				}
 
-				Console.WriteLine($"   ✓ Got {response.Artists.Count} artists from {countryName}");
+				Console.WriteLine($"Got {response.Artists.Count} artists from {countryName}");
 
 				return response.Artists.Select(a => new ArtistInfo
 				{
@@ -55,7 +53,7 @@ namespace Piece.Services
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"   ❌ Error searching MusicBrainz: {ex.Message}");
+				Console.WriteLine($"Error searching MusicBrainz: {ex.Message}");
 				return new List<ArtistInfo>();
 			}
 		}
@@ -71,7 +69,6 @@ namespace Piece.Services
 				using var context = await _dbFactory.CreateDbContextAsync();
 				foreach (var artistInfo in artists)
 				{
-					// Check if artist already exists
 					var existingArtist = await context.Artists
 						.FirstOrDefaultAsync(a => a.MusicBrainzId == artistInfo.MusicBrainzId);
 
