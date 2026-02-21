@@ -128,13 +128,13 @@ namespace Piece
 				{
 					var context = services.GetRequiredService<ApplicationDbContext>();
 
-					await context.Database.MigrateAsync();
+					await context.Database.EnsureCreatedAsync();
 
-					Console.WriteLine("Database migrations applied successfully!");
+					Console.WriteLine("Database tables created successfully!");
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"Error applying migrations: {ex.Message}");
+					Console.WriteLine($"Error creating database: {ex.Message}");
 				}
 			}
 
