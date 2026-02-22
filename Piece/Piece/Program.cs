@@ -128,13 +128,19 @@ namespace Piece
 				{
 					var context = services.GetRequiredService<ApplicationDbContext>();
 
+					// Drop migration history first
+					await context.Database.ExecuteSqlRawAsync(
+						"DROP TABLE IF EXISTS \"__EFMigrationsHistory\""
+					);
+
+					// Then create tables
 					await context.Database.EnsureCreatedAsync();
 
-					Console.WriteLine("Database tables created successfully!");
+					Console.WriteLine("Database recreated!");
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"Error creating database: {ex.Message}");
+					Console.WriteLine($"Error: {ex.Message}");
 				}
 			}
 
