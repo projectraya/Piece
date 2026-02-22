@@ -128,15 +128,18 @@ namespace Piece
 				{
 					var context = services.GetRequiredService<ApplicationDbContext>();
 
-					// Drop migration history first
-					await context.Database.ExecuteSqlRawAsync(
-						"DROP TABLE IF EXISTS \"__EFMigrationsHistory\""
-					);
+					// Drop ВСИЧКИ tables (nuclear option!)
+					await context.Database.ExecuteSqlRawAsync(@"
+						DROP SCHEMA public CASCADE;
+						CREATE SCHEMA public;
+						GRANT ALL ON SCHEMA public TO postgres;
+						GRANT ALL ON SCHEMA public TO public;
+						");
 
-					// Then create tables
+					// Create fresh tables
 					await context.Database.EnsureCreatedAsync();
 
-					Console.WriteLine("Database recreated!");
+					Console.WriteLine("Database completely recreated!");
 				}
 				catch (Exception ex)
 				{
