@@ -128,18 +128,9 @@ namespace Piece
 				{
 					var context = services.GetRequiredService<ApplicationDbContext>();
 
-					// Drop ВСИЧКИ tables (nuclear option!)
-					await context.Database.ExecuteSqlRawAsync(@"
-						DROP SCHEMA public CASCADE;
-						CREATE SCHEMA public;
-						GRANT ALL ON SCHEMA public TO postgres;
-						GRANT ALL ON SCHEMA public TO public;
-						");
-
-					// Create fresh tables
 					await context.Database.EnsureCreatedAsync();
 
-					Console.WriteLine("Database completely recreated!");
+					Console.WriteLine("Database ready!");
 				}
 				catch (Exception ex)
 				{
