@@ -72,7 +72,7 @@ namespace Piece
 					var password = uri.UserInfo.Split(':')[1];
 					var database = uri.LocalPath.TrimStart('/');
 
-					connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+					connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Disable;";
 
 					options.UseNpgsql(connectionString);
 					Console.WriteLine("Using PostgreSQL (Railway)");
