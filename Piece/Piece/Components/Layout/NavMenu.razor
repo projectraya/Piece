@@ -12,7 +12,10 @@
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
         <a href="/" class="app-logo">
-            <span class="logo-icon">꩜</span>
+            <img src="/images/piece_logo_white.png"
+            alt="Piece"
+            class="sidebar-logo @(isCollapsed ? "logo-sm" : "logo-md")" />
+           
             @if (!isCollapsed)
             {
                 <span class="logo-text">Piece</span>
@@ -265,7 +268,7 @@
             transform: translateX(3px);
         }
 
-            .app-logo:hover .logo-icon {
+            .app-logo:hover .sidebar-logo {
                 filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8));
                 transform: rotate(90deg);
             }
@@ -274,11 +277,16 @@
                 color: #8B5CF6;
             }
 
-    .logo-icon {
-        font-size: 28px;
-        color: #8B5CF6;
-        filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+    .sidebar-logo {
+        height: 32px;
+        width: auto;
+        object-fit: contain;
         transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-menu.collapsed .sidebar-logo {
+        height: 28px;
+        width: 28px;
     }
 
     .logo-text {

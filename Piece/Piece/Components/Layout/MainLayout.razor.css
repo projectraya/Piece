@@ -26,7 +26,7 @@ main {
     height: 3.5rem;
     display: flex;
     align-items: center;
-}
+}   
 
     .top-row ::deep a, .top-row ::deep .btn-link {
         white-space: nowrap;
@@ -77,8 +77,8 @@ main {
         }
 
     .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 }
 

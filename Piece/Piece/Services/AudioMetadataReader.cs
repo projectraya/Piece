@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using TagLib;
 
 namespace Piece.Services
 {
@@ -7,8 +8,7 @@ namespace Piece.Services
 		public static int GetDurationSeconds(string filePath)
 		{
 			Console.WriteLine($"[AudioMetadataReader] Attempting to read: {filePath}");
-			Console.WriteLine($"[AudioMetadataReader] File exists: {File.Exists(filePath)}");
-
+			Console.WriteLine($"[AudioMetadataReader] File exists: {System.IO.File.Exists(filePath)}");
 			try
 			{
 				using (var reader = new Mp3FileReader(filePath))
@@ -20,16 +20,23 @@ namespace Piece.Services
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"[AudioMetadataReader] ERROR Type: {ex.GetType().Name}");
-				Console.WriteLine($"[AudioMetadataReader] ERROR Message: {ex.Message}");
-				Console.WriteLine($"[AudioMetadataReader] ERROR StackTrace: {ex.StackTrace}");
-
-				if (ex.InnerException != null)
-				{
-					Console.WriteLine($"[AudioMetadataReader] INNER EXCEPTION: {ex.InnerException.Message}");
-				}
-
+				Console.WriteLine($"[AudioMetadataReader] ERROR: {ex.Message}");
 				return 0;
+			}
+		}
+
+		public static int? GetYearPublished(string filePath)
+		{
+			try
+			{
+				var tagFile = TagLib.File.Create(filePath);
+				if (tagFile.Tag.Year > 0)
+					return (int)tagFile.Tag.Year;
+				return null;
+			}
+			catch
+			{
+				return null;
 			}
 		}
 	}

@@ -1,4 +1,5 @@
 ﻿@page "/"
+
 @using Microsoft.AspNetCore.Components.Authorization
 @using Piece.Data
 @using Piece.Data.Models
@@ -11,6 +12,8 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IListeningHistoryService ListeningHistoryService
 @inject PlayerService PlayerService
+
+
 
 <PageTitle>@pageTitle</PageTitle>
 
@@ -30,8 +33,8 @@
         background: #0f0f0f;
         color: #ffffff;
         padding: 50px 70px 100px 70px;
-        margin: -1.5rem -1.5rem -1.5rem -2rem;
-        width: calc(100% + 3.5rem);
+        margin: -1.5rem -1.5rem -1.5rem -1.5rem;
+        width: calc(100% + 3rem);
     }
 
     /* Hero Section with Featured Discovery */
@@ -533,7 +536,7 @@
     }
 
         .logo img {
-            height: 64px;
+            height: 44px;
             width: auto;
             object-fit: contain;
         }
