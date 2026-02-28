@@ -3,6 +3,7 @@
 @inherits Piece.Components.Pages.PlaylistDetail
 @using Piece.Services
 @inject PlayerService PlayerService
+@inject LanguageService Lang
 
 <PageTitle>@(playlist?.Name ?? "Playlist") - Piece</PageTitle>
 
@@ -503,21 +504,21 @@
 <div class="playlist-detail-container">
     <a href="/playlists" class="back-button">
         <span>←</span>
-        <span>Back to Playlists</span>
+        <span>@Lang.T("Back to Playlists")</span>
     </a>
 
     @if (isLoading)
     {
         <div class="loading-container">
             <div class="spinner"></div>
-            <p style="margin-top: 20px;">Loading playlist...</p>
+            <p style="margin-top: 20px;">@Lang.T("Loading playlist...")</p>
         </div>
     }
     else if (playlist == null)
     {
         <div class="empty-state">
-            <h3>Playlist not found</h3>
-            <p>This playlist may have been deleted</p>
+            <h3>@Lang.T("Playlist not found")</h3>
+            <p>@Lang.T("This playlist may have been deleted")</p>
         </div>
     }
     else
@@ -535,20 +536,20 @@
                 @if (!isViewingOtherUsersPlaylist)
                 {
                     <div class="cover-overlay">
-                        <div class="cover-overlay-icon">📷</div>
-                        <div class="cover-overlay-text">Change Cover</div>
+                        <div class="cover-overlay-icon"><i data-lucide="camera"></i></div>
+                        <div class="cover-overlay-text">@Lang.T("Change Cover")</div>
                     </div>
                 }
             </div>
             <div class="playlist-info-header">
-                <div class="playlist-type">Playlist</div>
+                <div class="playlist-type">@Lang.T("Playlist")</div>
                 <h1 class="playlist-title">@playlist.Name</h1>
                 @if (playlist != null && playlist.UserId != currentUserId)
                 {
                     <div style="background: none; border: none;
                 border-radius: 8px; padding: 0px; margin-bottom: 10px;">
                         <div style="color: #8B5CF6; font-size: 13px; font-weight: 600;">
-                            Admin View - This playlist belongs to another user
+                            @Lang.T("Admin View - This playlist belongs to another user")
                         </div>
                     </div>
                 }
@@ -557,16 +558,16 @@
                     <p class="playlist-description-text">@playlist.Description</p>
                 }
                 <div class="playlist-stats">
-                    <span>@playlistTracks.Count @(playlistTracks.Count == 1 ? "track" : "tracks")</span>
+                    <span>@playlistTracks.Count @Lang.T(playlistTracks.Count == 1 ? "track" : "tracks")</span>
                 </div>
                 <div class="playlist-actions-header">
                     <button class="btn-play" @onclick="PlayPlaylist">
-                        <span>Play</span>
+                        <span>@Lang.T("Play")</span>
                     </button>
                     <button class="btn-shuffle @(PlayerService.IsShuffleOn ? "active" : "")"
-                            title="@(PlayerService.IsShuffleOn ? "Shuffle On" : "Shuffle Off")"
+                            title="@Lang.T(PlayerService.IsShuffleOn ? "Shuffle On" : "Shuffle Off")"
                             @onclick="ToggleShuffle">
-                        <span>Shuffle</span>
+                        <span>@Lang.T("Shuffle")</span>
                     </button>
                 </div>
             </div>
@@ -574,9 +575,9 @@
 
         <div class="tracks-section">
             <div class="tracks-header">
-                <h2 class="tracks-title">Tracks</h2>
+                <h2 class="tracks-title">@Lang.T("Tracks")</h2>
                 <button class="btn-add-tracks" @onclick="OpenAddTracksModal">
-                    <span>Add Tracks</span>
+                    <span>@Lang.T("Add Tracks")</span>
                 </button>
             </div>
 
@@ -595,7 +596,6 @@
                                     @if (!string.IsNullOrEmpty(track.CoverImageUrl))
                                     {
                                         <img src="@track.CoverImageUrl" alt="@track.Title" />
-
                                     }
                                     else
                                     {
@@ -607,13 +607,13 @@
                                     <div class="track-artist-small">@track.ArtistName</div>
                                 </div>
                             </div>
-                            <div class="track-album">@(track.Genre?.Name ?? "Unknown")</div>
-                            <div class="track-duration">3:45</div>
+                            <div class="track-album">@Lang.T(track.Genre?.Name ?? "Unknown")</div>
+                            <div class="track-duration">@track.DurationSeconds</div>
                             <div class="track-actions">
                                 <button class="btn-track-action remove"
                                         @onclick="() => RemoveTrackFromPlaylist(track.Id)"
                                         @onclick:stopPropagation="true"
-                                        title="Remove from playlist">
+                                        title="@Lang.T("Remove from playlist")">
                                     ✕
                                 </button>
                             </div>
@@ -625,8 +625,8 @@
             {
                 <div class="empty-state">
                     <div class="empty-state-icon">꩜</div>
-                    <h3>No tracks yet</h3>
-                    <p>Add some tracks to get started</p>
+                    <h3>@Lang.T("No tracks yet")</h3>
+                    <p>@Lang.T("Add some tracks to get started")</p>
                 </div>
             }
         </div>
@@ -638,7 +638,7 @@
     <div class="modal-overlay" @onclick="CloseAddTracksModal">
         <div class="modal-large" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">Add Tracks to Playlist</h2>
+                <h2 class="modal-title">@Lang.T("Add Tracks to Playlist")</h2>
                 <button class="btn-close" @onclick="CloseAddTracksModal">×</button>
             </div>
 
@@ -652,23 +652,24 @@
                             text-align: center;">
                     <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
                     <div style="color: #8B5CF6; font-size: 16px; font-weight: 600; margin-bottom: 8px;">
-                        Admin View Only
+                        @Lang.T("Admin View Only")
                     </div>
                     <div style="color: #aaa; font-size: 14px; line-height: 1.5;">
-                        You're viewing another user's playlist as an administrator.
-                        <br />You cannot modify playlists that belong to other users.
+                        @Lang.T("You're viewing another user's playlist as an administrator.")
+                        <br />
+                        @Lang.T("You cannot modify playlists that belong to other users.")
                     </div>
                 </div>
             }
             else
             {
                 <div class="search-box-modal">
-                    <span>🔍</span>
+                    <span><i data-lucide="search"></i></span>
                     <input type="text"
                            class="search-input-modal"
                            @bind="searchQuery"
                            @bind:event="oninput"
-                           placeholder="Search your library..." />
+                           placeholder="@Lang.T("Search your library...")" />
                 </div>
 
                 <div class="available-tracks">
@@ -684,7 +685,7 @@
                                 }
                                 else
                                 {
-                                    <span>🎵</span>
+                                    <span><i data-lucide="music"></i></span>
                                 }
                             </div>
                             <div class="track-text" style="flex: 1;">
@@ -693,11 +694,11 @@
                             </div>
                             @if (isInPlaylist)
                             {
-                                <span style="color: #8B5CF6; font-size: 12px;">✓ Added</span>
+                                <span style="color: #8B5CF6; font-size: 12px;"><i data-lucide="check"></i> @Lang.T("Added")</span>
                             }
                             else
                             {
-                                <span style="color: #888;">➕</span>
+                                <span style="color: #888;"><i data-lucide="plus"></i></span>
                             }
                         </div>
                     }
@@ -712,7 +713,22 @@
 {
     <div class="toast @toastType">
         <div class="toast-content">
-            <span class="toast-icon">@(toastType == "success" ? "✓" : "⚠")</span>
+            <span class="toast-icon">
+                @if (toastType == "success")
+                {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                }
+                else
+                {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12" y2="17" />
+                    </svg>
+                }
+            </span>
             <span class="toast-message">@toastMessage</span>
         </div>
     </div>

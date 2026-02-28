@@ -10,7 +10,7 @@ namespace Piece.Services
 		{
 			if (await context.Countries.AnyAsync())
 			{
-				Console.WriteLine("🌍 Countries already seeded");
+				Console.WriteLine("Countries already seeded");
 				return;
 			}
 

@@ -6,6 +6,7 @@
 @inject PlayerService PlayerService
 @inject IListeningHistoryService ListeningHistoryService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject LanguageService Lang
 
 <PageTitle>Listening Statistics</PageTitle>
 
@@ -234,54 +235,173 @@
 
 <div class="stats-container">
     <div class="page-header">
-        <h1 class="page-title">Statistics</h1>
+        <h1 class="page-title">@Lang.T("Statistics")</h1>
     </div>
     @if (isLoading)
     {
-        <p style="color: #888;">Loading statistics...</p>
+        <p style="color: #888;">@Lang.T("Loading statistics...")</p>
     }
     else
     {
 
         <!-- Genre Heatmap -->
         <div class="stats-section">
-            <h2 class="section-title">Listening History (Last 90 Days)</h2>
-            <div class="heatmap-container">
-                @foreach (var month in GetMonthsData())
-                {
-                    <div class="heatmap-month">
-                        <div class="month-label">@month.Key</div>
-                        <div class="heatmap-grid">
-                            @foreach (var day in month.Value)
+            <h2 class="section-title">@Lang.T("Listening History (Last 90 Days)")</h2>
+
+            <div style="display: flex; gap: 40px; align-items: flex-start;">
+                <!-- Left: heatmap -->
+                <div style="flex-shrink: 0;">
+                    <div class="heatmap-container">
+                        @foreach (var month in GetMonthsData())
+                        {
+                            <div class="heatmap-month">
+                                <div class="month-label">@month.Key</div>
+                                <div class="heatmap-grid">
+                                    @foreach (var day in month.Value)
+                                    {
+                                        <div class="heatmap-day @(day.ColorCounts.Any() ? "has-data" : "") @(selectedDay?.Date == day.Date ? "selected" : "")"
+                                             style="background: @GetDayColor(day.ColorCounts);
+                                            outline: @(selectedDay?.Date == day.Date ? "2px solid #ffffff" : "none");
+                                            outline-offset: 1px;"
+                                             title="@GetDayTooltip(day)"
+                                             @onclick="() => SelectDay(day)">
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Genre Color Legend -->
+                    <div style="margin-top: 20px; padding: 15px; background-color: #1a1a1a; border-radius: 8px;">
+                        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">@Lang.T("Genre Colors:")</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            @foreach (var genre in topGenres.Take(10))
                             {
-                                <div class="heatmap-day @(day.ColorCounts.Any() ? "has-data" : "")"
-                                     style="background: @GetDayColor(day.ColorCounts);"
-                                     title="@GetDayTooltip(day)">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <div style="width: 12px; height: 12px; background-color: @genre.Value.Color; border-radius: 3px;"></div>
+                                    <span style="font-size: 11px; color: #888;">@genre.Key</span>
                                 </div>
                             }
                         </div>
                     </div>
-                }
-            </div>
-
-            <!-- Genre Color Legend -->
-            <div style="margin-top: 20px; padding: 15px; background-color: #1a1a1a; border-radius: 8px;">
-                <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Genre Colors:</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    @foreach (var genre in topGenres.Take(10))
-                    {
-                        <div style="display: flex; align-items: center; gap: 5px;">
-                            <div style="width: 12px; height: 12px; background-color: @genre.Value.Color; border-radius: 3px;"></div>
-                            <span style="font-size: 11px; color: #888;">@genre.Key</span>
-                        </div>
-                    }
                 </div>
+
+                <!-- Right: day detail panel -->
+                @if (selectedDay != null)
+                {
+                    <div style="flex: 1;
+                        background: #1a1a1a;
+                        border-radius: 16px;
+                        padding: 24px;
+                        border: 1px solid rgba(139, 92, 246, 0.2);
+                        min-width: 280px;">
+
+                        <!-- Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <div style="font-size: 18px; font-weight: 700; color: #ffffff;">
+                                    @selectedDay.Date.ToString("MMMM dd, yyyy")
+                                </div>
+                                <div style="font-size: 13px; color: #888; margin-top: 4px;">
+                                    @selectedDaySongs.Sum(s => s.PlaysCount) plays total
+                                </div>
+                            </div>
+                            <button @onclick="() => { selectedDay = null; selectedDaySongs = new(); }"
+                                    style="background: none; border: none; color: #555; cursor: pointer; font-size: 18px;"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='#555'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        @if (isLoadingDaySongs)
+                        {
+                            <div style="display: flex; justify-content: center; padding: 40px;">
+                                <div class="spinner"></div>
+                            </div>
+                        }
+                        else if (!selectedDaySongs.Any())
+                        {
+                            <p style="color: #888; text-align: center; padding: 20px;">No data available</p>
+                        }
+                        else
+                        {
+                            <!-- Genre breakdown bars -->
+                            <div style="margin-bottom: 20px;">
+                                @{
+                                    var genreGroups = selectedDaySongs
+                                    .GroupBy(s => s.GenreName)
+                                    .Select(g => (Genre: g.Key, Color: g.First().GenreColor, Count: g.Sum(x => x.PlaysCount)))
+                                    .OrderByDescending(g => g.Count)
+                                    .ToList();
+                                    var maxCount = genreGroups.Any() ? genreGroups.Max(g => g.Count) : 1;
+                                }
+                                @foreach (var g in genreGroups)
+                                {
+                                    <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                        <span style="font-size: 12px; color: #aaa; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@g.Genre</span>
+                                        <div style="height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden;">
+                                            <div style="height: 100%; width: @((int)((double)g.Count / maxCount * 100))%; background: @g.Color; border-radius: 3px;"></div>
+                                        </div>
+                                        <span style="font-size: 12px; color: #888; font-family: monospace;">@g.Count</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Song list -->
+                            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;">
+                                <p style="font-size: 11px; color: #555; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">Tracks</p>
+                                <div style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">
+                                    @foreach (var song in selectedDaySongs)
+                                    {
+                                        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; background: #2a2a2a;">
+                                            <div style="width: 8px; height: 8px; border-radius: 50%; background: @song.GenreColor; flex-shrink: 0;"></div>
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@song.TrackTitle</div>
+                                                <div style="font-size: 11px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@song.ArtistName</div>
+                                            </div>
+                                            <div style="font-size: 12px; color: @song.GenreColor; font-weight: 700; flex-shrink: 0;">@song.PlaysCount×</div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Placeholder when nothing selected -->
+                    <div style="flex: 1;
+                        background: rgba(255,255,255,0.02);
+                        border-radius: 16px;
+                        border: 1px dashed rgba(255,255,255,0.06);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 200px;
+                        gap: 12px;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5">
+                            <rect x="3" y="4" width="18" height="18" rx="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <p style="color: rgba(255,255,255,0.2); font-size: 13px; text-align: center;">
+                            Click a day to see details
+                        </p>
+                    </div>
+                }
             </div>
         </div>
 
         <!-- Top Genres -->
         <div class="stats-section">
-            <h2 class="section-title">Top Genres (Last 30 Days)</h2>
+            <h2 class="section-title">@Lang.T("Top Genres (Last 30 Days)")</h2>
             <div class="top-genres">
                 @foreach (var genre in topGenres)
                 {
@@ -299,7 +419,7 @@
 
             <!-- Most Played Tracks -->
             <div class="stats-section">
-                <h2 class="section-title">Most Played Tracks (All Time)</h2>
+                <h2 class="section-title">@Lang.T("Most Played Tracks (All Time)")</h2>
 
                 @if (mostPlayedTracks.Any())
                 {
@@ -333,14 +453,14 @@
                 else
                 {
                     <div style="text-align: center; padding: 40px; color: #888;">
-                        <p>No play history yet</p>
+                        <p>@Lang.T("No play history yet")</p>
                     </div>
                 }
             </div>
 
             <!-- Recently Played -->
             <div class="stats-section">
-                <h2 class="section-title">Recently Played</h2>
+                <h2 class="section-title">@Lang.T("Recently Played")</h2>
 
                 @if (recentlyPlayed.Any())
                 {
@@ -373,7 +493,7 @@
                 else
                 {
                     <div style="text-align: center; padding: 40px; color: #888;">
-                        <p>No recent plays</p>
+                        <p>@Lang.T("No recent plays")</p>
                     </div>
                 }
             </div>
@@ -400,6 +520,62 @@
     }
     private Dictionary<string, (int Count, string Color)> topGenres = new();
 
+
+    private DayData? selectedDay = null;
+    private List<(string TrackTitle, string ArtistName, string GenreName, string GenreColor, int PlaysCount)> selectedDaySongs = new();
+    private bool isLoadingDaySongs = false;
+
+    private async Task SelectDay(DayData day)
+    {
+        if (!day.ColorCounts.Any()) return;
+
+        if (selectedDay?.Date == day.Date)
+        {
+            selectedDay = null;
+            selectedDaySongs = new();
+            return;
+        }
+
+        selectedDay = day;
+        isLoadingDaySongs = true;
+        StateHasChanged();
+
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
+            var dayStart = day.Date.ToUniversalTime();
+            var dayEnd = dayStart.AddDays(1);
+
+            var songs = await context.ListeningHistory
+                .Where(h => h.UserId == currentUserId &&
+                            h.PlayedAt >= dayStart &&
+                            h.PlayedAt < dayEnd)
+                .Include(h => h.Track)
+                    .ThenInclude(t => t.Genre)
+                .ToListAsync();
+
+            selectedDaySongs = songs
+                .GroupBy(h => h.TrackId)
+                .Select(g => (
+                    TrackTitle: g.First().Track?.Title ?? "Unknown",
+                    ArtistName: g.First().Track?.ArtistName ?? "Unknown",
+                    GenreName: g.First().Track?.Genre?.Name ?? "Unknown",
+                    GenreColor: g.First().Track?.Genre?.Color ?? "#888",
+                    PlaysCount: g.Count()
+                ))
+                .OrderByDescending(x => x.PlaysCount)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Statistics] Error loading day songs: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingDaySongs = false;
+            StateHasChanged();
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();

@@ -8,6 +8,7 @@
 @using Piece.Data
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Piece.Services.LanguageService Lang
 
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
@@ -15,7 +16,7 @@
             <img src="/images/piece_logo_white.png"
             alt="Piece"
             class="sidebar-logo @(isCollapsed ? "logo-sm" : "logo-md")" />
-           
+
             @if (!isCollapsed)
             {
                 <span class="logo-text">Piece</span>
@@ -32,35 +33,35 @@
                 <div class="nav-section">
                     @if (!isCollapsed)
                     {
-                        <div class="section-label">DISCOVER</div>
+                        <div class="section-label">@Lang.T("DISCOVER")</div>
                     }
 
                     <NavLink class="nav-link" href="search/users">
                         <span class="nav-icon">+</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Search</span>
+                            <span class="nav-text">@Lang.T("Search")</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="player">
                         <span class="nav-icon">▶︎</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Player</span>
+                            <span class="nav-text">@Lang.T("Player")</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="map">
                         <span class="nav-icon">🗺</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Map</span>
+                            <span class="nav-text">@Lang.T("Map")</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="visualizer">
                         <span class="nav-icon">👁</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Visualizer</span>
+                            <span class="nav-text">@Lang.T("Visualizer")</span>
                         }
                     </NavLink>
                 </div>
@@ -68,20 +69,20 @@
                 <div class="nav-section">
                     @if (!isCollapsed)
                     {
-                        <div class="section-label">YOURS</div>
+                        <div class="section-label">@Lang.T("YOURS")</div>
                     }
                     <NavLink class="nav-link" href="playlists">
                         <span class="nav-icon">🕮</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Library</span>
+                            <span class="nav-text">@Lang.T("Library")</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="liked-songs">
                         <span class="nav-icon">♡︎</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Favorites</span>
+                            <span class="nav-text">@Lang.T("Favorites")</span>
                         }
                     </NavLink>
                 </div>
@@ -89,7 +90,7 @@
                 <div class="nav-section">
                     @if (!isCollapsed)
                     {
-                        <div class="section-label">ACCOUNT</div>
+                        <div class="section-label">@Lang.T("ACCOUNT")</div>
                     }
                     @if (!string.IsNullOrEmpty(currentUsername))
                     {
@@ -97,7 +98,7 @@
                             <span class="nav-icon">𓀡</span>
                             @if (!isCollapsed)
                             {
-                                <span class="nav-text">Profile</span>
+                                <span class="nav-text">@Lang.T("Profile")</span>
                             }
                         </NavLink>
                     }
@@ -105,14 +106,14 @@
                         <span class="nav-icon">🎢</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Weekly Colors</span>
+                            <span class="nav-text">@Lang.T("Weekly Colors")</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="subscriptions">
                         <span class="nav-icon">🕭</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Subscriptions</span>
+                            <span class="nav-text">@Lang.T("Subscriptions")</span>
                         }
                     </NavLink>
                 </div>
@@ -123,20 +124,20 @@
                         <div class="nav-section">
                             @if (!isCollapsed)
                             {
-                                <div class="section-label">ADMIN</div>
+                                <div class="section-label">@Lang.T("ADMIN")</div>
                             }
                             <NavLink class="nav-link" href="admin/dashboard">
                                 <span class="nav-icon">🛡</span>
                                 @if (!isCollapsed)
                                 {
-                                    <span class="nav-text">Dashboard</span>
+                                    <span class="nav-text">@Lang.T("Dashboard")</span>
                                 }
                             </NavLink>
                             <NavLink class="nav-link" href="admin/upload">
                                 <span class="nav-icon">⬆</span>
                                 @if (!isCollapsed)
                                 {
-                                    <span class="nav-text">Upload Music</span>
+                                    <span class="nav-text">@Lang.T("Upload Music")</span>
                                 }
                             </NavLink>
 
@@ -146,7 +147,7 @@
             </nav>
         </Authorized>
 
-        <NotAuthorized>
+        @* <NotAuthorized>
             <nav class="nav-items">
                 <div class="nav-section">
                     @if (!isCollapsed)
@@ -176,27 +177,47 @@
                     </NavLink>
                 </div>
             </nav>
-        </NotAuthorized>
+        </NotAuthorized> *@
     </AuthorizeView>
 
     <div class="nav-footer">
         <AuthorizeView>
             <Authorized>
+
+                <div style="display: flex; gap: 8px; padding: 8px 20px; margin-bottom: 8px;">
+                    <button @onclick='() => SetLanguage("en")'
+                    style="flex: 1; padding: 6px; border-radius: 8px; border: 1px solid;
+                   border-color: @(Lang.CurrentLanguage == "en" ? "#8B5CF6" : "#3a3a3a");
+                   background: @(Lang.CurrentLanguage == "en" ? "rgba(139,92,246,0.15)" : "transparent");
+                   color: @(Lang.CurrentLanguage == "en" ? "#8B5CF6" : "#888");
+                   cursor: pointer; font-size: 13px; font-weight: 600;">
+                        EN
+                    </button>
+                    <button @onclick='() => SetLanguage("bg")'
+                    style="flex: 1; padding: 6px; border-radius: 8px; border: 1px solid;
+                   border-color: @(Lang.CurrentLanguage == "bg" ? "#8B5CF6" : "#3a3a3a");
+                   background: @(Lang.CurrentLanguage == "bg" ? "rgba(139,92,246,0.15)" : "transparent");
+                   color: @(Lang.CurrentLanguage == "bg" ? "#8B5CF6" : "#888");
+                   cursor: pointer; font-size: 13px; font-weight: 600;">
+                        БГ
+                    </button>
+                </div>
                 <form action="Account/Logout" method="post" class="logout-form">
                     <AntiforgeryToken />
                     <input type="hidden" name="returnUrl" value="" />
+
                     <NavLink class="nav-link" href="Account/Manage">
                         <span class="nav-icon">⚙</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Settings</span>
+                            <span class="nav-text">@Lang.T("Settings")</span>
                         }
                     </NavLink>
                     <button type="submit" class="logout-btn">
                         <span class="nav-icon">✌︎</span>
                         @if (!isCollapsed)
                         {
-                            <span class="nav-text">Logout</span>
+                            <span class="nav-text">@Lang.T("Logout")</span>
                         }
                     </button>
                 </form>
@@ -208,258 +229,258 @@
 <style>
     /* ===== Sidebar ===== */
     .nav-menu {
-        width: 250px;
-        height: 100vh;
-        background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
-        display: flex;
-        flex-direction: column;
-        border-right: 1px solid rgba(139, 92, 246, 0.15);
-        position: fixed;
-        left: 0;
-        top: 0;
-        overflow-y: auto;
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1000;
-        padding-bottom: 120px;
+    width: 250px;
+    height: 100vh;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(139, 92, 246, 0.15);
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    padding-bottom: 120px;
     }
 
-        .nav-menu.collapsed {
-            width: 80px;
-        }
+    .nav-menu.collapsed {
+    width: 80px;
+    }
 
-        /* ===== Scrollbar (PURPLE) ===== */
-        .nav-menu::-webkit-scrollbar {
-            width: 6px;
-        }
+    /* ===== Scrollbar (PURPLE) ===== */
+    .nav-menu::-webkit-scrollbar {
+    width: 6px;
+    }
 
-        .nav-menu::-webkit-scrollbar-track {
-            background: transparent;
-        }
+    .nav-menu::-webkit-scrollbar-track {
+    background: transparent;
+    }
 
-        .nav-menu::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.45);
-            border-radius: 3px;
-        }
+    .nav-menu::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.45);
+    border-radius: 3px;
+    }
 
-            .nav-menu::-webkit-scrollbar-thumb:hover {
-                background: rgba(139, 92, 246, 0.75);
-            }
+    .nav-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.75);
+    }
 
     /* ===== Header ===== */
     .nav-header {
-        padding: 25px 20px;
-        border-bottom: 1px solid rgba(139, 92, 246, 0.15);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
+    padding: 25px 20px;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     }
 
     .app-logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        transition: all 0.3s;
-        text-decoration: none;
-        cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s;
+    text-decoration: none;
+    cursor: pointer;
     }
 
-        .app-logo:hover {
-            transform: translateX(3px);
-        }
+    .app-logo:hover {
+    transform: translateX(3px);
+    }
 
-            .app-logo:hover .sidebar-logo {
-                filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8));
-                transform: rotate(90deg);
-            }
+    .app-logo:hover .sidebar-logo {
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8));
+    transform: rotate(90deg);
+    }
 
-            .app-logo:hover .logo-text {
-                color: #8B5CF6;
-            }
+    .app-logo:hover .logo-text {
+    color: #8B5CF6;
+    }
 
     .sidebar-logo {
-        height: 32px;
-        width: auto;
-        object-fit: contain;
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .nav-menu.collapsed .sidebar-logo {
-        height: 28px;
-        width: 28px;
+    height: 28px;
+    width: 28px;
     }
 
     .logo-text {
-        font-size: 24px;
-        font-weight: 700;
-        color: #fff;
-        letter-spacing: 1px;
-        transition: all 0.3s;
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    transition: all 0.3s;
     }
 
     .nav-menu.collapsed .logo-text {
-        display: none;
+    display: none;
     }
 
     /* ===== Toggle Button ===== */
     .toggle-btn {
-        background: rgba(139, 92, 246, 0.1);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        color: #8B5CF6;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        transition: all 0.3s;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #8B5CF6;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s;
     }
 
-        .toggle-btn:hover {
-            background: rgba(139, 92, 246, 0.2);
-            border-color: #8B5CF6;
-            transform: scale(1.05);
-        }
+    .toggle-btn:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: #8B5CF6;
+    transform: scale(1.05);
+    }
 
-        .toggle-btn:active {
-            transform: scale(0.95);
-        }
+    .toggle-btn:active {
+    transform: scale(0.95);
+    }
 
     /* ===== Nav Items ===== */
     .nav-items {
-        flex: 1;
-        padding: 20px 0;
+    flex: 1;
+    padding: 20px 0;
     }
 
     .nav-section {
-        margin-bottom: 30px;
+    margin-bottom: 30px;
     }
 
     .section-label {
-        padding: 0 20px 10px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #666;
-        letter-spacing: 1px;
+    padding: 0 20px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 1px;
     }
 
     /* ===== Nav Links ===== */
     .nav-link {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 20px;
-        color: #ccc;
-        text-decoration: none;
-        transition: all 0.25s ease;
-        position: relative;
-        border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #ccc;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    position: relative;
+    border-left: 3px solid transparent;
     }
 
     .nav-menu.collapsed .nav-link {
-        justify-content: center;
-        padding: 12px 0;
+    justify-content: center;
+    padding: 12px 0;
     }
 
     /* Hover → TURQUOISE */
     .nav-link:not(.active):hover {
-        background: rgba(16, 185, 129, 0.12);
-        color: #10B981;
-        border-left-color: #10B981;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+    border-left-color: #10B981;
     }
 
     /* Active → PURPLE */
     .nav-link.active {
-        background: rgba(139, 92, 246, 0.18);
-        color: #8B5CF6;
-        border-left-color: #8B5CF6;
-        font-weight: 600;
+    background: rgba(139, 92, 246, 0.18);
+    color: #8B5CF6;
+    border-left-color: #8B5CF6;
+    font-weight: 600;
     }
 
-        .nav-link.active .nav-icon {
-            filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.7));
-        }
+    .nav-link.active .nav-icon {
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.7));
+    }
 
     .nav-icon {
-        font-size: 20px;
-        width: 24px;
-        text-align: center;
-        flex-shrink: 0;
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
     }
 
     .nav-text {
-        font-size: 14px;
-        font-weight: 500;
-        white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
     }
 
     /* ===== Footer ===== */
     .nav-footer {
-        padding: 20px;
-        border-top: 1px solid rgba(139, 92, 246, 0.15);
+    padding: 20px;
+    border-top: 1px solid rgba(139, 92, 246, 0.15);
     }
 
     .logout-form {
-        margin: 0;
+    margin: 0;
     }
 
     .logout-btn {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        padding: 12px 20px;
-        background: rgba(139, 92, 246, 0.1);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 8px;
-        color: #8B5CF6;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 20px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    color: #8B5CF6;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
     }
 
     .nav-menu.collapsed .logout-btn {
-        justify-content: center;
-        padding: 12px;
+    justify-content: center;
+    padding: 12px;
     }
 
     .logout-btn:hover {
-        background: rgba(139, 92, 246, 0.2);
-        border-color: #8B5CF6;
-        transform: translateY(-2px);
+    background: rgba(139, 92, 246, 0.2);
+    border-color: #8B5CF6;
+    transform: translateY(-2px);
     }
 
     .logout-btn:active {
-        transform: translateY(0);
+    transform: translateY(0);
     }
 
     /* ===== Responsive ===== */
     @@media (max-width: 768px) {
-        .nav-menu
+    .nav-menu
 
     {
-        width: 70px;
+    width: 70px;
     }
 
     .nav-menu.collapsed {
-        width: 70px;
+    width: 70px;
     }
 
     .logo-text,
     .nav-text,
     .section-label {
-        display: none;
+    display: none;
     }
 
     .nav-link {
-        justify-content: center;
+    justify-content: center;
     }
 
     .toggle-btn {
-        display: none;
+    display: none;
     }
 
     }
@@ -471,6 +492,18 @@
     private bool isCollapsed = false;
     private string? currentUsername;
 
+    protected override void OnInitialized()
+    {
+        Lang.OnLanguageChanged += StateHasChanged;
+    }
+
+    private async Task SetLanguage(string lang)
+    {
+        Lang.SetLanguage(lang);
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "pieceLanguage", lang);
+    }
+
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -479,6 +512,11 @@
             {
                 var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
                 var user = authState.User;
+
+                var savedLang = await JSRuntime.InvokeAsync<string?>(
+                        "localStorage.getItem", "pieceLanguage");
+                if (!string.IsNullOrEmpty(savedLang))
+                    Lang.SetLanguage(savedLang);
 
                 if (user.Identity?.IsAuthenticated == true)
                 {
@@ -551,5 +589,8 @@
         StateHasChanged();
     }
 
-    public async ValueTask DisposeAsync() { }
+    public async ValueTask DisposeAsync()
+    {
+        Lang.OnLanguageChanged -= StateHasChanged;
+    }
 }

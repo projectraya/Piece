@@ -10,7 +10,7 @@
 
 
 
-@if (PlayerService.CurrentTrack != null)
+@if (PlayerService.CurrentTrack != null && isPlayerVisible == true)
 {
     <div id="global-player-bar" style="position: fixed;
                 bottom: 0;
@@ -25,6 +25,26 @@
                 padding: 0 30px;
                 z-index: 9999;">
 
+        <!-- Close button -->
+        <button @onclick="() => isPlayerVisible = false"
+        style="position: absolute;
+               top: 8px;
+               right: 12px;
+               background: none;
+               border: none;
+               color: #555;
+               font-size: 18px;
+               cursor: pointer;
+               line-height: 1;
+               transition: color 0.2s;"
+        onmouseover="this.style.color='#fff'"
+        onmouseout="this.style.color='#555'"
+        title="Hide player">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+        </button>
         <!-- Left: Now Playing Info -->
         <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
             <div style="width: 60px;
@@ -39,17 +59,22 @@
                 @if (!string.IsNullOrEmpty(PlayerService.CurrentTrack.AlbumImage))
                 {
                     <img src="@PlayerService.CurrentTrack.AlbumImage"
-                         alt="@PlayerService.CurrentTrack.Title"
-                         style="width: 100%; height: 100%; object-fit: cover;" />
+                    alt="@PlayerService.CurrentTrack.Title"
+                    style="width: 100%; height: 100%; object-fit: cover;" />
                 }
                 else
                 {
-                    <span>🎵</span>
+                    <span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </span>
                 }
             </div>
             <div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    
+
                     <span style="
                         background-color: @PlayerService.CurrentTrack.Genre?.Color;
                         width: 10px;
@@ -71,23 +96,42 @@
                     }
                 </p>
             </div>
-            
+
         </div>
 
         <!-- Center: Player Controls & Audio -->
         <div style="flex: 2; display: flex; flex-direction: column; align-items: center; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 20px;">
                 <button @onclick="PlayerService.PlayPrevious"
-                        style="background: none; border: none; color: #ffffff; font-size: 32px; cursor: pointer;">
-                    ⏮
+                style="background: none; border: none; color: #ffffff; font-size: 32px; cursor: pointer;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="19 20 9 12 19 4 19 20" />
+                        <line x1="5" y1="19" x2="5" y2="5" />
+                    </svg>
                 </button>
                 <button @onclick="TogglePlayPause"
-                        style="background: none; border: none; color: #ffffff; font-size: 40px; cursor: pointer;">
-                    @(PlayerService.IsPlaying ? "⏸" : "▶")
+                style="background: none; border: none; color: #ffffff; font-size: 40px; cursor: pointer;">
+                    @if (PlayerService.IsPlaying)
+                    {
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="6" y="4" width="4" height="16" />
+                            <rect x="14" y="4" width="4" height="16" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                    }
+
                 </button>
                 <button @onclick="PlayerService.PlayNext"
-                        style="background: none; border: none; color: #ffffff; font-size: 32px; cursor: pointer;">
-                    ⏭
+                style="background: none; border: none; color: #ffffff; font-size: 32px; cursor: pointer;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 4 15 12 5 20 5 4" />
+                        <line x1="19" y1="5" x2="19" y2="19" />
+                    </svg>
                 </button>
             </div>
 
@@ -95,8 +139,8 @@
             <div style="width: 100%; max-width: 500px; display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 12px; color: #888; min-width: 40px;">@currentTime</span>
                 <div @onclick="SeekTo"
-                     class="progress-bar-container"
-                     style="flex: 1;
+                class="progress-bar-container"
+                style="flex: 1;
                     height: 6px;
                     background-color: #3a3a3a;
                     border-radius: 3px;
@@ -113,12 +157,12 @@
 
             @* Hidden audio element *@
             <audio @key="PlayerService.CurrentTrack.Id"
-                   id="globalAudioPlayer"
-                   autoplay
-                   crossorigin="anonymous"
-                   @ref="audioElement"
-                   @onended="OnTrackEnded"
-                   style="display: none;">
+            id="globalAudioPlayer"
+            autoplay
+            crossorigin="anonymous"
+            @ref="audioElement"
+            @onended="OnTrackEnded"
+            style="display: none;">
                 <source src="@PlayerService.CurrentTrack.AudioUrl" type="audio/mpeg" />
             </audio>
         </div>
@@ -129,7 +173,7 @@
                 <MiniVisualizer />
             </div>
             <button @onclick="ToggleFavorite"
-                    style="background: none;
+            style="background: none;
                    border: 2px solid @(PlayerService.CurrentTrack.IsFavorite ? "#10B981" : "#3a3a3a");
                    color: @(PlayerService.CurrentTrack.IsFavorite ? "#10B981" : "#888");
                    width: 40px;
@@ -141,8 +185,8 @@
                    display: flex;
                    align-items: center;
                    justify-content: center;"
-                    onmouseover="this.style.borderColor='#10B981'; this.style.transform='scale(1.1)'"
-                    onmouseout="this.style.borderColor=@(PlayerService.CurrentTrack.IsFavorite ? "'#10B981'" : "'#3a3a3a'"); this.style.transform='scale(1)'">
+            onmouseover="this.style.borderColor='#10B981'; this.style.transform='scale(1.1)'"
+            onmouseout="this.style.borderColor=@(PlayerService.CurrentTrack.IsFavorite ? "'#10B981'" : "'#3a3a3a'"); this.style.transform='scale(1)'">
                 @if (PlayerService.CurrentTrack.IsFavorite)
                 {
                     <span>♥</span>
@@ -161,29 +205,50 @@
                     transition: color 0.3s;">
                     @if (volume == 0)
                     {
-                        <span><i data-lucide="volume-off"></i></span>
+                        <span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                <line x1="23" y1="9" x2="17" y2="15" />
+                                <line x1="17" y1="9" x2="23" y2="15" />
+                            </svg>
+                        </span>
                     }
                     else if (volume < 0.3)
                     {
-						<span><i data-lucide="volume"></i></span>
+                        <span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            </svg>
+                        </span>
                     }
                     else if (volume < 0.7)
                     {
-						<span><i data-lucide="volume-1"></i></span>
+                        <span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                            </svg>
+                        </span>
                     }
                     else
                     {
-						<span><i data-lucide="volume-2"></i></span>
+                        <span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                            </svg>
+                        </span>
                     }
                 </div>
 
                 <!-- Horizontal Volume Slider -->
                 <input type="range"
-                       min="0"
-                       max="100"
-                       value="@((int)(volume * 100))"
-                       @oninput="OnVolumeChange"
-                       style="flex: 1;
+                min="0"
+                max="100"
+                value="@((int)(volume * 100))"
+                @oninput="OnVolumeChange"
+                style="flex: 1;
                       height: 6px;
                       -webkit-appearance: none;
                       appearance: none;
@@ -198,38 +263,38 @@
 
 <style>
     input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 14px;
-        height: 14px;
-        background: #8B5CF6;
-        border: 2px solid #ffffff;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
-        transition: all 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #8B5CF6;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+    transition: all 0.2s ease;
     }
 
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
-        }
+    input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+    }
 
     input[type="range"]::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
-        background: #8B5CF6;
-        border: 2px solid #ffffff;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
-        transition: all 0.2s ease;
+    width: 14px;
+    height: 14px;
+    background: #8B5CF6;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+    transition: all 0.2s ease;
     }
 
-        input[type="range"]::-moz-range-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
-        }
+    input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+    }
 </style>
 @code {
     private ElementReference audioElement;
@@ -245,23 +310,24 @@
     private string? lastTrackedTrackId;
     private bool isMuted = false;
     private double volume = 1.0; // Default volume 100%
+    private bool isPlayerVisible = true;
 
-private async Task OnVolumeChange(ChangeEventArgs e)
-{
-    if (double.TryParse(e.Value?.ToString(), out double newVolume))
+    private async Task OnVolumeChange(ChangeEventArgs e)
     {
-        volume = newVolume / 100.0; // Convert from 0-100 to 0-1
-        
-        await JSRuntime.InvokeVoidAsync("eval", $@"
+        if (double.TryParse(e.Value?.ToString(), out double newVolume))
+        {
+            volume = newVolume / 100.0; // Convert from 0-100 to 0-1
+
+            await JSRuntime.InvokeVoidAsync("eval", $@"
             var audio = document.getElementById('globalAudioPlayer');
             if (audio) {{
                 audio.volume = {volume.ToString(System.Globalization.CultureInfo.InvariantCulture)};
             }}
         ");
-        
-        StateHasChanged();
+
+            StateHasChanged();
+        }
     }
-}
 
     protected override async Task OnInitializedAsync()
     {
@@ -299,6 +365,7 @@ private async Task OnVolumeChange(ChangeEventArgs e)
 
     private void OnTrackChanged()
     {
+        isPlayerVisible = true;
         Console.WriteLine($"[GlobalPlayer] Track changed to: {PlayerService.CurrentTrack?.Title}");
         Console.WriteLine($"[GlobalPlayer] Current user ID: {currentUserId}");
         Console.WriteLine($"[GlobalPlayer] Last tracked track ID: {lastTrackedTrackId}");

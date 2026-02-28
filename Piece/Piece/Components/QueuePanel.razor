@@ -3,6 +3,7 @@
 @inject PlayerService PlayerService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
+@inject Piece.Services.LanguageService Lang
 
 <button style="position: fixed; right: 24px; bottom: 140px; width: 56px; height: 56px; background: #8B5CF6; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; z-index: 9999; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: all 0.3s ease;"
         @onclick="ToggleQueue"
@@ -19,20 +20,20 @@
 {
     <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #8B5CF6; z-index: 9998; padding: 20px; overflow-y: auto; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700;">@queue.Count @(queue.Count == 1 ? "track" : "tracks") in queue</h3>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700;">@queue.Count @(queue.Count == 1 ? Lang.T("track") : Lang.T("tracks")) @Lang.T("in queue")</h3>
             <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 36px; height: 36px; color: white; cursor: pointer; font-size: 20px; transition: all 0.2s;"
                     @onclick="ToggleQueue"
                     onmouseover="this.style.background='rgba(255,255,255,0.2)'"
                     onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                ✕
+                <i data-lucide="cancel"></i>
             </button>
         </div>
 
         @if (!queue.Any())
         {
             <div style="text-align: center; padding: 60px 20px; color: #666;">
-                <div style="font-size: 48px; margin-bottom: 16px;">🎵</div>
-                <p style="margin: 0;">No tracks in queue</p>
+                <div style="font-size: 48px; margin-bottom: 16px;"><i data-lucide="music-2"></i></div>
+                <p style="margin: 0;">@Lang.T("No tracks in queue")</p>
             </div>
         }
         else
@@ -123,7 +124,7 @@
                     @onclick="ClearQueue"
                     onmouseover="this.style.borderColor='#10B981'; this.style.color='#10B981'; this.style.transform='scale(1.02)'"
                     onmouseout="this.style.borderColor='#3a3a3a'; this.style.color='white'; this.style.transform='scale(1)'">
-                Clear Queue
+                @Lang.T("Clear Queue")
             </button>
         }
     </div>

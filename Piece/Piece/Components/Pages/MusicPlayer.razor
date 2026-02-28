@@ -10,7 +10,8 @@
 @inject IFavoriteService FavoriteService
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
-
+@inject Piece.Services.LanguageService Lang
+@inherits LocalizedComponentBase
 
 <PageTitle>Piece - Music Player</PageTitle>
 
@@ -351,7 +352,7 @@
 {
     <div class="loading-container">
         <div class="spinner"></div>
-        <p style="margin-top: 20px;">Loading music...</p>
+        <p style="margin-top: 20px;">@Lang.T("Loading music...")</p>
     </div>
 }
 else
@@ -364,7 +365,7 @@ else
                     <span class="search-icon"><i data-lucide="search"></i></span>
                     <input type="text"
                     class="search-input"
-                    placeholder="Search the library or Jamendo..."
+                           placeholder="@Lang.T("Search the library or Jamendo...")"
                     @bind="searchQuery"
                     @bind:event="oninput"
                     @onkeyup="HandleSearchKeyUp" />
@@ -376,7 +377,7 @@ else
                 <div class="search-tabs">
                     <button class="search-tab @(activeTab == "library" ? "active" : "")"
                     @onclick='() => SetActiveTab("library")'>
-                        Library
+                        @Lang.T("Library")
                     </button>
                     <button class="search-tab @(activeTab == "jamendo" ? "active" : "")"
                     @onclick='() => SetActiveTab("jamendo")'>
@@ -387,7 +388,7 @@ else
                 <!-- Genre Filter (shown for both tabs) -->
                 <div class="filter-section">
                     <label style="color: #888; font-size: 12px; margin-right: 10px;">
-                        @(activeTab == "library" ? "Filter by Genre" : "Filter by Jamendo Tag:")
+                        @(activeTab == "library" ? Lang.T("Filter by Genre:") : Lang.T("Filter by Jamendo Tag:"))
                     </label>
                     <select @bind="selectedGenre" @bind:after="ApplyFilters"
                     style="background-color: #2a2a2a;
@@ -397,7 +398,7 @@ else
                    padding: 8px 12px;
                    font-size: 14px;
                    cursor: pointer;">
-                        <option value="">All Genres</option>
+                        <option value="">@Lang.T("All Genres")</option>
                         @foreach (var genre in availableGenres.OrderBy(g => g))
                         {
                             <option value="@genre">@genre</option>
@@ -413,7 +414,7 @@ else
                        cursor: pointer;
                        font-size: 14px;
                        margin-left: 10px;">
-                            Clear Filter
+                            @Lang.T("Clear Filters")
                         </button>
                     }
                 </div>
@@ -423,12 +424,12 @@ else
                     <div style="display: flex; gap: 15px; align-items: end;">
                         <!-- Artist Filter (shown for both) -->
                         <div class="form-group" style="flex: 1;">
-                            <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">Search by Artist:</label>
+                            <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">@Lang.T("Search by Artist:")</label>
                             <input type="text"
                             @bind="searchArtist"
                             @bind:event="oninput"
                             @onkeyup="ApplyFilters"
-                            placeholder="Artist name..."
+                                   placeholder="@Lang.T("Artist name...")"
                             style="width: 100%;
                           padding: 8px 12px;
                           background-color: #2a2a2a;
@@ -442,13 +443,13 @@ else
                         @if (activeTab == "library")
                         {
                             <div class="form-group" style="flex: 1;">
-                                <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">Year:</label>
+                                <label style="color: #888; font-size: 12px; margin-bottom: 5px; display: block;">@Lang.T("Year:")</label>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <input type="number"
-                                    @bind="searchYear"
+                                    @bind="searchYearText"
                                     @bind:event="oninput"
                                     @onkeyup="ApplyFilters"
-                                    placeholder="e.g., 2020"
+                                           placeholder="@Lang.T("e.g., 2020")"
                                     min="1900"
                                     max="2030"
                                     style="width: 100%;
@@ -460,7 +461,7 @@ else
                                                 font-size: 14px;" />
                                     @if (searchYear.HasValue)
                                     {
-                                        <button @onclick="() => { searchYear = null; _ = ApplyFilters(); }"
+                                        <button @onclick="() => { searchYearText = null; _ = ApplyFilters(); }"
                                         style="background: none; border: none; color: #8B5CF6;
                                cursor: pointer; font-size: 20px; padding: 0 4px;"
                                         title="Clear year">
@@ -481,7 +482,7 @@ else
                            font-size: 14px;
                            padding: 8px 16px;
                            white-space: nowrap;">
-                                Clear Filters
+                                @Lang.T("Clear Filters")
                             </button>
                         }
                     </div>
@@ -492,7 +493,7 @@ else
             {
                 <div class="search-loading">
                     <div class="spinner"></div>
-                    <p>Searching...</p>
+                    <p>@Lang.T("Searching...")</p>
                 </div>
             }
             else if (activeTab == "library")
@@ -501,8 +502,8 @@ else
                 {
                     <div class="content-section">
                         <div class="section-header">
-                            <h2 class="section-title">Library</h2>
-                            <span style="color: #888; font-size: 14px;">@filteredTracks.Count tracks</span>
+                            <h2 class="section-title">@Lang.T("Library")</h2>
+                            <span style="color: #888; font-size: 14px;">@filteredTracks.Count @Lang.T("tracks")</span>
                         </div>
                         <div class="track-grid">
                             @foreach (var track in filteredTracks)
@@ -538,8 +539,8 @@ else
                 {
                     <div class="empty-state">
                         <div class="empty-state-icon"><i data-lucide="music-2"></i></div>
-                        <h3>No tracks found</h3>
-                        <p>@(string.IsNullOrEmpty(selectedGenre) ? "Library is empty" : $"No tracks found in genre: {selectedGenre}")</p>
+                        <h3>@Lang.T("No tracks found")</h3>
+                        <p>@(string.IsNullOrEmpty(selectedGenre) ? Lang.T("Library is empty") : Lang.T($"No tracks found for genre: {selectedGenre}"))</p>
                     </div>
                 }
             }
@@ -559,17 +560,17 @@ else
                                     }
                                     else if (!string.IsNullOrEmpty(selectedGenre))
                                     {
-                                        <span>genre: @selectedGenre</span>
+                                        <span>@Lang.T("genre:") @selectedGenre</span>
                                     }
                                     else if (!string.IsNullOrEmpty(searchArtist))
                                     {
-                                        <span>artist: @searchArtist</span>
+                                        <span>@Lang.T("artist:") @searchArtist</span>
                                     }
                                 </h2>
                             }
                             else
                             {
-                                <h2 class="section-title">Recommended tracks</h2>
+                                <h2 class="section-title">@Lang.T("Recommended tracks")</h2>
                             }
                             <span style="color: #888; font-size: 14px;">@filteredJamendoResults.Count tracks</span>
                         </div>
@@ -611,7 +612,7 @@ else
                 {
                     <div class="empty-state">
                         <div class="empty-state-icon"><i data-lucide="search"></i></div>
-                        <h3>No Jamendo results found</h3>
+                        <h3>@Lang.T("No Jamendo results found")</h3>
                         <p>Try a different search term or genre</p>
                     </div>
                 }
@@ -619,7 +620,7 @@ else
                 {
                     <div class="empty-state">
                         <div class="empty-state-icon"><i data-lucide="search"></i></div>
-                        <h3>No tracks found</h3>
+                        <h3>@Lang.T("No tracks found")</h3>
                         <p>No Jamendo tracks found for genre: {selectedGenre}</p>
                     </div>
                 }
@@ -657,6 +658,7 @@ else
 
     private List<Track> filteredTracks = new();
     private List<JamendoTrack> filteredJamendoResults = new();
+    private string searchYearText = "";
 
     private string searchArtist = "";
     private int? searchYear = null;
@@ -1017,11 +1019,11 @@ else
                 t.YearPublished.Value == searchYear.Value);
         }
 
-        if (!string.IsNullOrEmpty(searchQuery))
+        if (!string.IsNullOrEmpty(searchYearText))
         {
             query = query.Where(t =>
-                t.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                t.ArtistName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+                t.YearPublished.HasValue &&
+                t.YearPublished.Value.ToString().Contains(searchYearText)
             );
         }
 

@@ -7,13 +7,15 @@
 @using Piece.Data
 @using Piece.Data.Models
 @using Piece.Data.Enums
+@inject Piece.Services.LanguageService Lang
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Subscriptions - Piece</PageTitle>
 
 <div class="subscriptions-page">
     <div class="hero-section">
-        <h1 class="hero-title">Choose Your Plan</h1>
-        <p class="hero-subtitle">Experience Piece at its fullest with Premium!</p>
+        <h1 class="hero-title">@Lang.T("Choose Your Plan")</h1>
+        <p class="hero-subtitle">@Lang.T("Experience Piece at its fullest with Premium!")</p>
     </div>
 
     <div class="plans-container">
@@ -25,13 +27,13 @@
                     <div class="plan-price">
                         @if (plan.Price == 0)
                         {
-                            <span class="price-amount">Without cost</span>
+                            <span class="price-amount">@Lang.T("Without cost")</span>
                         }
                         else
                         {
                             <span class="price-currency">$</span>
                             <span class="price-amount">@plan.Price.ToString("0.00")</span>
-                            <span class="price-period">/month</span>
+                            <span class="price-period">@Lang.T("/month")</span>
                         }
                     </div>
                     <p class="plan-description">@plan.Description</p>
@@ -40,9 +42,8 @@
                 <div class="plan-features">
                     <div class="feature-item">
                         <span class="feature-icon">@(plan.CanUseMap ? "✓" : "—")</span>
-                        <span class="feature-text">Interactive Map Feature</span>
+                        <span class="feature-text">@Lang.T("Interactive Map Feature")</span>
                     </div>
-                    
                 </div>
 
                 <button class="plan-button @(plan.Name == "Premium" ? "premium-btn" : "")"
@@ -50,15 +51,15 @@
                         disabled="@(currentPlanId == plan.Id)">
                     @if (currentPlanId == plan.Id)
                     {
-                        <span>Current Plan</span>
+                        <span>@Lang.T("Current Plan")</span>
                     }
                     else if (plan.Price == 0)
                     {
-                        <span>Downgrade</span>
+                        <span>@Lang.T("Downgrade")</span>
                     }
                     else
                     {
-                        <span>Upgrade</span>
+                        <span>@Lang.T("Upgrade")</span>
                     }
                 </button>
             </div>
@@ -70,36 +71,36 @@
         <div class="modal-overlay" @onclick="CloseCheckout">
             <div class="checkout-modal" @onclick:stopPropagation="true">
                 <div class="modal-header">
-                    <h2>Complete Your Purchase</h2>
+                    <h2>@Lang.T("Complete Your Purchase")</h2>
                     <button class="close-btn" @onclick="CloseCheckout">✕</button>
                 </div>
 
                 <div class="modal-body">
                     <div class="order-summary">
-                        <h3>Order Summary</h3>
+                        <h3>@Lang.T("Order Summary")</h3>
                         <div class="summary-row">
-                            <span>@selectedPlan?.Name Plan</span>
+                            <span>@selectedPlan?.Name @Lang.T("Plan")</span>
                             <span>$@selectedPlan?.Price.ToString("0.00")</span>
                         </div>
                         <div class="summary-row total">
-                            <span>Total</span>
+                            <span>@Lang.T("Total")</span>
                             <span>$@selectedPlan?.Price.ToString("0.00")</span>
                         </div>
                     </div>
 
                     <div class="payment-form">
-                        <h3>Payment Information</h3>
+                        <h3>@Lang.T("Payment Information")</h3>
                         <div class="form-group">
-                            <label>Card Number</label>
+                            <label>@Lang.T("Card Number")</label>
                             <input type="text" @bind="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" class="form-control" />
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Expiry Date</label>
+                                <label>@Lang.T("Expiry Date")</label>
                                 <input type="text" @bind="expiryDate" placeholder="MM/YY" maxlength="5" class="form-control" />
                             </div>
                             <div class="form-group">
-                                <label>CVV</label>
+                                <label>@Lang.T("CVV")</label>
                                 <input type="text" @bind="cvv" placeholder="123" maxlength="3" class="form-control" />
                             </div>
                         </div>
@@ -109,7 +110,7 @@
                     {
                         <div class="success-message">
                             <span class="success-icon">✓</span>
-                            <span>Payment successful! Redirecting...</span>
+                            <span>@Lang.T("Payment successful! Redirecting...")</span>
                         </div>
                     }
 
@@ -122,11 +123,11 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="cancel-btn" @onclick="CloseCheckout">Cancel</button>
+                    <button class="cancel-btn" @onclick="CloseCheckout">@Lang.T("Cancel")</button>
                     <button class="confirm-btn" @onclick="ProcessPayment" disabled="@isProcessing">
                         @if (isProcessing)
                         {
-                            <span>Processing...</span>
+                            <span>@Lang.T("Processing...")</span>
                         }
                         else
                         {
@@ -142,41 +143,29 @@
     {
         <div class="modal-overlay" @onclick="CloseWelcomeModal">
             <div class="welcome-modal" @onclick:stopPropagation="true">
-
-                <!-- Header -->
                 <div class="welcome-header">
-                    <div class="welcome-icon">🎉</div>
-                    <h1>Welcome to Premium!</h1>
-                    <p class="welcome-subtitle">
-                        You now have access to exclusive features
-                    </p>
+                    <div class="welcome-icon"><i data-lucide="party-popper"></i></div>
+                    <h1>@Lang.T("Welcome to Premium!")</h1>
+                    <p class="welcome-subtitle">@Lang.T("You now have access to exclusive features")</p>
                 </div>
 
-                <!-- Feature Highlight -->
                 <div class="welcome-feature">
-                    <div class="welcome-feature-icon">🗺️</div>
-                    <h2>Explore the World Map</h2>
-                    <p>
-                        Discover music from every corner of the globe.
-                        Click on countries to explore local artists and genres.
-                    </p>
+                    <div class="welcome-feature-icon"><i data-lucide="map"></i></div>
+                    <h2>@Lang.T("Explore the World Map")</h2>
+                    <p>@Lang.T("Discover music from every corner of the globe. Click on countries to explore local artists and genres.")</p>
                 </div>
 
-                <!-- Actions -->
                 <div class="welcome-actions">
                     <button class="primary-btn" @onclick="GoToMap">
-                        Explore Map Now <span class="arrow">→</span>
+                        @Lang.T("Explore Map Now") <span class="arrow">→</span>
                     </button>
-
                     <button class="secondary-btn" @onclick="CloseWelcomeModal">
-                        Maybe Later
+                        @Lang.T("Maybe Later")
                     </button>
                 </div>
-
             </div>
         </div>
     }
-
 </div>
 
 <style>
@@ -753,6 +742,11 @@
         cardNumber = "";
         expiryDate = "";
         cvv = "";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeVoidAsync("lucide.createIcons");
     }
 
     private async Task ProcessPayment()

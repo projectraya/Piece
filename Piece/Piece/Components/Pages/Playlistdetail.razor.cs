@@ -77,6 +77,11 @@ namespace Piece.Components.Pages
 			InvokeAsync(StateHasChanged);
 		}
 
+		protected override async Task OnAfterRenderAsync(bool firstRender)
+		{
+			await JSRuntime.InvokeVoidAsync("lucide.createIcons");
+		}
+
 		public async Task LoadPlaylist()
 		{
 
@@ -293,14 +298,14 @@ namespace Piece.Components.Pages
 				var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
 				if (!allowedTypes.Contains(file.ContentType.ToLower()))
 				{
-					ShowToast("Invalid file type. Please upload a JPEG, PNG, or WebP image.", "error");
+					await ShowToast("Invalid file type. Please upload a JPEG, PNG, or WebP image.", "error");
 					return;
 				}
 
 				// Validate file size (max 5MB)
 				if (file.Size > 5 * 1024 * 1024)
 				{
-					ShowToast("File size too large. Maximum size is 5MB.", "error");
+					await ShowToast("File size too large. Maximum size is 5MB.", "error");
 					return;
 				}
 
@@ -340,27 +345,26 @@ namespace Piece.Components.Pages
 
 					// Reload playlist to show new cover
 					await LoadPlaylist();
-					ShowToast("Cover image updated successfully!", "success");
+					await ShowToast("Cover image updated successfully!", "success");
 				}
 			}
 			catch (Exception ex)
 			{
 				Console.WriteLine($"Error uploading cover image: {ex.Message}");
-				ShowToast("Failed to upload cover image. Please try again.", "error");
+				await ShowToast("Failed to upload cover image. Please try again.", "error");
 			}
 		}
 
-		private async void ShowToast(string message, string type)
+		private async Task ShowToast(string message, string type)
 		{
 			toastMessage = message;
 			toastType = type;
 			showToast = true;
-			StateHasChanged();
+			await InvokeAsync(StateHasChanged);
 
-			// Hide toast after 3 seconds
 			await Task.Delay(3000);
 			showToast = false;
-			StateHasChanged();
+			await InvokeAsync(StateHasChanged);
 		}
 
 		public void Dispose()

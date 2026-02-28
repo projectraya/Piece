@@ -5,6 +5,8 @@
 @implements IDisposable
 @inject NavigationManager Navigation
 @using Piece.Services
+@inject Piece.Services.LanguageService Lang
+@inherits LocalizedComponentBase
 
 <PageTitle>Visualizer - Piece</PageTitle>
 
@@ -30,29 +32,29 @@
 
                 <!-- Mode selector -->
                 <div class="mode-selector" style="margin-top: 30px;">
-                    <button class="mode-btn @(currentMode == "liquidbars" ? "active" : "")"
-                            @onclick='() => SwitchMode("liquidbars")'>
-                        Liquid Bars
+                    <button class="mode-btn @(currentMode == "bars" ? "active" : "")"
+                            @onclick='() => SwitchMode("bars")'>
+                        @Lang.T("Liquid Bars")
                     </button>
                     <button class="mode-btn @(currentMode == "circle" ? "active" : "")"
                             @onclick='() => SwitchMode("circle")'>
-                        Circle
+                        @Lang.T("Circle")
                     </button>
                     <button class="mode-btn @(currentMode == "waveform" ? "active" : "")"
                             @onclick='() => SwitchMode("waveform")'>
-                        Wave
+                        @Lang.T("Wave")
                     </button>
                     <button class="mode-btn @(currentMode == "particles" ? "active" : "")"
                             @onclick='() => SwitchMode("particles")'>
-                        Particles
+                        @Lang.T("Particles")
                     </button>
                     <button class="mode-btn @(currentMode == "dna" ? "active" : "")"
                             @onclick='() => SwitchMode("dna")'>
-                        DNA
+                        @Lang.T("DNA")
                     </button>
                     <button class="mode-btn @(currentMode == "sphere" ? "active" : "")"
                             @onclick='() => SwitchMode("sphere")'>
-                        3D Sphere
+                        @Lang.T("3D Sphere")
                     </button>
                 </div>
             </div>
@@ -60,7 +62,7 @@
             <!-- Top right controls -->
             <div class="top-controls">
                 <button class="control-btn" @onclick="GoBack">
-                    <span>← Back</span>
+                    <span>← @Lang.T("Back")</span>
                 </button>
             </div>
         </div>
@@ -68,12 +70,12 @@
     else
     {
         <div class="no-track">
-            <h2>🎵</h2>
-            <p>Play a song to see the visualizer</p>
+            <h2><i data-lucide="music-2"></i></h2>
+            <p>@Lang.T("Play a song to start the visualizer")</p>
 
             <!-- Back button -->
             <button class="control-btn" @onclick="GoBack" style="margin-top: 30px;">
-                <span>← Back</span>
+                <span>← @Lang.T("Back")</span>
             </button>
         </div>
     }
@@ -176,8 +178,8 @@
     }
 
     .mode-btn.active {
-        background: rgba(255, 215, 0, 0.3);
-        border-color: #FFD700;
+            background: #086345;
+            border-color: #10B981;
     }
 
     .no-track {

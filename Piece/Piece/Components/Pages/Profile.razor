@@ -16,6 +16,7 @@
 @inject IProfanityFilter ProfanityFilter
 @inject IWebHostEnvironment Environment
 @inject IJSRuntime JSRuntime
+@inject LanguageService Lang
 
 <PageTitle>@(user?.DisplayName ?? user?.Email ?? "User Profile") - Piece</PageTitle>
 
@@ -644,7 +645,7 @@
     <div class="profile-container">
         <div class="loading-container">
             <div class="spinner"></div>
-            <p style="margin-top: 20px;">Loading profile...</p>
+            <p style="margin-top: 20px;">@Lang.T("Loading profile...")</p>
         </div>
     </div>
 }
@@ -652,8 +653,8 @@ else if (user == null)
 {
     <div class="profile-container">
         <div class="empty-state">
-            <h3>User Not Found</h3>
-            <p>This user doesn't exist or their profile is private.</p>
+            <h3>@Lang.T("User Not Found")</h3>
+            <p>@Lang.T("This user doesn't exist or their profile is private.")</p>
         </div>
     </div>
 }
@@ -661,8 +662,8 @@ else if (!user.IsProfilePublic && !isOwnProfile)
 {
     <div class="profile-container">
         <div class="private-message">
-            <h2>Private Profile</h2>
-            <p>This user's profile is set to private.</p>
+            <h2>@Lang.T("Private Profile")</h2>
+            <p>@Lang.T("This user's profile is set to private.")</p>
         </div>
     </div>
 }
@@ -701,33 +702,24 @@ else
                     <div class="profile-stats">
                         <div class="stat-item">
                             <span class="stat-value">@publicPlaylists.Count</span>
-                            <span class="stat-label">Playlists</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">@totalTracks</span>
-                            <span class="stat-label">Tracks</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">@topGenres.Count</span>
-                            <span class="stat-label">Genres</span>
+                            <span class="stat-label">@Lang.T("Public Playlists")</span>
                         </div>
                     </div>
 
                     @if (isOwnProfile)
                     {
                         <div class="profile-actions">
-                            <button class="btn-edit" @onclick="OpenEditModal">Edit Profile</button>
+                            <button class="btn-edit" @onclick="OpenEditModal">@Lang.T("Edit Profile")</button>
                         </div>
                     }
                 </div>
             </div>
 
-            <!-- Top Genres on the Right -->
             @if (user.ShowListeningHistory && topGenres.Any())
             {
                 <div class="profile-right">
                     <div class="genres-section-header">
-                        <h3 class="genres-section-title">Top Genres</h3>
+                        <h3 class="genres-section-title">@Lang.T("Top Genres")</h3>
                         <div class="genres-grid">
                             @foreach (var genre in topGenres.Take(5))
                             {
@@ -742,11 +734,10 @@ else
             }
         </div>
 
-        <!-- Public Playlists -->
         @if (user.ShowPlaylists && publicPlaylists.Any())
         {
             <div>
-                <h2 class="section-title">Public Playlists</h2>
+                <h2 class="section-title">@Lang.T("Public Playlists")</h2>
                 <div class="playlists-grid">
                     @foreach (var playlist in publicPlaylists)
                     {
@@ -762,7 +753,7 @@ else
                                 }
                             </div>
                             <div class="playlist-name">@playlist.Name</div>
-                            <div class="playlist-tracks">@playlist.PlaylistTracks.Count tracks</div>
+                            <div class="playlist-tracks">@playlist.PlaylistTracks.Count @Lang.T("tracks")</div>
                         </div>
                     }
                 </div>
@@ -771,8 +762,8 @@ else
         else if (user.ShowPlaylists)
         {
             <div class="empty-state">
-                <h3>No public playlists yet</h3>
-                <p>Create a playlist and make it public to share with others</p>
+                <h3>@Lang.T("No public playlists yet")</h3>
+                <p>@Lang.T("Create a playlist and make it public to share with others")</p>
             </div>
         }
     </div>
@@ -784,7 +775,7 @@ else
     <div class="modal-overlay" @onclick="CloseEditModal">
         <div class="modal-large" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">Edit Profile</h2>
+                <h2 class="modal-title">@Lang.T("Edit Profile")</h2>
                 <button class="btn-close" @onclick="CloseEditModal">×</button>
             </div>
 
@@ -833,12 +824,12 @@ else
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="avatar-upload-btn" @onclick="OpenAvatarUpload">
-                            Change Avatar
+                            @Lang.T("Change Avatar")
                         </button>
                         @if ((previewAvatarUrl != null && previewAvatarUrl != "REMOVED") || (!string.IsNullOrEmpty(user?.ProfilePictureUrl) && previewAvatarUrl != "REMOVED"))
                         {
                             <button type="button" class="avatar-upload-btn" style="border-color: #ff4444; color: #ff4444;" @onclick="RemoveAvatar">
-                                Remove Avatar
+                                @Lang.T("Remove Avatar")
                             </button>
                         }
                     </div>
@@ -846,52 +837,51 @@ else
 
                 <!-- Display Name -->
                 <div class="form-group">
-                    <label class="form-label">Display Name</label>
-                    <InputText @bind-Value="Input.DisplayName" class="form-input" placeholder="How you want to be called" />
+                    <label class="form-label">@Lang.T("Display Name")</label>
+                    <InputText @bind-Value="Input.DisplayName" class="form-input" placeholder="@Lang.T("How you want to be called")" />
                     <ValidationMessage For="() => Input.DisplayName" class="text-danger" />
                 </div>
 
                 <!-- Bio -->
                 <div class="form-group">
-                    <label class="form-label">Bio</label>
+                    <label class="form-label">@Lang.T("Bio")</label>
                     <InputTextArea @bind-Value="Input.Bio" class="form-input form-textarea"
-                                   placeholder="Tell us about your music taste..."
+                                   placeholder="@Lang.T("Tell us about your music taste...")"
                                    @oninput="UpdateBioCharCount" />
-                    <div class="char-counter">@bioCharCount / 500 characters</div>
+                    <div class="char-counter">@bioCharCount / 500 @Lang.T("characters")</div>
                     <ValidationMessage For="() => Input.Bio" class="text-danger" />
                 </div>
 
                 <!-- Privacy Settings -->
                 <div class="form-group">
-                    <label class="form-label">Privacy Settings</label>
+                    <label class="form-label">@Lang.T("Privacy Settings")</label>
                     <div class="checkbox-group">
                         <label class="checkbox-item">
                             <InputCheckbox @bind-Value="Input.IsProfilePublic" />
-                            <span class="checkbox-label">Public Profile - Anyone can view your profile</span>
+                            <span class="checkbox-label">@Lang.T("Public Profile - Anyone can view your profile")</span>
                         </label>
                         <label class="checkbox-item">
                             <InputCheckbox @bind-Value="Input.ShowPlaylists" />
-                            <span class="checkbox-label">Show Public Playlists - Display your playlists on your profile</span>
+                            <span class="checkbox-label">@Lang.T("Show Public Playlists - Display your playlists on your profile")</span>
                         </label>
                         <label class="checkbox-item">
                             <InputCheckbox @bind-Value="Input.ShowListeningHistory" />
-                            <span class="checkbox-label">Show Listening Colors - Display your top genres and listening stats</span>
+                            <span class="checkbox-label">@Lang.T("Show Listening Colors - Display your top genres and listening stats")</span>
                         </label>
                     </div>
                 </div>
 
                 <!-- Form Actions -->
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" @onclick="CloseEditModal">Cancel</button>
+                    <button type="button" class="btn-secondary" @onclick="CloseEditModal">@Lang.T("Cancel")</button>
                     <button type="submit" class="btn-primary" disabled="@modalIsLoading">
-                        @(modalIsLoading ? "Saving..." : "Save Changes")
+                        @Lang.T(modalIsLoading ? "Saving..." : "Save Changes")
                     </button>
                 </div>
             </EditForm>
         </div>
     </div>
 }
-
 <!-- Toast Notification -->
 @if (showToast)
 {

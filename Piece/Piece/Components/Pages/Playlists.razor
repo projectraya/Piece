@@ -1,5 +1,6 @@
 ﻿@page "/playlists"
 @rendermode InteractiveServer
+@inject Piece.Services.LanguageService Lang
 
 <PageTitle>Playlists - Piece</PageTitle>
 
@@ -319,9 +320,9 @@
 
 <div class="playlists-container">
     <div class="page-header">
-        <h1 class="page-title">Playlists</h1>
+        <h1 class="page-title">@Lang.T("Playlists")</h1>
         <button class="btn-primary" @onclick="OpenCreateModal">
-            <span>Create Playlist</span>
+            <span>@Lang.T("Create Playlist")</span>
         </button>
     </div>
 
@@ -329,14 +330,14 @@
     {
         <div class="loading-container">
             <div class="spinner"></div>
-            <p style="margin-top: 20px;">Loading playlists...</p>
+            <p style="margin-top: 20px;">@Lang.T("Loading playlists")...</p>
         </div>
     }
     else if (!playlists.Any())
     {
         <div class="empty-state">
-            <h3>No playlists yet</h3>
-            <p>Create your first playlist to organize your music</p>
+            <h3>@Lang.T("No playlists yet")</h3>
+            <p>@Lang.T("Create your first playlist to organize your music")</p>
         </div>
     }
     else
@@ -367,10 +368,10 @@
                     }
                     <div class="playlist-actions">
                         <button class="action-btn" @onclick="() => OpenEditModal(playlist)">
-                            <span>Edit</span>
+                            <span>@Lang.T("Edit")</span>
                         </button>
                         <button class="action-btn" @onclick="() => DeletePlaylist(playlist.Id)">
-                            <span>Delete</span>
+                            <span>@Lang.T("Delete")</span>
                         </button>
                     </div>
                 </div>
@@ -405,7 +406,7 @@
                        font-weight: 700;
                        margin-bottom: 24px;
                        color: #ffffff;">
-                @(isEditMode ? "Edit Playlist" : "Create Playlist")
+                @(isEditMode ? Lang.T("Edit Playlist") : Lang.T("Create Playlist"))
             </h2>
 
             <div style="margin-bottom: 20px;">
@@ -414,11 +415,11 @@
                               font-weight: 600;
                               color: #ffffff;
                               margin-bottom: 8px;">
-                    Name
+                    @Lang.T("Name")
                 </label>
                 <input type="text"
                        @bind="playlistName"
-                       placeholder="My Awesome Playlist"
+                       placeholder="@Lang.T("My Awesome Playlist")"
                        style="width: 100%;
                               background-color: #1a1a1a;
                               border: 2px solid #3a3a3a;
@@ -434,10 +435,10 @@
                               font-weight: 600;
                               color: #ffffff;
                               margin-bottom: 8px;">
-                    Description (Optional)
+                    @Lang.T("Description (Optional)")
                 </label>
                 <textarea @bind="playlistDescription"
-                          placeholder="A collection of my favorite tracks..."
+                          placeholder="@Lang.T("A collection of my favorite tracks")"
                           style="width: 100%;
                                  background-color: #1a1a1a;
                                  border: 2px solid #3a3a3a;
@@ -460,7 +461,7 @@
                     <input type="checkbox"
                            @bind="isPublic"
                            style="width: 18px; height: 18px; cursor: pointer; accent-color: #8B5CF6" />
-                    <span>Make this playlist public</span>
+                    <span>@Lang.T("Make this playlist public")</span>
                 </label>
             </div>
 
@@ -477,7 +478,7 @@
                                font-size: 14px;
                                font-weight: 600;
                                cursor: pointer;">
-                    Cancel
+                    @Lang.T("Cancel")
                 </button>
                 <button @onclick="SavePlaylist"
                         style="background: #8B5CF6;
@@ -488,7 +489,7 @@
                                font-size: 14px;
                                font-weight: 600;
                                cursor: pointer;">
-                    @(isEditMode ? "Save Changes" : "Create")
+                    @(isEditMode ? Lang.T("Save changes") : Lang.T("Create"))
                 </button>
             </div>
         </div>

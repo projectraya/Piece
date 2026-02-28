@@ -5,6 +5,8 @@
 @inject IProfileService ProfileService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject Piece.Services.LanguageService Lang
+@inherits LocalizedComponentBase
 
 <PageTitle>Search Users - Piece</PageTitle>
 
@@ -177,11 +179,11 @@
 
 <div class="search-container">
     <div class="search-header">
-        <h1 class="search-title">Search artists or users</h1>
+        <h1 class="search-title">@Lang.T("Search users")</h1>
         <div class="search-box-wrapper">
             <input type="text"
                    class="search-input"
-                   placeholder="That one person..."
+                   placeholder="@Lang.T("That one person...")"
                    @bind="searchQuery"
                    @bind:event="oninput"
                    @onkeyup="HandleSearchKeyUp" />
@@ -197,13 +199,13 @@
         {
             <div class="loading-state">
                 <div class="spinner"></div>
-                <p style="margin-top: 20px;">Searching...</p>
+                <p style="margin-top: 20px;">@Lang.T("Searching...")</p>
             </div>
         }
         else if (users.Any())
         {
             <div class="results-count">
-                Found @users.Count @(users.Count == 1 ? "user" : "users")
+                @(users.Count == 1 ? Lang.T("Found") : Lang.T("Foиnd")) @users.Count @(users.Count == 1 ? Lang.T("user") : Lang.T("users"))
             </div>
             <div class="user-grid">
                 @foreach (var user in users)
@@ -213,7 +215,7 @@
                             @GetInitials(user.DisplayName ?? user.UserName ?? "U")
                         </div>
                         <div class="user-info">
-                            <div class="user-name">@(user.DisplayName ?? "Piece User")</div>
+                            <div class="user-name">@(user.DisplayName ?? Lang.T("Piece User"))</div>
                             <div class="user-username">@@@user.UserName</div>
                             @if (!string.IsNullOrEmpty(user.Bio))
                             {
@@ -228,15 +230,15 @@
         {
             <div class="empty-state">
                 <div class="empty-icon"><i data-lucide="search"></i></div>
-                <h3>No users found</h3>
-                <p>Try a different search term</p>
+                <h3>@Lang.T("No users found")</h3>
+                <p>@Lang.T("Try a different search term")</p>
             </div>
         }
         else
         {
             <div class="empty-state">
-                <h3>Find artists or Piece users</h3>
-                <p>Search for users by their username or display name</p>
+                <h3>@Lang.T("Find Piece users")</h3>
+                <p>@Lang.T("Search for users by their username or display name")</p>
             </div>
         }
     </div>

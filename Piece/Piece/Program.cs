@@ -45,6 +45,7 @@ namespace Piece
 			builder.Services.AddHttpClient();
 			builder.Services.AddScoped<CountryMusicService>();
 			builder.Services.AddHttpClient<DeezerService>();
+			builder.Services.AddSingleton<LanguageService>();
 
 
 			builder.Services.AddAuthentication(options =>
@@ -199,7 +200,7 @@ namespace Piece
 					"style-src 'self' 'unsafe-inline' https://unpkg.com; " +
 					"img-src 'self' data: https: blob:; " +
 					"font-src 'self' data:; " +
-					"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; " +
+					"connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; https://unpkg.com/lucide.min.js.map" +
 					"media-src 'self' https://mp3l.jamendo.com https://usercontent.jamendo.com https://prod-1.storage.jamendo.com https://storage.jamendo.com https://*.dzcdn.net; "+
 					"frame-src 'none';");
 
