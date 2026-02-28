@@ -26,7 +26,6 @@
     }
     else
     {
-        <!-- Current Subscription Card -->
         <div class="current-subscription-card">
             <h2>Current Subscription</h2>
 
@@ -101,7 +100,6 @@
             }
         </div>
 
-        <!-- Payment History -->
         <div class="payment-history-section">
             <h2>Payment History</h2>
 
@@ -171,7 +169,6 @@
             }
         </div>
 
-        <!-- Subscription History -->
         <div class="subscription-history-section">
             <h2>Subscription History</h2>
 
@@ -218,7 +215,6 @@
         </div>
     }
 
-    <!-- Downgrade Confirmation Modal -->
     @if (showDowngradeModal)
     {
         <div class="modal-overlay" @onclick="CloseDowngradeModal">
@@ -251,68 +247,24 @@
 </div>
 
 <style>
-
-    /* Light theme for payment history */
-    .payment-history-page {
-        background: #ffffff !important;
-        color: #000000 !important;
-    }
-
-        .payment-history-page * {
-            color: #000000 !important;
-        }
-
-    .page-title {
-        color: #000000 !important;
-    }
-
-    .current-subscription-card,
-    .payment-history-section,
-    .subscription-history-section {
-        background: #f5f5f5 !important;
-        border: 1px solid #e0e0e0 !important;
-    }
-
-    .payment-item,
-    .timeline-content {
-        background: #ffffff !important;
-        border: 1px solid #e0e0e0 !important;
-    }
-
-    .label,
-    .payment-meta,
-    .timeline-date {
-        color: #666666 !important;
-    }
-
-    .value,
-    .payment-title,
-    .plan-name {
-        color: #000000 !important;
-    }
-
-    .current-subscription-card h2,
-    .payment-history-section h2,
-    .subscription-history-section h2 {
-        color: #000000 !important;
-    }
     .payment-history-page {
         max-width: 900px;
         margin: 0 auto;
-        padding: 40px 20px;
+        padding: 20px;
+        color: #ffffff;
     }
 
     .page-title {
         font-size: 36px;
         font-weight: 700;
-        color: #000;
+        color: #ffffff;
         margin-bottom: 40px;
     }
 
     .loading {
         text-align: center;
         padding: 60px 20px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.6);
         font-size: 18px;
     }
 
@@ -322,15 +274,15 @@
     }
 
         .not-logged-in p {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255,255,255,0.7);
             margin-bottom: 20px;
         }
 
     .login-btn {
         padding: 12px 32px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
-        color: #000;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        color: #fff;
         border: none;
         font-weight: 600;
         cursor: pointer;
@@ -339,23 +291,25 @@
 
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+            box-shadow: 0 8px 20px rgba(139,92,246,0.4);
         }
 
-    /* Current Subscription Card */
-    .current-subscription-card {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    .current-subscription-card,
+    .payment-history-section,
+    .subscription-history-section {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 16px;
         padding: 30px;
-        margin-bottom: 40px;
+        margin-bottom: 24px;
     }
 
-        .current-subscription-card h2 {
+        .current-subscription-card h2,
+        .payment-history-section h2,
+        .subscription-history-section h2 {
             font-size: 20px;
             font-weight: 600;
-            color: #fff;
+            color: #ffffff;
             margin-bottom: 24px;
         }
 
@@ -369,20 +323,20 @@
     }
 
         .plan-badge.free {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.8);
         }
 
         .plan-badge.premium {
-            background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
-            color: #000;
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            color: #fff;
         }
 
     .detail-row {
         display: flex;
         justify-content: space-between;
         padding: 12px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
         .detail-row:last-of-type {
@@ -390,31 +344,31 @@
         }
 
     .label {
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.5);
         font-size: 14px;
     }
 
     .value {
-        color: #fff;
+        color: #ffffff;
         font-size: 14px;
         font-weight: 500;
     }
 
         .value.expires {
-            color: #FFD335;
+            color: #8B5CF6;
         }
 
     .status-active {
-        color: #4caf50;
+        color: #10B981;
     }
 
     .status-cancelled, .status-expired {
-        color: #f44336;
+        color: #f87171;
     }
 
     .days-remaining {
-        background: rgba(255, 211, 53, 0.1);
-        border: 1px solid rgba(255, 211, 53, 0.2);
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
         border-radius: 12px;
         padding: 20px;
         text-align: center;
@@ -425,14 +379,14 @@
         display: block;
         font-size: 48px;
         font-weight: 700;
-        color: #FFD335;
+        color: #8B5CF6;
         line-height: 1;
     }
 
     .days-label {
         display: block;
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.5);
         margin-top: 8px;
     }
 
@@ -442,35 +396,39 @@
         gap: 12px;
     }
 
-    .upgrade-btn, .downgrade-btn {
+    .upgrade-btn, .get-started-btn {
         flex: 1;
         padding: 14px;
-        border-radius: 10px;
+        border-radius: 24px;
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
         border: none;
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        color: #ffffff;
         transition: all 0.3s;
     }
 
-    .upgrade-btn {
-        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
-        color: #000;
-    }
-
-        .upgrade-btn:hover {
+        .upgrade-btn:hover, .get-started-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+            box-shadow: 0 8px 20px rgba(139,92,246,0.4);
         }
 
     .downgrade-btn {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: rgba(255, 255, 255, 0.8);
+        flex: 1;
+        padding: 14px;
+        border-radius: 24px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.7);
+        transition: all 0.3s;
     }
 
         .downgrade-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255,255,255,0.08);
             color: #fff;
         }
 
@@ -480,63 +438,36 @@
     }
 
         .no-subscription p {
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255,255,255,0.5);
             margin-bottom: 20px;
         }
 
     .get-started-btn {
+        display: inline-block;
         padding: 14px 32px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
-        color: #000;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
+        flex: unset;
     }
-
-        .get-started-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
-        }
-
-    /* Payment History */
-    .payment-history-section, .subscription-history-section {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        padding: 30px;
-        margin-bottom: 40px;
-    }
-
-        .payment-history-section h2, .subscription-history-section h2 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 24px;
-        }
 
     .payments-list {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
     }
 
     .payment-item {
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 16px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 12px;
         transition: all 0.3s;
     }
 
         .payment-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 211, 53, 0.2);
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(139,92,246,0.2);
         }
 
     .payment-icon .icon {
@@ -546,28 +477,28 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
     }
 
     .icon.success {
-        background: rgba(76, 175, 80, 0.2);
-        color: #4caf50;
+        background: rgba(16,185,129,0.15);
+        color: #10B981;
     }
 
     .icon.failed {
-        background: rgba(244, 67, 54, 0.2);
-        color: #f44336;
+        background: rgba(248,113,113,0.15);
+        color: #f87171;
     }
 
     .icon.refunded {
-        background: rgba(255, 152, 0, 0.2);
-        color: #ff9800;
+        background: rgba(251,191,36,0.15);
+        color: #fbbf24;
     }
 
     .icon.pending {
-        background: rgba(158, 158, 158, 0.2);
-        color: #9e9e9e;
+        background: rgba(255,255,255,0.08);
+        color: #888;
     }
 
     .payment-details {
@@ -577,20 +508,20 @@
     .payment-title {
         font-size: 15px;
         font-weight: 600;
-        color: #fff;
+        color: #ffffff;
         margin-bottom: 4px;
     }
 
     .payment-meta {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255,255,255,0.4);
         display: flex;
         gap: 8px;
         align-items: center;
     }
 
     .separator {
-        color: rgba(255, 255, 255, 0.3);
+        color: rgba(255,255,255,0.2);
     }
 
     .transaction-id {
@@ -605,7 +536,7 @@
             display: block;
             font-size: 18px;
             font-weight: 700;
-            color: #FFD335;
+            color: #8B5CF6;
             margin-bottom: 4px;
         }
 
@@ -617,32 +548,31 @@
         }
 
     .status-completed {
-        background: rgba(76, 175, 80, 0.2);
-        color: #4caf50;
+        background: rgba(16,185,129,0.15);
+        color: #10B981;
     }
 
     .status-failed {
-        background: rgba(244, 67, 54, 0.2);
-        color: #f44336;
+        background: rgba(248,113,113,0.15);
+        color: #f87171;
     }
 
     .status-refunded {
-        background: rgba(255, 152, 0, 0.2);
-        color: #ff9800;
+        background: rgba(251,191,36,0.15);
+        color: #fbbf24;
     }
 
     .status-pending {
-        background: rgba(158, 158, 158, 0.2);
-        color: #9e9e9e;
+        background: rgba(255,255,255,0.08);
+        color: #888;
     }
 
     .no-payments, .no-history {
         text-align: center;
         padding: 40px 20px;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255,255,255,0.4);
     }
 
-    /* Subscription Timeline */
     .subscription-timeline {
         position: relative;
         padding-left: 30px;
@@ -655,12 +585,12 @@
             top: 0;
             bottom: 0;
             width: 2px;
-            background: rgba(255, 211, 53, 0.2);
+            background: rgba(139,92,246,0.2);
         }
 
     .timeline-item {
         position: relative;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
     }
 
         .timeline-item:last-child {
@@ -674,13 +604,13 @@
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background: #FFD335;
-        border: 3px solid #0a0a0a;
+        background: #8B5CF6;
+        border: 3px solid #1a1a1a;
     }
 
     .timeline-content {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 12px;
         padding: 16px;
     }
@@ -695,12 +625,12 @@
     .plan-name {
         font-size: 16px;
         font-weight: 600;
-        color: #fff;
+        color: #ffffff;
     }
 
     .timeline-date {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255,255,255,0.4);
     }
 
     .timeline-details {
@@ -718,17 +648,13 @@
 
     .action-text {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.5);
     }
 
-    /* Downgrade Modal */
     .modal-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.85);
+        inset: 0;
+        background: rgba(0,0,0,0.85);
         backdrop-filter: blur(10px);
         display: flex;
         align-items: center;
@@ -738,11 +664,12 @@
     }
 
     .confirm-modal {
-        background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
-        border: 1px solid rgba(255, 211, 53, 0.2);
+        background: #1a1a1a;
+        border: 1px solid rgba(139,92,246,0.2);
         border-radius: 20px;
         padding: 40px;
         max-width: 500px;
+        width: 100%;
         text-align: center;
     }
 
@@ -754,35 +681,34 @@
     .confirm-modal h2 {
         font-size: 28px;
         font-weight: 600;
-        color: #fff;
+        color: #ffffff;
         margin-bottom: 16px;
     }
 
     .confirm-modal p {
         font-size: 15px;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255,255,255,0.6);
         line-height: 1.6;
         margin-bottom: 16px;
     }
 
     .confirm-modal strong {
-        color: #FFD335;
-        font-weight: 600;
+        color: #8B5CF6;
     }
 
     .features-lost {
         text-align: left;
         margin: 24px 0;
         padding: 20px;
-        background: rgba(244, 67, 54, 0.1);
-        border: 1px solid rgba(244, 67, 54, 0.2);
+        background: rgba(248,113,113,0.08);
+        border: 1px solid rgba(248,113,113,0.2);
         border-radius: 12px;
         list-style: none;
     }
 
         .features-lost li {
             padding: 8px 0;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255,255,255,0.7);
             font-size: 14px;
         }
 
@@ -795,52 +721,49 @@
     .cancel-modal-btn, .confirm-downgrade-btn {
         flex: 1;
         padding: 14px;
-        border-radius: 10px;
+        border-radius: 24px;
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s;
+        border: none;
     }
 
     .cancel-modal-btn {
-        background: linear-gradient(135deg, #FFD335 0%, #FFA500 100%);
-        color: #000;
-        border: none;
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        color: #ffffff;
     }
 
         .cancel-modal-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(255, 211, 53, 0.4);
+            box-shadow: 0 8px 20px rgba(139,92,246,0.4);
         }
 
     .confirm-downgrade-btn {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15) !important;
+        color: rgba(255,255,255,0.7);
     }
 
         .confirm-downgrade-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255,255,255,0.08);
             color: #fff;
         }
 
     @@media (max-width: 768px) {
-        .payment-item
+        .payment-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
 
-    {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+        .payment-amount {
+            text-align: left;
+            width: 100%;
+        }
 
-    .payment-amount {
-        text-align: left;
-        width: 100%;
-    }
-
-    .modal-actions {
-        flex-direction: column;
-    }
-
+        .modal-actions {
+            flex-direction: column;
+        }
     }
 </style>
 
@@ -890,15 +813,8 @@
             .ToListAsync();
     }
 
-    private void OpenDowngradeModal()
-    {
-        showDowngradeModal = true;
-    }
-
-    private void CloseDowngradeModal()
-    {
-        showDowngradeModal = false;
-    }
+    private void OpenDowngradeModal() => showDowngradeModal = true;
+    private void CloseDowngradeModal() => showDowngradeModal = false;
 
     private async Task ConfirmDowngrade()
     {
@@ -906,13 +822,9 @@
         using var context = await DbFactory.CreateDbContextAsync();
         try
         {
-            // Don't cancel immediately - let them use premium until end date
             currentSubscription.AutoRenew = false;
             currentSubscription.Status = SubscriptionStatus.Cancelled;
-
             await context.SaveChangesAsync();
-
-            // Close modal and reload
             showDowngradeModal = false;
             await LoadData();
             StateHasChanged();

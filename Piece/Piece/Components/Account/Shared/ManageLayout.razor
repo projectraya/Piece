@@ -1,16 +1,135 @@
 ﻿@inherits LayoutComponentBase
 @layout AccountLayout
 
-<h1>Manage your account</h1>
+<style>
+    .manage-container {
+        min-height: 100vh;
+        background: #0f0f0f;
+        color: #fff;
+        padding: 40px;
+        padding-bottom: 120px;
+    }
 
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-3">
+    .manage-header {
+        margin-bottom: 40px;
+    }
+
+    .manage-title {
+        font-size: 36px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0 8px 0;
+    }
+
+    .manage-subtitle {
+        font-size: 15px;
+        color: rgba(255,255,255,0.4);
+        margin: 0;
+    }
+
+    .manage-layout {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+    }
+
+    .manage-nav {
+        width: 200px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 20px;
+    }
+
+    .manage-content {
+        flex: 1;
+        min-width: 0;
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 32px;
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+
+        /* Override Bootstrap inputs */
+        .manage-content input.form-control,
+        .manage-content .form-floating input {
+            background: #2a2a2a !important;
+            border: 2px solid #3a3a3a !important;
+            color: #ffffff !important;
+            border-radius: 8px !important;
+        }
+
+            .manage-content input.form-control:focus,
+            .manage-content .form-floating input:focus {
+                border-color: #8B5CF6 !important;
+                box-shadow: 0 0 0 3px rgba(139,92,246,0.2) !important;
+                background: #2a2a2a !important;
+            }
+
+            .manage-content input.form-control:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .manage-content .form-floating label {
+            color: rgba(255,255,255,0.4) !important;
+        }
+
+        .manage-content .btn-primary,
+        .manage-content .w-100.btn {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED) !important;
+            border: none !important;
+            border-radius: 24px !important;
+            padding: 12px 32px !important;
+            font-weight: 600 !important;
+            color: #fff !important;
+            transition: all 0.3s !important;
+        }
+
+            .manage-content .btn-primary:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 8px 24px rgba(139,92,246,0.4) !important;
+            }
+
+        .manage-content h3,
+        .manage-content h4 {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .manage-content .text-danger {
+            color: #f87171 !important;
+        }
+
+        .manage-content hr {
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        .manage-content .alert-success {
+            background: rgba(16,185,129,0.1) !important;
+            border: 1px solid rgba(16,185,129,0.3) !important;
+            color: #10B981 !important;
+            border-radius: 8px !important;
+        }
+
+        .manage-content .alert-danger {
+            background: rgba(239,68,68,0.1) !important;
+            border: 1px solid rgba(239,68,68,0.3) !important;
+            color: #f87171 !important;
+            border-radius: 8px !important;
+        }
+</style>
+
+<div class="manage-container">
+    <div class="manage-header">
+        <h1 class="manage-title">Account Settings</h1>
+        <p class="manage-subtitle">Manage your account preferences and security</p>
+    </div>
+
+    <div class="manage-layout">
+        <div class="manage-nav">
             <ManageNavMenu />
         </div>
-        <div class="col-md-9">
+        <div class="manage-content">
             @Body
         </div>
     </div>

@@ -1,33 +1,67 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Piece.Data
-
 @inject SignInManager<ApplicationUser> SignInManager
 
-<ul class="nav nav-pills flex-column">
-    
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Username">
-             Username
+<style>
+    .manage-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+        .manage-nav-list .nav-link {
+            display: block;
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+            .manage-nav-list .nav-link:hover {
+                background: rgba(255,255,255,0.05);
+                color: #ffffff;
+                border-left-color: #10B981;
+            }
+
+            .manage-nav-list .nav-link.active {
+                background: rgba(139,92,246,0.15);
+                color: #8B5CF6;
+                border-left-color: #8B5CF6;
+                font-weight: 600;
+            }
+</style>
+
+<ul class="manage-nav-list">
+    <li>
+        <NavLink class="nav-link" href="Account/Manage/PaymentHistory">
+            Payment History
         </NavLink>
     </li>
-    
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PaymentHistory">Payment History</NavLink>
+    <li>
+        <NavLink class="nav-link" href="Account/Manage/Email">
+            Email
+        </NavLink>
     </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
+    <li>
+        <NavLink class="nav-link" href="Account/Manage/ChangePassword">
+            Password
+        </NavLink>
     </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
-    
     @if (hasExternalLogins)
     {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
+        <li>
+            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">
+                External Logins
+            </NavLink>
         </li>
     }
-    
 </ul>
 
 @code {

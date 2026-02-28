@@ -926,6 +926,7 @@
         }
 </style>
 
+@* add translation button *@
 @if (isLoading)
 {
     <div class="loading-state">
@@ -1058,7 +1059,7 @@ else
 
             <div class="stats-row">
                 <div class="stat-box">
-                    <div class="landing-stat-number">0.5M+</div>
+                    <div class="landing-stat-number">.5M+</div>
                     <div class="landing-stat-label">Total Tracks</div>
                 </div>
                 <div class="stat-box">
@@ -1078,121 +1079,20 @@ else
             <a href="/Account/Register" class="btn btn-signup btn-cta">Start Your Journey</a>
         </section>
 
-        <!-- Trending Tracks -->
-        <section class="section">
-            <div class="section-header-row">
-                <h2 class="landing-section-title">Trending Now</h2>
-            </div>
-            <div class="tracks-scroll">
-                @for (int i = 0; i < trendingTracks.Count && i < 10; i++)
-                {
-                    var track = trendingTracks[i];
-                    <div class="track-card">
-                        <div class="track-rank">@(i + 1)</div>
-                        <div class="track-art">
-                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
-                            {
-                                <img src="@track.CoverImageUrl" alt="@track.Title" />
-                            }
-                            else
-                            {
-                                <img src="/images/default-album-cover.png" alt="Default album" />
-                            }
-                        </div>
-                        <div class="track-title">@track.Title</div>
-                        <div class="track-artist">@track.ArtistName</div>
-                        <div class="track-plays">
-                            <span>@track.PlayCount.ToString("N0") plays</span>
-                        </div>
-                    </div>
-                }
-            </div>
-        </section>
+        <!-- Experience the visualizers -->
 
-        <!-- Interactive Logo Section -->
-        <section class="logo-section">
-            <div class="logo-container" onclick="rotatePuzzleLogo()">
-                <img src="/images/piece_logo_white.png"
-                     alt="Piece - Interactive Music Discovery"
-                     class="interactive-logo"
-                     id="puzzleLogo">
-            </div>
-            <p class="logo-subtitle">Click to spin the puzzle 🧩</p>
-        </section>
+        <!-- Learn about artists from around the world with the map -->
+        
+        <!-- Hear sounds you haven't yet, with our huge selection of copyright free music -->
 
-        <!-- Fresh Uploads -->
-        <section class="section">
-            <div class="section-header-row">
-                <h2 class="landing-section-title">Fresh Uploads</h2>
-            </div>
-            <div class="tracks-scroll">
-                @foreach (var track in latestTracks.Take(10))
-                {
-                    <div class="track-card">
-                        <div class="track-art">
-                            @if (!string.IsNullOrEmpty(track.CoverImageUrl))
-                            {
-                                <img src="@track.CoverImageUrl" alt="@track.Title" />
-                            }
-                            else
-                            {
-                                <img src="/images/default-album-cover.png" alt="Default album" />
-                            }
-                        </div>
-                        <div class="track-title">@track.Title</div>
-                        <div class="track-artist">@track.ArtistName</div>
-                        <div class="track-plays">
-                            <span>@track.PlayCount plays</span>
-                        </div>
-                    </div>
-                }
-            </div>
-        </section>
+        <!-- See your music journey through the colorful stats -->
 
-        <!-- Genre Spotlight -->
-        <section class="section">
-            <div class="section-header-row">
-                <h2 class="landing-section-title">Explore by Genre</h2>
-            </div>
-            <div class="genres-grid">
-                @foreach (var genre in genres)
-                {
-                    <div class="genre-card" style="background: @genre.Color;">
-                        <div class="genre-content">
-                            <div class="genre-name">@genre.Name</div>
-                            <div class="genre-count">@genre.Tracks.Count tracks</div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </section>
-
-        <!-- Features -->
-        <section class="section">
-            <div class="section-header-row">
-                <h2 class="landing-section-title">Why Piece?</h2>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-title">6 Visualizer Modes</div>
-                    <div class="feature-desc">Transform music into art with real-time audio visualization</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-title">Global Discovery</div>
-                    <div class="feature-desc">Explore artists and music from every continent</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-title">Listening Analytics</div>
-                    <div class="feature-desc">Beautiful stats tracking your musical journey</div>
-                </div>
-            </div>
-        </section>
-
+        
         <!-- CTA -->
         <section class="cta-section">
-            <h2 class="cta-title">Ready to Experience Music Differently?</h2>
-            <p class="cta-subtitle">Join thousands discovering new sounds every day</p>
-            <a href="/Account/Register" class="btn btn-signup btn-cta">Get Started Free</a>
+            <h2 class="cta-title">Ready to experience music differently?</h2>
+            <p class="cta-subtitle">Join us in the new way of enjoying music</p>
+            <a href="/Account/Register" class="btn btn-signup btn-cta">Get started here</a>
         </section>
     </div>
 }

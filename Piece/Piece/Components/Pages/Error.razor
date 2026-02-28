@@ -1,36 +1,289 @@
 ﻿@page "/Error"
+@page "/Error/{StatusCode:int}"
 @using System.Diagnostics
+@inject NavigationManager Navigation
+@inject Piece.Services.LanguageService Lang
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
 
-<PageTitle>Error</PageTitle>
+<PageTitle>@GetTitle() - Piece</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="error-wrapper">
+    <div class="map-bg"></div>
 
-@if (ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
-    </p>
-}
+    <div class="dots-container">
+        @for (int i = 0; i < 20; i++)
+        {
+            var size = (i % 3 + 1) * 4;
+            var top = (i * 37 % 90) + 5;
+            var left = (i * 53 % 90) + 5;
+            var delay = (i * 0.5) % 4;
+            <div class="dot" style="top: @(top)%; left: @(left)%; width: @(size)px; height: @(size)px; animation-delay: @(delay)s;"></div>
+        }
+    </div>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+    <div class="error-card">
+        <div class="icon-orb">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.5">
+                @if (StatusCode == 404)
+                {
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                }
+                else
+                {
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                }
+            </svg>
+            <div class="status-badge">
+                <span style="color: #8B5CF6; font-weight: 800; font-size: 10px;">@(StatusCode ?? 500)</span>
+            </div>
+        </div>
 
-@code{
-    [CascadingParameter]
-    private HttpContext? HttpContext { get; set; }
+        <h1 class="error-title">@GetTitle()</h1>
+
+        <p class="error-subtitle">
+            @GetSubtitle()
+        </p>
+
+        <div class="pill-container">
+            @foreach (var pill in GetPills())
+            {
+                <div class="error-pill">@pill</div>
+            }
+        </div>
+
+        @if (ShowRequestId)
+        {
+            <div class="request-id-box">
+                <span class="id-label">Ref ID:</span>
+                <span class="id-value">@RequestId</span>
+            </div>
+        }
+
+        <button class="btn-primary" @onclick='() => Navigation.NavigateTo("/")'>
+            @Lang.T("Return to the app")
+        </button>
+
+        <button class="btn-secondary" @onclick="Reload">
+            @Lang.T("Refresh Page")
+        </button>
+    </div>
+</div>
+
+<style>
+    .error-wrapper {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0a0a 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .map-bg {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1280px-World_map_-_low_resolution.svg.png');
+        background-size: cover;
+        background-position: center;
+        opacity: 0.04;
+        filter: blur(2px);
+    }
+
+    .dots-container {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .dot {
+        position: absolute;
+        border-radius: 50%;
+        background: #8B5CF6;
+        opacity: 0.2;
+        animation: pulse 4s infinite ease-in-out;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 0.1;
+        }
+
+        50% {
+            transform: scale(1.5);
+            opacity: 0.3;
+        }
+    }
+
+    .error-card {
+        position: relative;
+        background: rgba(20, 10, 40, 0.85);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 32px;
+        padding: 50px 40px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 0 80px rgba(139, 92, 246, 0.15), 0 40px 80px rgba(0,0,0,0.6);
+        backdrop-filter: blur(20px);
+    }
+
+    .icon-orb {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(16,185,129,0.1));
+        border: 2px solid rgba(139,92,246,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+        position: relative;
+    }
+
+    .status-badge {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #1a0a2e;
+        border: 2px solid rgba(139,92,246,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .error-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 12px;
+        letter-spacing: -1px;
+    }
+
+    .error-subtitle {
+        font-size: 16px;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+
+    .pill-container {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 32px;
+    }
+
+    .error-pill {
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 11px;
+        color: #A78BFA;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .request-id-box {
+        margin-bottom: 30px;
+        padding: 10px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 12px;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    .id-label {
+        color: #666;
+        margin-right: 8px;
+    }
+
+    .id-value {
+        color: #8B5CF6;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 16px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        border: none;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 16px;
+        box-shadow: 0 8px 24px rgba(139,92,246,0.3);
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(139,92,246,0.5);
+            filter: brightness(1.1);
+        }
+
+    .btn-secondary {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+        .btn-secondary:hover {
+            color: #ffffff;
+        }
+</style>
+
+@code {
+    [Parameter] public int? StatusCode { get; set; }
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
 
     private string? RequestId { get; set; }
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
         RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+    }
+
+    private string GetTitle() => StatusCode switch
+    {
+        404 => Lang.T("404"),
+        500 => Lang.T("System Jammed"),
+        _ => Lang.T("Out of Tune")
+    };
+
+    private string GetSubtitle() => StatusCode switch
+    {
+        404 => Lang.T("This piece of the app seems to be missing. Perhaps the coordinates were wrong?"),
+        500 => Lang.T("Something went wrong on our end. Our engineers are currently retuning the system."),
+        _ => Lang.T("An unexpected interruption occurred. Please try again in a moment.")
+    };
+
+    private string[] GetPills() => StatusCode switch
+    {
+        404 => new[] { "Route Not Found", "Broken Link", "404 Error" },
+        500 => new[] { "Server Error", "Log Created", "Engineers Notified" },
+        _ => new[] { "Interrupted", "Connectivity", "Check Status" }
+    };
+
+    private void Reload() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
 }

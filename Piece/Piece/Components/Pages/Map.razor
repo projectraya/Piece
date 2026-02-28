@@ -10,581 +10,739 @@
 @inject CountryMusicService CountryMusicService
 @inject Piece.Services.LanguageService Lang
 @inherits LocalizedComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>World Music Map - Piece</PageTitle>
 
 <style>
     * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
     }
 
     body, html {
-        overflow: hidden;
+    overflow: hidden;
     }
 
     .map-page {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: #0a0a0a;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0a0a;
     }
 
     .back-btn {
-        position: fixed;
-        top: 24px;
-        left: 24px;
-        z-index: 2000;
-        background: rgba(139, 92, 246, 0.9);
-        border: none;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 2000;
+    background: rgba(139, 92, 246, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
     }
 
-        .back-btn:hover {
-            background: #7C3AED;
-            transform: scale(1.1);
-        }
+    .back-btn:hover {
+    background: #7C3AED;
+    transform: scale(1.1);
+    }
 
     #map {
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
     }
 
     .info-panel {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 500px;
-        height: 100vh;
-        background: linear-gradient(to left, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95));
-        backdrop-filter: blur(20px);
-        border-left: 2px solid rgba(139, 92, 246, 0.4);
-        z-index: 1500;
-        transform: translateX(100%);
-        transition: transform 0.4s;
-        padding: 30px;
-        overflow-y: auto;
-        pointer-events: auto;
-        display: flex;
-        flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 500px;
+    height: 100vh;
+    background: linear-gradient(to left, rgba(10, 10, 10, 0.98), rgba(10, 10, 10, 0.95));
+    backdrop-filter: blur(20px);
+    border-left: 2px solid rgba(139, 92, 246, 0.4);
+    z-index: 1500;
+    transform: translateX(100%);
+    transition: transform 0.4s;
+    padding: 30px;
+    overflow-y: auto;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
     }
 
-        .info-panel.active {
-            transform: translateX(0);
-        }
+    .info-panel.active {
+    transform: translateX(0);
+    }
 
-        .info-panel:not(.active) {
-            pointer-events: none;
-        }
+    .info-panel:not(.active) {
+    pointer-events: none;
+    }
 
     .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
     }
 
     .country-name {
-        font-size: 28px;
-        font-weight: 700;
-        color: white;
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
     }
 
     .close-btn {
-        background: rgba(255, 255, 255, 0.1);
-        border: none;
-        border-radius: 8px;
-        width: 40px;
-        height: 40px;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
     }
 
-        .close-btn:hover {
-            background: rgba(139, 92, 246, 0.3);
-        }
+    .close-btn:hover {
+    background: rgba(139, 92, 246, 0.3);
+    }
 
     .country-stats {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
     }
 
     .stat-box {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 12px;
-        text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
     }
 
     .stat-number {
-        font-size: 24px;
-        font-weight: 700;
-        color: #8B5CF6;
+    font-size: 24px;
+    font-weight: 700;
+    color: #8B5CF6;
     }
 
     .stat-label {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
-        margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 4px;
     }
 
     .section-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 16px;
     }
 
     .genres-list {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
     }
 
     .genre-tag {
-        background: rgba(139, 92, 246, 0.15);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 20px;
-        padding: 6px 16px;
-        font-size: 12px;
-        color: #A78BFA;
-        font-weight: 600;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: #A78BFA;
+    font-weight: 600;
     }
 
     .tracks-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
     }
 
     .track-item {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 12px;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        gap: 12px;
-        align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    gap: 12px;
+    align-items: center;
     }
 
-        .track-item:hover {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.4);
-            transform: translateX(-4px);
-        }
+    .track-item:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.4);
+    transform: translateX(-4px);
+    }
 
-        .track-item.playing {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: rgba(139, 92, 246, 0.5);
-        }
+    .track-item.playing {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.5);
+    }
 
     .track-cover {
-        width: 60px;
-        height: 60px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
-        object-fit: cover;
-        flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
+    object-fit: cover;
+    flex-shrink: 0;
     }
 
     .track-info {
-        flex: 1;
-        min-width: 0;
+    flex: 1;
+    min-width: 0;
     }
 
     .track-name {
-        font-size: 14px;
-        font-weight: 600;
-        color: white;
-        margin-bottom: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .track-artist {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .play-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: rgba(139, 92, 246, 0.2);
-        border: 2px solid rgba(139, 92, 246, 0.5);
-        color: #8B5CF6;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.2);
+    border: 2px solid rgba(139, 92, 246, 0.5);
+    color: #8B5CF6;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
     }
 
-        .play-btn:hover {
-            background: rgba(139, 92, 246, 0.4);
-            transform: scale(1.1);
-        }
+    .play-btn:hover {
+    background: rgba(139, 92, 246, 0.4);
+    transform: scale(1.1);
+    }
 
-        .play-btn.playing {
-            background: #8B5CF6;
-            color: white;
-        }
+    .play-btn.playing {
+    background: #8B5CF6;
+    color: white;
+    }
 
     .no-data {
-        text-align: center;
-        padding: 40px 20px;
-        color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.5);
     }
 
     .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 3000;
-        color: white;
-        font-size: 18px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    color: white;
+    font-size: 18px;
     }
 
     .mini-player {
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        width: 500px;
-        background: linear-gradient(to top, rgba(15, 15, 15, 0.98), rgba(15, 15, 15, 0.95));
-        border-top: 2px solid rgba(139, 92, 246, 0.5);
-        border-left: 2px solid rgba(139, 92, 246, 0.5);
-        padding: 20px;
-        z-index: 1600;
-        transform: translateY(100%);
-        transition: transform 0.4s;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 500px;
+    background: linear-gradient(to top, rgba(15, 15, 15, 0.98), rgba(15, 15, 15, 0.95));
+    border-top: 2px solid rgba(139, 92, 246, 0.5);
+    border-left: 2px solid rgba(139, 92, 246, 0.5);
+    padding: 20px;
+    z-index: 1600;
+    transform: translateY(100%);
+    transition: transform 0.4s;
     }
 
-        .mini-player.active {
-            transform: translateY(0);
-        }
+    .mini-player.active {
+    transform: translateY(0);
+    }
 
     .player-track-info {
-        display: flex;
-        gap: 16px;
-        align-items: center;
-        margin-bottom: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
     }
 
     .player-cover {
-        width: 60px;
-        height: 60px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
-        object-fit: cover;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
+    object-fit: cover;
     }
 
     .player-details {
-        flex: 1;
-        min-width: 0;
+    flex: 1;
+    min-width: 0;
     }
 
     .player-track-name {
-        font-size: 16px;
-        font-weight: 700;
-        color: white;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .player-artist-name {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
     .player-controls {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        justify-content: center;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
     }
 
     .control-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: rgba(139, 92, 246, 0.2);
-        border: 2px solid rgba(139, 92, 246, 0.5);
-        color: white;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.2);
+    border: 2px solid rgba(139, 92, 246, 0.5);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
     }
 
-        .control-btn:hover {
-            background: rgba(139, 92, 246, 0.4);
-            transform: scale(1.05);
-        }
+    .control-btn:hover {
+    background: rgba(139, 92, 246, 0.4);
+    transform: scale(1.05);
+    }
 
-        .control-btn.primary {
-            background: #8B5CF6;
-            width: 56px;
-            height: 56px;
-        }
+    .control-btn.primary {
+    background: #8B5CF6;
+    width: 56px;
+    height: 56px;
+    }
 
-            .control-btn.primary:hover {
-                background: #7C3AED;
-            }
+    .control-btn.primary:hover {
+    background: #7C3AED;
+    }
 
     .progress-bar {
-        width: 100%;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 2px;
-        margin-top: 16px;
-        overflow: hidden;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
     }
 
     .progress-fill {
-        height: 100%;
-        background: #10B981;
-        width: 0%;
-        transition: width 0.3s;
+    height: 100%;
+    background: #10B981;
+    width: 0%;
+    transition: width 0.3s;
     }
 
     .country-tooltip {
-        background: rgba(139, 92, 246, 0.95) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        color: white !important;
-        font-weight: 600 !important;
-        padding: 8px 12px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    background: rgba(139, 92, 246, 0.95) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
     }
 
-        .country-tooltip::before {
-            border-top-color: rgba(139, 92, 246, 0.95) !important;
-        }
+    .country-tooltip::before {
+    border-top-color: rgba(139, 92, 246, 0.95) !important;
+    }
 
     @@keyframes spin {
-        to
+    to
 
     {
-        transform: rotate(360deg);
+    transform: rotate(360deg);
     }
 
     }
 
     .spinner {
-        animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
     }
 </style>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-<div class="map-page">
-    @if (isLoading)
-    {
-        <div class="loading-overlay">
-            <div>@Lang.T("Loading world map")...</div>
-        </div>
-    }
-
-    <button class="back-btn" @onclick="GoBack">←</button>
-
-    <div id="map"></div>
-
-    <!-- Info Panel -->
-    <div class="info-panel @(countryData != null || isLoadingCountryData ? "active" : "")">
-        @if (isLoadingCountryData)
+@if (userHasPremium)
+{
+    <div class="map-page">
+        @if (isLoading)
         {
-            <!-- Loading State -->
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px;">
-                <div class="spinner" style="width: 60px; height: 60px; border: 4px solid #3a3a3a; border-top-color: #8B5CF6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                <p style="color: #888; font-size: 18px;">@Lang.T("Loading artists and tracks")...</p>
-                <p style="color: #666; font-size: 14px; text-align: center; max-width: 300px;">
-                    @Lang.T("Fetching data from MusicBrainz and Deezer APIs.")<br />@Lang.T("This may take a few moments.")
-                </p>
+            <div class="loading-overlay">
+                <div>@Lang.T("Loading world map")...</div>
             </div>
         }
-        else if (countryData != null)
-        {
-            <!-- Panel Header -->
-            <div class="panel-header">
-                <h2 class="country-name">@countryData.CountryName</h2>
-                <button class="close-btn" @onclick="ClosePanel">✕</button>
-            </div>
 
+        <button class="back-btn" @onclick="GoBack">←</button>
 
-            <!-- Featured Artists -->
-            @if (countryData.Artists.Any())
+        <div id="map"></div>
+
+        <!-- Info Panel -->
+        <div class="info-panel @(countryData != null || isLoadingCountryData ? "active" : "")">
+            @if (isLoadingCountryData)
             {
-                <div style="flex: 1; overflow-y: auto;">
-                    <h3 class="section-title">@Lang.T("Big artists from") @countryData.CountryName</h3>
+                <!-- Loading State -->
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px;">
+                    <div class="spinner" style="width: 60px; height: 60px; border: 4px solid #3a3a3a; border-top-color: #8B5CF6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <p style="color: #888; font-size: 18px;">@Lang.T("Loading artists and tracks")...</p>
+                    <p style="color: #666; font-size: 14px; text-align: center; max-width: 300px;">
+                        @Lang.T("Fetching data from MusicBrainz and Deezer APIs.")<br />@Lang.T("This may take a few moments.")
+                    </p>
+                </div>
+            }
+            else if (countryData != null)
+            {
+                <!-- Panel Header -->
+                <div class="panel-header">
+                    <h2 class="country-name">@countryData.CountryName</h2>
+                    <button class="close-btn" @onclick="ClosePanel">✕</button>
+                </div>
 
-                    @foreach (var artist in countryData.Artists)
-                    {
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                            <!-- Artist Header -->
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                                @if (!string.IsNullOrEmpty(artist.ImageUrl))
+
+                <!-- Featured Artists -->
+                @if (countryData.Artists.Any())
+                {
+                    <div style="flex: 1; overflow-y: auto;">
+                        <h3 class="section-title">@Lang.T("Big artists from") @countryData.CountryName</h3>
+
+                        @foreach (var artist in countryData.Artists)
+                        {
+                            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                                <!-- Artist Header -->
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                    @if (!string.IsNullOrEmpty(artist.ImageUrl))
+                                    {
+                                        <img src="@artist.ImageUrl" alt="@artist.Name" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #8B5CF6, #10B981); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white;">
+                                            @artist.Name.Substring(0, 1).ToUpper()
+                                        </div>
+                                    }
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 16px; font-weight: 700; color: white;">@artist.Name</div>
+                                        @if (!string.IsNullOrEmpty(artist.Genre))
+                                        {
+                                            <div style="font-size: 12px; color: #888;">@artist.Genre</div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Artist Tracks -->
+                                @if (artist.TopTracks.Any())
                                 {
-                                    <img src="@artist.ImageUrl" alt="@artist.Name" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        @foreach (var track in artist.TopTracks)
+                                        {
+                                            <div class="track-item @(currentTrack?.PreviewUrl == track.PreviewUrl ? "playing" : "")"
+                                            @onclick="() => SelectTrack(track)">
+                                                @if (!string.IsNullOrEmpty(track.AlbumArtUrl))
+                                                {
+                                                    <img src="@track.AlbumArtUrl" alt="@track.TrackName" class="track-cover" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="track-cover"></div>
+                                                }
+                                                <div class="track-info">
+                                                    <div class="track-name">@track.TrackName</div>
+                                                    <div class="track-artist">@track.AlbumName</div>
+                                                </div>
+                                                <div class="play-btn @(currentTrack?.PreviewUrl == track.PreviewUrl && isPlaying ? "playing" : "")">
+                                                    @(currentTrack?.PreviewUrl == track.PreviewUrl && isPlaying ? "⏸" : "▶")
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
                                 }
                                 else
                                 {
-                                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #8B5CF6, #10B981); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white;">
-                                        @artist.Name.Substring(0, 1).ToUpper()
+                                    <div style="text-align: center; padding: 12px; color: #666; font-size: 13px;">
+                                        @Lang.T("No preview tracks available")
                                     </div>
                                 }
-                                <div style="flex: 1;">
-                                    <div style="font-size: 16px; font-weight: 700; color: white;">@artist.Name</div>
-                                    @if (!string.IsNullOrEmpty(artist.Genre))
-                                    {
-                                        <div style="font-size: 12px; color: #888;">@artist.Genre</div>
-                                    }
-                                </div>
                             </div>
-
-                            <!-- Artist Tracks -->
-                            @if (artist.TopTracks.Any())
-                            {
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    @foreach (var track in artist.TopTracks)
-                                    {
-                                        <div class="track-item @(currentTrack?.PreviewUrl == track.PreviewUrl ? "playing" : "")"
-                                             @onclick="() => SelectTrack(track)">
-                                            @if (!string.IsNullOrEmpty(track.AlbumArtUrl))
-                                            {
-                                                <img src="@track.AlbumArtUrl" alt="@track.TrackName" class="track-cover" />
-                                            }
-                                            else
-                                            {
-                                                <div class="track-cover"></div>
-                                            }
-                                            <div class="track-info">
-                                                <div class="track-name">@track.TrackName</div>
-                                                <div class="track-artist">@track.AlbumName</div>
-                                            </div>
-                                            <div class="play-btn @(currentTrack?.PreviewUrl == track.PreviewUrl && isPlaying ? "playing" : "")">
-                                                @(currentTrack?.PreviewUrl == track.PreviewUrl && isPlaying ? "⏸" : "▶")
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <div style="text-align: center; padding: 12px; color: #666; font-size: 13px;">
-                                    @Lang.T("No preview tracks available")
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="no-data">
-                    <p>@Lang.T("No artist data available for this country.")</p>
-                </div>
-            }
-        }
-    </div>
-
-    <!-- Mini Player -->
-    <div class="mini-player @(currentTrack != null ? "active" : "")">
-        @if (currentTrack != null)
-        {
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                @if (!string.IsNullOrEmpty(currentTrack.AlbumArtUrl))
-                {
-                    <img src="@currentTrack.AlbumArtUrl" alt="@currentTrack.TrackName"
-                         style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;" />
+                        }
+                    </div>
                 }
                 else
                 {
-                    <div style="width: 60px; height: 60px; border-radius: 8px; background: linear-gradient(135deg, #8B5CF6, #10B981);"></div>
+                    <div class="no-data">
+                        <p>@Lang.T("No artist data available for this country.")</p>
+                    </div>
                 }
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-size: 16px; font-weight: 600; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @currentTrack.TrackName
+            }
+        </div>
+
+        <!-- Mini Player -->
+        <div class="mini-player @(currentTrack != null ? "active" : "")">
+            @if (currentTrack != null)
+            {
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                    @if (!string.IsNullOrEmpty(currentTrack.AlbumArtUrl))
+                    {
+                        <img src="@currentTrack.AlbumArtUrl" alt="@currentTrack.TrackName"
+                        style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div style="width: 60px; height: 60px; border-radius: 8px; background: linear-gradient(135deg, #8B5CF6, #10B981);"></div>
+                    }
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 16px; font-weight: 600; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @currentTrack.TrackName
+                        </div>
+                        <div style="font-size: 14px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @currentTrack.ArtistName
+                        </div>
                     </div>
-                    <div style="font-size: 14px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @currentTrack.ArtistName
+                    <button @onclick="StopPlayback"
+                    style="background: rgba(255, 68, 68, 0.2); border: 2px solid rgba(255, 68, 68, 0.5); border-radius: 50%; width: 40px; height: 40px; color: #ff4444; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="cross"></i>
+                    </button>
+                </div>
+
+                <!-- Playback Controls -->
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                    <button @onclick="TogglePlayPause"
+                    style="background: #8B5CF6; border: none; border-radius: 50%; width: 48px; height: 48px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                        @(isPlaying ? "⏸" : "▶")
+                    </button>
+
+                    <!-- Time Display -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <span style="font-size: 12px; color: #888; min-width: 35px;">@FormatTime(currentPosition)</span>
+
+                        <!-- Progress Bar -->
+                        <div style="flex: 1; height: 6px; background: #3a3a3a; border-radius: 3px; position: relative; cursor: pointer;">
+                            <div style="width: @((int)progressPercent)%; height: 100%; background: #10B981; border-radius: 3px; transition: width 0.1s;"></div>
+                        </div>
+
+                        <span style="font-size: 12px; color: #888; min-width: 35px;">@FormatTime(30)</span>
                     </div>
                 </div>
-                <button @onclick="StopPlayback"
-                        style="background: rgba(255, 68, 68, 0.2); border: 2px solid rgba(255, 68, 68, 0.5); border-radius: 50%; width: 40px; height: 40px; color: #ff4444; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <i data-lucide="cross"></i>
-                </button>
-            </div>
 
-            <!-- Playback Controls -->
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-                <button @onclick="TogglePlayPause"
-                        style="background: #8B5CF6; border: none; border-radius: 50%; width: 48px; height: 48px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
-                    @(isPlaying ? "⏸" : "▶")
-                </button>
-
-                <!-- Time Display -->
-                <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                    <span style="font-size: 12px; color: #888; min-width: 35px;">@FormatTime(currentPosition)</span>
-
-                    <!-- Progress Bar -->
-                    <div style="flex: 1; height: 6px; background: #3a3a3a; border-radius: 3px; position: relative; cursor: pointer;">
-                        <div style="width: @((int)progressPercent)%; height: 100%; background: #10B981; border-radius: 3px; transition: width 0.1s;"></div>
-                    </div>
-
-                    <span style="font-size: 12px; color: #888; min-width: 35px;">@FormatTime(30)</span>
+                <!-- Preview Notice -->
+                <div style="text-align: center; font-size: 11px; color: #666; margin-top: 8px;">
+                    @Lang.T("30-second preview")
                 </div>
-            </div>
+            }
+        </div>
+    </div>
+}
 
-            <!-- Preview Notice -->
-            <div style="text-align: center; font-size: 11px; color: #666; margin-top: 8px;">
-                @Lang.T("30-second preview")
+else
+{
+<div style="position: fixed;
+                inset: 0;
+                background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0a0a 70%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;">
+
+    <!-- Blurred fake map background -->
+    <div style="position: absolute;
+                    inset: 0;
+                    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1280px-World_map_-_low_resolution.svg.png');
+                    background-size: cover;
+                    background-position: center;
+                    opacity: 0.04;
+                    filter: blur(2px);">
+    </div>
+
+    <!-- Floating dots decoration -->
+    <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+        @for (int i = 0; i < 20; i++)
+        {
+            var size = (i % 3 + 1) * 4;
+            var top = (i * 37 % 90) + 5;
+            var left = (i * 53 % 90) + 5;
+            var opacity = 0.1 + (i % 4) * 0.05;
+            <div style="position: absolute;
+                            top: @(top)%;
+                            left: @(left)%;
+                            width: @(size)px;
+                            height: @(size)px;
+                            border-radius: 50%;
+                            background: #8B5CF6;
+                            opacity: @opacity.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);">
             </div>
         }
     </div>
+
+    <!-- Lock card -->
+    <div style="position: relative;
+                    background: rgba(20, 10, 40, 0.9);
+                    border: 1px solid rgba(139, 92, 246, 0.3);
+                    border-radius: 24px;
+                    padding: 60px 48px;
+                    max-width: 520px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 0 80px rgba(139, 92, 246, 0.15), 0 40px 80px rgba(0,0,0,0.5);
+                    backdrop-filter: blur(20px);">
+
+        <!-- Globe icon -->
+        <div style="width: 100px;
+                        height: 100px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(16,185,129,0.1));
+                        border: 2px solid rgba(139,92,246,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 32px;
+                        position: relative;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            <!-- Lock badge -->
+            <div style="position: absolute;
+                            bottom: -4px;
+                            right: -4px;
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 50%;
+                            background: #1a0a2e;
+                            border: 2px solid rgba(139,92,246,0.5);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+            </div>
+        </div>
+
+        <h1 style="font-size: 32px;
+                       font-weight: 700;
+                       color: #ffffff;
+                       margin-bottom: 12px;
+                       letter-spacing: -0.5px;">
+            World Music Map
+        </h1>
+
+        <p style="font-size: 16px;
+                      color: rgba(255,255,255,0.5);
+                      margin-bottom: 32px;
+                      line-height: 1.6;">
+            Explore music from every country on Earth.<br />
+            Discover artists, genres and 30-second previews<br />
+            from cultures around the world.
+        </p>
+
+        <!-- Feature pills -->
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px;">
+            @foreach (var feature in new[] { "Interactive Map", "Track Previews", "190+ Countries", "Local Artists" })
+            {
+                <div style="background: rgba(139,92,246,0.1);
+                                border: 1px solid rgba(139,92,246,0.2);
+                                border-radius: 20px;
+                                padding: 6px 14px;
+                                font-size: 12px;
+                                color: #A78BFA;
+                                font-weight: 600;">
+                    @feature
+                </div>
+            }
+        </div>
+
+        <!-- CTA Button -->
+        <button @onclick='() => Navigation.NavigateTo("/subscriptions")'
+                style="width: 100%;
+                           padding: 16px;
+                           border-radius: 24px;
+                           background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+                           border: none;
+                           color: #ffffff;
+                           font-size: 16px;
+                           font-weight: 700;
+                           cursor: pointer;
+                           transition: all 0.3s;
+                           margin-bottom: 16px;
+                           box-shadow: 0 8px 32px rgba(139,92,246,0.4);"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 40px rgba(139,92,246,0.5)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(139,92,246,0.4)'">
+            Upgrade to Premium
+        </button>
+
+        <button @onclick='() => Navigation.NavigateTo("/")'
+                style="background: none;
+                           border: none;
+                           color: rgba(255,255,255,0.3);
+                           font-size: 14px;
+                           cursor: pointer;
+                           transition: color 0.2s;"
+                onmouseover="this.style.color='rgba(255,255,255,0.6)'"
+                onmouseout="this.style.color='rgba(255,255,255,0.3)'">
+            Maybe later
+        </button>
+    </div>
 </div>
+}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -594,144 +752,144 @@
     window.currentAudio = null;
 
     window.waitForLeaflet = function() {
-        return new Promise((resolve) => {
-            if (typeof L !== 'undefined') {
-                resolve();
-            } else {
-                const checkInterval = setInterval(() => {
-                    if (typeof L !== 'undefined') {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-            }
-        });
+    return new Promise((resolve) => {
+    if (typeof L !== 'undefined') {
+    resolve();
+    } else {
+    const checkInterval = setInterval(() => {
+    if (typeof L !== 'undefined') {
+    clearInterval(checkInterval);
+    resolve();
+    }
+    }, 100);
+    }
+    });
     };
 
     window.initializeWorldMap = async function (dotNetRef) {
-        console.log('Initializing world map...');
+    console.log('Initializing world map...');
 
-        await window.waitForLeaflet();
+    await window.waitForLeaflet();
 
-        window.pieceMapComponentRef = dotNetRef;
+    window.pieceMapComponentRef = dotNetRef;
 
-        if (window.pieceMapInstance) {
-            window.pieceMapInstance.remove();
-        }
+    if (window.pieceMapInstance) {
+    window.pieceMapInstance.remove();
+    }
 
-        const map = L.map('map', {
-            minZoom: 2,
-            maxZoom: 6,
-            maxBounds: [[-90, -180], [90, 180]],
-            maxBoundsViscosity: 1.0
-        }).setView([20, 0], 2);
+    const map = L.map('map', {
+    minZoom: 2,
+    maxZoom: 6,
+    maxBounds: [[-90, -180], [90, 180]],
+    maxBoundsViscosity: 1.0
+    }).setView([20, 0], 2);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap contributors © CARTO',
-            subdomains: 'abcd',
-            maxZoom: 6
-        }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 6
+    }).addTo(map);
 
-        window.pieceMapInstance = map;
-        console.log('Map initialized');
+    window.pieceMapInstance = map;
+    console.log('Map initialized');
     };
 
     window.addCountryMarkers = async function (countries) {
-        await window.waitForLeaflet();
+    await window.waitForLeaflet();
 
-        if (!window.pieceMapInstance) {
-            console.error('Map not initialized');
-            return;
-        }
+    if (!window.pieceMapInstance) {
+    console.error('Map not initialized');
+    return;
+    }
 
-        console.log(`Adding ${countries.length} country markers...`);
+    console.log(`Adding ${countries.length} country markers...`);
 
-        countries.forEach(country => {
-            const marker = L.circleMarker([country.latitude, country.longitude], {
-                radius: 8,
-                fillColor: '#8B5CF6',
-                color: '#10B981',
-                weight: 2,
-                opacity: 0.8,
-                fillOpacity: 0.6
-            });
+    countries.forEach(country => {
+    const marker = L.circleMarker([country.latitude, country.longitude], {
+    radius: 8,
+    fillColor: '#8B5CF6',
+    color: '#10B981',
+    weight: 2,
+    opacity: 0.8,
+    fillOpacity: 0.6
+    });
 
-            marker.on('mouseover', function () {
-                this.setStyle({
-                    fillColor: '#10B981',
-                    radius: 12,
-                    fillOpacity: 0.9
-                });
-            });
+    marker.on('mouseover', function () {
+    this.setStyle({
+    fillColor: '#10B981',
+    radius: 12,
+    fillOpacity: 0.9
+    });
+    });
 
-            marker.on('mouseout', function () {
-                this.setStyle({
-                    fillColor: '#8B5CF6',
-                    radius: 8,
-                    fillOpacity: 0.6
-                });
-            });
+    marker.on('mouseout', function () {
+    this.setStyle({
+    fillColor: '#8B5CF6',
+    radius: 8,
+    fillOpacity: 0.6
+    });
+    });
 
-            marker.on('click', function () {
-                console.log(`Clicked: ${country.name}`);
-                if (window.pieceMapComponentRef) {
-                    window.pieceMapComponentRef.invokeMethodAsync('SelectCountryFromJS', country.name, country.countryCode)
-                        .then(() => console.log('Country selected'))
-                        .catch(err => console.error('Error selecting country:', err));
-                }
-            });
+    marker.on('click', function () {
+    console.log(`Clicked: ${country.name}`);
+    if (window.pieceMapComponentRef) {
+    window.pieceMapComponentRef.invokeMethodAsync('SelectCountryFromJS', country.name, country.countryCode)
+    .then(() => console.log('Country selected'))
+    .catch(err => console.error('Error selecting country:', err));
+    }
+    });
 
-            marker.bindTooltip(country.name, {
-                permanent: false,
-                direction: 'top',
-                className: 'country-tooltip'
-            });
+    marker.bindTooltip(country.name, {
+    permanent: false,
+    direction: 'top',
+    className: 'country-tooltip'
+    });
 
-            marker.addTo(window.pieceMapInstance);
-        });
+    marker.addTo(window.pieceMapInstance);
+    });
 
-        console.log('Markers added');
+    console.log('Markers added');
     };
 
     window.playAudioPreview = function (url) {
-        if (window.currentAudio) {
-            window.currentAudio.pause();
-            window.currentAudio = null;
-        }
+    if (window.currentAudio) {
+    window.currentAudio.pause();
+    window.currentAudio = null;
+    }
 
-        window.currentAudio = new Audio(url);
-        window.currentAudio.play();
+    window.currentAudio = new Audio(url);
+    window.currentAudio.play();
 
-        window.currentAudio.addEventListener('timeupdate', () => {
-            if (window.pieceMapComponentRef && window.currentAudio) {
-                const progress = (window.currentAudio.currentTime / window.currentAudio.duration) * 100;
-                window.pieceMapComponentRef.invokeMethodAsync('UpdateProgress', progress);
-            }
-        });
+    window.currentAudio.addEventListener('timeupdate', () => {
+    if (window.pieceMapComponentRef && window.currentAudio) {
+    const progress = (window.currentAudio.currentTime / window.currentAudio.duration) * 100;
+    window.pieceMapComponentRef.invokeMethodAsync('UpdateProgress', progress);
+    }
+    });
 
-        window.currentAudio.addEventListener('ended', () => {
-            window.pieceMapComponentRef.invokeMethodAsync('OnPlaybackEnded');
-        });
+    window.currentAudio.addEventListener('ended', () => {
+    window.pieceMapComponentRef.invokeMethodAsync('OnPlaybackEnded');
+    });
     };
 
     window.pauseAudio = function () {
-        if (window.currentAudio) {
-            window.currentAudio.pause();
-        }
+    if (window.currentAudio) {
+    window.currentAudio.pause();
+    }
     };
 
     window.resumeAudio = function () {
-        if (window.currentAudio) {
-            window.currentAudio.play();
-        }
+    if (window.currentAudio) {
+    window.currentAudio.play();
+    }
     };
 
     window.stopAudio = function () {
-        if (window.currentAudio) {
-            window.currentAudio.pause();
-            window.currentAudio.currentTime = 0;
-            window.currentAudio = null;
-        }
+    if (window.currentAudio) {
+    window.currentAudio.pause();
+    window.currentAudio.currentTime = 0;
+    window.currentAudio = null;
+    }
     };
 </script>
 
@@ -747,6 +905,40 @@
     private double progressPercent = 0;
     private double currentPosition = 0;
     private double trackDuration = 30;
+
+    private bool userHasPremium = false;
+    private int? currentPlanId = null;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        await LoadCurrentSubscription();
+    }
+
+    private async Task LoadCurrentSubscription()
+    {
+        if (string.IsNullOrEmpty(currentUserId)) return;
+        using var context = await DbFactory.CreateDbContextAsync();
+        var currentSub = await context.UserSubscriptions
+            .Where(s => s.UserId == currentUserId && s.Status == SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
+            .Include(s => s.SubscriptionPlan)
+            .FirstOrDefaultAsync();
+
+        if (currentSub != null)
+        {
+            currentPlanId = currentSub.SubscriptionPlanId;
+            userHasPremium = true;
+        }
+    }
+
 
     private string FormatTime(double seconds)
     {

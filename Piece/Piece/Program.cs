@@ -172,12 +172,16 @@ namespace Piece
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
 			{
-				app.UseWebAssemblyDebugging();
-				app.UseMigrationsEndPoint();
+				//app.UseWebAssemblyDebugging();
+				//app.UseMigrationsEndPoint();
+				app.UseExceptionHandler("/Error");
+				app.UseStatusCodePagesWithReExecute("/Error/{0}");
+				app.UseHsts();
 			}
 			else
 			{
 				app.UseExceptionHandler("/Error");
+				app.UseStatusCodePagesWithReExecute("/Error/{0}");
 				app.UseHsts();
 			}
 
