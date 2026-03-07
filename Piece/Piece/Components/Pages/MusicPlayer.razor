@@ -738,9 +738,9 @@ else
             var random = new Random();
             var randomOffset = random.Next(0, 5000);
 
-            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=20&offset={randomOffset}&include=musicinfo&audioformat=mp32&order=popularity_total";
+            var url = $"https://api.jamendo.com/v3.0/tracks/?client_id={clientId}&format=json&limit=200&offset={randomOffset}&include=musicinfo&audioformat=mp32&order=popularity_total";
 
-            Console.WriteLine($"[LoadRandomJamendoTracks] Fetching 20 random tracks...");   
+            Console.WriteLine($"[LoadRandomJamendoTracks] Fetching 200 random tracks...");   
 
             var response = await HttpClient.GetFromJsonAsync<JamendoResponse>(url);
 

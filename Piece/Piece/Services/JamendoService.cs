@@ -17,7 +17,7 @@ namespace Piece.Services
 			_httpClient.BaseAddress = new Uri("https://api.jamendo.com/v3.0/");
 		}
 
-		public async Task<List<Track>> SearchTracksAsync(string query, int limit = 20)
+		public async Task<List<Track>> SearchTracksAsync(string query, int limit = 200)
 		{
 			try
 			{

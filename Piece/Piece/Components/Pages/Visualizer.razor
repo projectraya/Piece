@@ -228,36 +228,56 @@
     {
         if (firstRender)
         {
-            Console.WriteLine($"[Visualizer] First render - CurrentTrack: {PlayerService.CurrentTrack?.Title}");
-
             if (PlayerService.CurrentTrack != null)
             {
-                await Task.Delay(500);
-
-                await JSRuntime.InvokeVoidAsync("visualizerManager.registerFullCanvas", "fullVisualizer");
-
+                await Task.Delay(300);
                 await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawFull", true);
                 await JSRuntime.InvokeVoidAsync("visualizerManager.setDrawMini", false);
-
-                await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", currentMode);
-
-                Console.WriteLine("[Full Visualizer] Registered with manager");
+                await RegisterCurrentCanvas();
             }
+        }
+        else
+        {
+            if (PlayerService.CurrentTrack != null && currentMode != "sphere")
+            {
+                await JSRuntime.InvokeVoidAsync("visualizerManager.registerFullCanvas", "fullVisualizer");
+                await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", currentMode);
+            }
+        }
+    }
+
+    private async Task RegisterCurrentCanvas()
+    {
+        if (currentMode == "sphere")
+        {
+            await JSRuntime.InvokeVoidAsync("visualizerManager.initThreeSphere", "threeSphereCanvas");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("visualizerManager.registerFullCanvas", "fullVisualizer");
+            await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", currentMode);
         }
     }
 
     private async Task SwitchMode(string mode)
     {
+        var previousMode = currentMode;
         currentMode = mode;
+        StateHasChanged();
+
+        await Task.Delay(200);
 
         if (mode == "sphere")
         {
-            await Task.Delay(100); 
+            var canvasExists = await JSRuntime.InvokeAsync<bool>("eval",
+                "document.getElementById('threeSphereCanvas') !== null");
+            Console.WriteLine($"[Visualizer] threeSphereCanvas exists: {canvasExists}");
+
             await JSRuntime.InvokeVoidAsync("visualizerManager.initThreeSphere", "threeSphereCanvas");
         }
         else
         {
-            // Regular 2D modes
+            await JSRuntime.InvokeVoidAsync("visualizerManager.registerFullCanvas", "fullVisualizer");
             await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", mode);
         }
     }

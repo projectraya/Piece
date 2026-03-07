@@ -15,17 +15,33 @@
     }
 
     async initialize(canvasId, analyser, dataArray) {
+        console.log('[ThreeSphere] initialize called, isInitialized:', this.isInitialized);
+
         if (this.isInitialized) {
-            console.log('[ThreeSphere] Already initialized');
-            return;
+            console.log('[ThreeSphere] Disposing...');
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            if (this.renderer) this.renderer.dispose();
+            if (this.controls) this.controls.dispose();
+            this.isInitialized = false;
+            this.scene = null;
+            this.camera = null;
+            this.renderer = null;
+            this.sphere = null;
+            this.originalPositions = [];
+            this.impacts = [];
         }
 
-        this.analyser = analyser;
-        this.dataArray = dataArray;
+        await new Promise(resolve => setTimeout(resolve, 150));
 
         const canvas = document.getElementById(canvasId);
+        console.log('[ThreeSphere] Canvas found:', canvas);
+        console.log('[ThreeSphere] Canvas size:', canvas?.width, canvas?.height);
+
+        // Вземи нов WebGL контекст
+        const gl = canvas?.getContext('webgl2') || canvas?.getContext('webgl');
+        console.log('[ThreeSphere] WebGL context:', gl);
         if (!canvas) {
-            console.error('[ThreeSphere] Canvas not found');
+            console.error('[ThreeSphere] Canvas not found:', canvasId);
             return false;
         }
 
@@ -66,9 +82,8 @@
         this.sphere = new THREE.Mesh(geometry, material);
         this.scene.add(this.sphere);
 
-        // Check if OrbitControls is available
         if (typeof THREE.OrbitControls === 'undefined') {
-            console.error('[ThreeSphere] THREE.OrbitControls is not defined. Make sure OrbitControls.js loads after THREE.js');
+            console.error('[ThreeSphere] OrbitControls not found');
             return false;
         }
 
@@ -85,7 +100,6 @@
         console.log('[ThreeSphere] Initialized successfully');
 
         this.animate();
-
         return true;
     }
 

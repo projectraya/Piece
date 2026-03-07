@@ -190,83 +190,45 @@
 
     
     drawBars() {
-        const barCount = 64;
-        const barWidth = (this.fullCanvas.width / barCount) * 0.8;
+        const barCount = 48;
         const spacing = this.fullCanvas.width / barCount;
+        const barWidth = spacing * 0.7;
+        const centerY = this.fullCanvas.height / 2;
+        const time = Date.now() / 1000;
+
+        this.fullCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        this.fullCtx.fillRect(0, 0, this.fullCanvas.width, this.fullCanvas.height);
 
         for (let i = 0; i < barCount; i++) {
             const logIndex = Math.pow(i / barCount, 1.5);
             const dataIndex = Math.floor(logIndex * this.dataArray.length);
             const value = this.dataArray[dataIndex] || 0;
 
-            const height = (value / 255) * this.fullCanvas.height * 0.85;
+            const halfHeight = (value / 255) * (this.fullCanvas.height * 0.45);
             const x = i * spacing + (spacing - barWidth) / 2;
-            const y = this.fullCanvas.height - height;
-
-            const time = Date.now() / 300;
-            const wave1 = Math.sin(time + i * 0.2) * 15;
-            const wave2 = Math.cos(time * 1.3 + i * 0.15) * 10;
-            const waveHeight = wave1 + wave2;
 
             const t = i / barCount;
-            const hue = 240 + (t * 60);
-            const saturation = 70 + (t * 30);
-            const lightness = 50 + (value / 255) * 30;
+            const hue = (260 + t * 80 + time * 20) % 360;
+            const lightness = 50 + (value / 255) * 25;
 
-            this.fullCtx.beginPath();
-            this.fullCtx.moveTo(x, this.fullCanvas.height);
+            const gradient = this.fullCtx.createLinearGradient(0, centerY - halfHeight, 0, centerY + halfHeight);
+            gradient.addColorStop(0, `hsla(${hue}, 90%, ${lightness}%, 0.3)`);
+            gradient.addColorStop(0.5, `hsla(${hue}, 90%, ${lightness + 15}%, 1)`);
+            gradient.addColorStop(1, `hsla(${hue}, 90%, ${lightness}%, 0.3)`);
 
-            this.fullCtx.quadraticCurveTo(
-                x - 5,
-                this.fullCanvas.height - height / 2,
-                x,
-                y + 20
-            );
-
-            this.fullCtx.bezierCurveTo(
-                x + barWidth * 0.25, y + waveHeight - 10,
-                x + barWidth * 0.75, y - waveHeight - 10,
-                x + barWidth, y + 20
-            );
-
-            this.fullCtx.quadraticCurveTo(
-                x + barWidth + 5,
-                this.fullCanvas.height - height / 2,
-                x + barWidth,
-                this.fullCanvas.height
-            );
-
-            this.fullCtx.closePath();
-
-            const gradient = this.fullCtx.createLinearGradient(0, y, 0, this.fullCanvas.height);
-            gradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.9)`);
-            gradient.addColorStop(1, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+            this.fullCtx.shadowBlur = 18;
+            this.fullCtx.shadowColor = `hsla(${hue}, 90%, 60%, 0.7)`;
 
             this.fullCtx.fillStyle = gradient;
+            this.fullCtx.beginPath();
+            this.fullCtx.roundRect(x, centerY - halfHeight, barWidth, halfHeight * 2, barWidth / 2);
             this.fullCtx.fill();
 
-            this.fullCtx.shadowBlur = 25;
-            this.fullCtx.shadowColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            this.fullCtx.fill();
             this.fullCtx.shadowBlur = 0;
 
-            this.fullCtx.strokeStyle = `rgba(255, 255, 255, ${0.4 + (value / 255) * 0.4})`;
-            this.fullCtx.lineWidth = 3;
-            this.fullCtx.lineCap = 'round';
-            this.fullCtx.beginPath();
-            this.fullCtx.bezierCurveTo(
-                x + barWidth * 0.25, y + waveHeight - 10,
-                x + barWidth * 0.75, y - waveHeight - 10,
-                x + barWidth, y + 20
-            );
-            this.fullCtx.stroke();
-
-            if (value > 180) {
-                const dripY = y + 30 + Math.sin(time * 2 + i) * 5;
-                this.fullCtx.beginPath();
-                this.fullCtx.arc(x + barWidth / 2, dripY, 3, 0, Math.PI * 2);
-                this.fullCtx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.6)`;
-                this.fullCtx.fill();
+            if (value > 60) {
+                this.fullCtx.fillStyle = `rgba(255, 255, 255, ${(value / 255) * 0.6})`;
+                this.fullCtx.fillRect(x, centerY - 1, barWidth, 2);
             }
         }
     }
@@ -352,74 +314,51 @@
     }
 
     drawParticleFountain() {
-        if (!this.particles) {
-            this.particles = [];
-        }
-
-        this.fullCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        this.fullCtx.fillRect(0, 0, this.fullCanvas.width, this.fullCanvas.height);
-
-        const baseY = this.fullCanvas.height;
-
-        const streamCount = 48; 
-        for (let i = 0; i < streamCount; i++) {
-            const dataIndex = Math.floor((i / streamCount) * this.dataArray.length * 0.6);
-            const value = this.dataArray[dataIndex] || 0;
-
-            const spawnChance = (value / 255) * 0.8; 
-            if (Math.random() < spawnChance && value > 20) {
-               
-                const xPos = (i / streamCount) * this.fullCanvas.width;
-
-                const maxVelocity = Math.sqrt(2 * 0.4 * this.fullCanvas.height);
-                const velocity = 8 + (value / 255) * (maxVelocity - 8);
-                const t = i / streamCount;
-                const hue = 240 + (t * 60);
-
-                this.particles.push({
-                    x: xPos,
-                    y: baseY,
-                    vx: (Math.random() - 0.5) * 3, 
-                    vy: -velocity,
-                    life: 1,
-                    hue: hue,
-                    size: 2 + (value / 255) * 5,
-                    brightness: 50 + (value / 255) * 30
+        if (!this.dustParticles) {
+            this.dustParticles = [];
+            for (let i = 0; i < 120; i++) {
+                this.dustParticles.push({
+                    x: Math.random() * this.fullCanvas.width,
+                    y: Math.random() * this.fullCanvas.height,
+                    size: 0.5 + Math.random() * 2.5,
+                    speedY: 0.2 + Math.random() * 0.6,
+                    speedX: (Math.random() - 0.5) * 0.3,
+                    hue: 240 + Math.random() * 60,
+                    phase: Math.random() * Math.PI * 2,
+                    opacity: 0.2 + Math.random() * 0.6
                 });
             }
         }
 
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const p = this.particles[i];
+        this.fullCtx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+        this.fullCtx.fillRect(0, 0, this.fullCanvas.width, this.fullCanvas.height);
 
-            p.vy += 0.4;
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= 0.008; 
+        const avg = this.dataArray.reduce((a, b) => a + b, 0) / this.dataArray.length;
+        const energy = avg / 255;
 
-            if (p.life <= 0 || p.y > this.fullCanvas.height + 100) {
-                this.particles.splice(i, 1);
-                continue;
-            }
+        const time = Date.now() / 1000;
 
-            const alpha = p.life;
+        for (let p of this.dustParticles) {
+            p.y -= p.speedY * (1 + energy * 20);
+            p.x += p.speedX + Math.sin(time + p.phase) * 0.3;
+
+            if (p.y < -5) p.y = this.fullCanvas.height + 5;
+            if (p.x < -5) p.x = this.fullCanvas.width + 5;
+            if (p.x > this.fullCanvas.width + 5) p.x = -5;
+
+            const pulse = 1 + energy * 12;
+            const drawSize = p.size * pulse;
+
+            const hue = (p.hue + time * 15) % 360;
+            const alpha = p.opacity * (0.5 + energy * 0.5);
 
             this.fullCtx.beginPath();
-            this.fullCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            this.fullCtx.fillStyle = `hsla(${p.hue}, 80%, ${p.brightness}%, ${alpha})`;
-            this.fullCtx.shadowBlur = 20;
-            this.fullCtx.shadowColor = `hsla(${p.hue}, 80%, ${p.brightness}%, ${alpha})`;
+            this.fullCtx.arc(p.x, p.y, drawSize, 0, Math.PI * 2);
+            this.fullCtx.fillStyle = `hsla(${hue}, 80%, 65%, ${alpha})`;
+            this.fullCtx.shadowBlur = drawSize * 3;
+            this.fullCtx.shadowColor = `hsla(${hue}, 80%, 65%, 0.4)`;
             this.fullCtx.fill();
             this.fullCtx.shadowBlur = 0;
-
-            this.fullCtx.beginPath();
-            this.fullCtx.arc(p.x, p.y, p.size * 0.4, 0, Math.PI * 2);
-            this.fullCtx.fillStyle = `hsla(${p.hue}, 100%, 90%, ${alpha * 0.8})`;
-            this.fullCtx.fill();
-        }
-
-        if (this.particles.length > 3000) {
-            this.particles = this.particles.slice(-3000);
         }
     }
 

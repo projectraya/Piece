@@ -227,14 +227,53 @@
 			{ ("bg", "Explore Map Now"), "Разгледай картата" },
 			{ ("bg", "Maybe Later"), "Може би по-късно" },
 
+
+			//Home
+			{ ("bg", "Welcome Back") , "Добре дошъл" },
+			{ ("bg", "Where do you want to start?") , "От къде искаш да започнеш?" },
+			{ ("bg", "Surprise Me") , "Изненадай ме" },
+			{ ("bg", "Recently Played") , "Наскоро слушани" },
+			{ ("bg", "View All") , "Виж всички" },
+			{ ("bg", ">No listening history yet") , "Все още няма история на слушани парчета" },
+			{ ("bg", "Start playing music to build your personal history") , "Пусни музика за да създадеш своята история на слушани парчета" },
+			{ ("bg", "Browse Music") , "Търси музика" },
+			{ ("bg", "Your Top Genre") , "Твоят най-слушан жанр" },
+			{ ("bg", "plays this month") , "слушания този месец" },
+			{ ("bg", "Quick Actions") , "Бързи действия" },
+			{ ("bg", "Your Listening Journey") , "Твоето музикално пътуване" },
+			{ ("bg", "Last 30 days — each color represents a genre") , "Последните 30 дни - всеки цвят показва жанр" },
+			{ ("bg", "Full Stats") , "Пълна статистика" },
+
+
             // Landing
             { ("bg", "Log In") , "Влез" },
 			{ ("bg", "Sign Up Free") , "Регистрирай се" },
-			{ ("bg", "Start Your Journey") , "Започни" },
-			{ ("bg", "Trending Now") , "Trending сега" },
-			{ ("bg", "Fresh Uploads") , "Нови качвания" },
-			{ ("bg", "Explore by Genre") , "Разгледай по жанр" },
-			{ ("bg", "Why Piece?") , "Защо Piece?" },
+			{ ("bg", "Music From Every Corner of the World") , "Музика от всяка точка на света" },
+			{ ("bg", "500,000+ tracks. Real-time visualizers. Global discovery.") , "500,000+ парчета. Визуализатори в реално време. Глобално откритие." },
+			{ ("bg", "Total Tracks") , "Общо парчета" },
+			{ ("bg", "Plays Today") , "Слушания днес" },
+			{ ("bg", "Continents") , "Континента" },
+			{ ("bg", "Start Your Journey") , "Започни своето пътуване" },
+			{ ("bg", "VISUALIZER") , "ВИЗУАЛИЗАТОР" },
+			{ ("bg", "Feel the music,") , "Усети музиката," },
+			{ ("bg", "not just hear it") , "вместо само да я слушаш" },
+			{ ("bg", "Watch your music come alive with real-time audio visualizations. Five unique visual modes transform sound frequencies into stunning visual experiences — from pulsing bars to a breathing 3D sphere.") , "Гледай как музиката ти оживява с визуализациите в реално време. 5 уникални режима превръщат музикалните честоти в невероятно визуално преживяване - от пулсиращи флуиди до дишаща 3D сфера." },
+			{ ("bg", "WORLD MAP") , "СВЕТОВНА КАРТА" },
+			{ ("bg", "PREMIUM") , "ПРЕМИУМ" },
+			{ ("bg", "Music has") , "Музиката" },
+			{ ("bg", "no borders") , "няма граници" },
+			{ ("bg", "Click on any country and instantly discover its most iconic artists, local genres, and 30-second track previews. From K-Pop in South Korea to Bossa Nova in Brazil — the world's music is at your fingertips.") , "Натисни на която и да е държава и веднага ще откриеш най-известните артисти от там и можеш да чуеш 30-секундни откъси от парчетата им. От К-Поп в Южна Корея до Боса Нова в Бразилия - световната музика е в твоите ръце." },
+			{ ("bg", "Half a million tracks,") , "Половин милион парчета" },
+			{ ("bg", "zero restrictions") , "0 ограничения" },
+			{ ("bg", "Every track on Piece is royalty-free and licensed for streaming. Discover indie artists from Jamendo alongside our curated local library — all without copyright barriers.") , "Всяко парче в Piece е без авторски права и е лицензирано за стрийминг. Открий инди изпълнители от Jamendo както и от нашиата локална библиотека - напълно без копирайт бариери." },
+			{ ("bg", "STATISTICS") , "СТАТИСТИКА" },
+			{ ("bg", "Your listening,") , "Твоето слушане" },
+			{ ("bg", "painted in color") , "оцветено" },
+			{ ("bg", "Every genre has a color. Every day you listen builds a heatmap of your musical journey. See your most-played tracks, top genres, and listening patterns come to life visually.") , "Всеки жанр има цвят. Всеки ден, в който слушаш, сглобява шарена карта на твоето музикално пътуване. Виж своите най-слушани парчета и жанрове, както и тенденцията ти на слушане как оживяват." },
+			{ ("bg", "Ready to experience music differently?") , "Готов ли си да преживееш музиката по различен начин?" },
+			{ ("bg", "Get started here") , "Започни тук" },
+
+			
 		};
 	}
 }

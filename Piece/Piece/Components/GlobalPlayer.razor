@@ -355,11 +355,16 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("lucide.createIcons");
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+            var audio = document.getElementById('globalAudioPlayer');
+            if (audio) {{
+                audio.volume = {volume.ToString(System.Globalization.CultureInfo.InvariantCulture)};
+            }}
+        ");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GlobalPlayer] Error initializing Lucide: {ex.Message}");
+            Console.WriteLine($"[GlobalPlayer] OnAfterRenderAsync error: {ex.Message}");
         }
     }
 

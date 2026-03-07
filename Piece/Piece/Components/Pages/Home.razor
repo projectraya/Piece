@@ -1,5 +1,4 @@
 ﻿@page "/"
-
 @using Microsoft.AspNetCore.Components.Authorization
 @using Piece.Data
 @using Piece.Data.Models
@@ -9,11 +8,8 @@
 @using Microsoft.EntityFrameworkCore
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
+@inject LanguageService Lang
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
-@inject IListeningHistoryService ListeningHistoryService
-@inject PlayerService PlayerService
-
-
 
 <PageTitle>@pageTitle</PageTitle>
 
@@ -25,420 +21,38 @@
     }
 
     /* ============================================
-                   LOGGED-IN USER DASHBOARD STYLES
-                   ============================================ */
-
-    .dashboard-container {
-        min-height: 100vh;
-        background: #0f0f0f;
-        color: #ffffff;
-        padding: 50px 70px 100px 70px;
-        margin: -1.5rem -1.5rem -1.5rem -1.5rem;
-        width: calc(100% + 3rem);
-    }
-
-    /* Hero Section with Featured Discovery */
-    .hero-section {
-        margin-bottom: 60px;
-        background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
-        border-radius: 24px;
-        padding: 60px;
-        position: relative;
-        overflow: hidden;
-    }
-
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(138, 92, 246, 0.15) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-
-    .hero-content {
-        position: relative;
-        z-index: 2;
-    }
-
-    .welcome-label {
-        font-size: 14px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.5);
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        margin-bottom: 12px;
-    }
-
-    .welcome-title {
-        font-size: 52px;
-        font-weight: 700;
-        margin-bottom: 16px;
-        color: #ffffff;
-        letter-spacing: -1px;
-        line-height: 1.1;
-    }
-
-    .welcome-subtitle {
-        font-size: 18px;
-        color: rgba(255, 255, 255, 0.6);
-        font-weight: 400;
-        margin-bottom: 40px;
-        max-width: 600px;
-    }
-
-    /* Roulette Discovery Wheel */
-    .discovery-wheel {
-        display: flex;
-        align-items: center;
-        gap: 30px;
-        margin-top: 40px;
-    }
-
-    .wheel-container {
-        position: relative;
-        width: 180px;
-        height: 180px;
-    }
-
-    .wheel-circle {
-        width: 180px;
-        height: 180px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        cursor: pointer;
-        box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
-    }
-
-        .wheel-circle:hover {
-            box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
-        }
-
-    .wheel-inner {
-        width: 140px;
-        height: 140px;
-        border-radius: 50%;
-        background: #0f0f0f;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: 700;
-        color: #8B5CF6;
-        text-align: center;
-        line-height: 1.3;
-    }
-
-    .wheel-arrow {
-        position: absolute;
-        top: -20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 15px solid transparent;
-        border-right: 15px solid transparent;
-        border-top: 25px solid #8B5CF6;
-        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-        z-index: 10;
-    }
-
-    .wheel-options {
-        flex: 1;
-    }
-
-    .wheel-option {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 16px 24px;
-        margin-bottom: 12px;
-        font-size: 16px;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.7);
-        transition: all 0.3s;
-        cursor: default;
-    }
-
-        .wheel-option.active {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: rgba(139, 92, 246, 0.4);
-            color: #8B5CF6;
-            transform: translateX(8px);
-        }
-
-    .spin-button {
-        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-        border: none;
-        border-radius: 12px;
-        padding: 16px 48px;
-        font-size: 16px;
-        font-weight: 700;
-        color: #ffffff;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
-        margin-top: 20px;
-    }
-
-        .spin-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
-        }
-
-        .spin-button:active {
-            transform: translateY(0);
-        }
-
-    /* Stats Cards */
-    .stats-section {
-        margin-bottom: 60px;
-    }
-
-    .section-title {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 24px;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-    }
-
-    @@media (max-width: 1024px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
+           SHARED
+        ============================================ */
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
         }
     }
 
-    .stat-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 32px 28px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #8B5CF6, #7C3AED);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    @@keyframes mapPulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
         }
 
-        .stat-card:hover::before {
-            transform: scaleX(1);
+        50% {
+            transform: scale(1.3);
+            opacity: 0.8;
+        }
+    }
+
+    @@keyframes mapRing {
+        0% {
+            transform: scale(1);
+            opacity: 0.4;
         }
 
-        .stat-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(139, 92, 246, 0.3);
-            transform: translateY(-4px);
-        }
-
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        background: rgba(139, 92, 246, 0.15);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 16px;
-        font-size: 24px;
-    }
-
-    .stat-number {
-        font-size: 42px;
-        font-weight: 700;
-        color: #ffffff;
-        margin-bottom: 8px;
-        letter-spacing: -1px;
-    }
-
-    .stat-label {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
-        font-weight: 500;
-        letter-spacing: 0.3px;
-    }
-
-    /* Recent Activity Section */
-    .activity-section {
-        margin-bottom: 60px;
-    }
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
-
-    .view-all-link {
-        font-size: 14px;
-        color: #8B5CF6;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-        .view-all-link:hover {
-            color: #A78BFA;
-            transform: translateX(4px);
-        }
-
-    .activity-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 16px;
-    }
-
-    .activity-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-        .activity-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(139, 92, 246, 0.3);
-            transform: translateY(-4px);
-        }
-
-    .activity-art {
-        width: 100%;
-        aspect-ratio: 1;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
-        margin-bottom: 12px;
-        overflow: hidden;
-        position: relative;
-    }
-
-        .activity-art img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .activity-art::after {
-            content: '▶';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            background: rgba(139, 92, 246, 0.95);
-            color: #fff;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            transition: all 0.3s;
+        100% {
+            transform: scale(2.5);
             opacity: 0;
         }
-
-    .activity-card:hover .activity-art::after {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
     }
 
-    .activity-track-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: #ffffff;
-        margin-bottom: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .activity-track-artist {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        margin-bottom: 8px;
-    }
-
-    .activity-time {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.4);
-        font-weight: 500;
-    }
-
-    /* Empty States */
-    .empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 16px;
-        border: 1px dashed rgba(255, 255, 255, 0.1);
-    }
-
-    .empty-state-title {
-        font-size: 20px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.6);
-        margin-bottom: 12px;
-    }
-
-    .empty-state-text {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.4);
-        max-width: 400px;
-        margin: 0 auto 24px;
-        line-height: 1.6;
-    }
-
-    .empty-state-button {
-        background: rgba(139, 92, 246, 0.1);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 8px;
-        padding: 12px 32px;
-        color: #8B5CF6;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: inline-block;
-    }
-
-        .empty-state-button:hover {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: rgba(139, 92, 246, 0.5);
-            transform: translateY(-2px);
-        }
-
-    /* Loading State */
     .loading-state {
         display: flex;
         flex-direction: column;
@@ -451,62 +65,105 @@
     .spinner {
         width: 50px;
         height: 50px;
-        border: 3px solid rgba(255, 255, 255, 0.1);
+        border: 3px solid rgba(255,255,255,0.1);
         border-top-color: #8B5CF6;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
         margin-bottom: 20px;
     }
 
-    @@keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
     .loading-text {
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255,255,255,0.5);
         font-size: 14px;
         font-weight: 500;
     }
 
-    /* Responsive adjustments */
+    /* ============================================
+           LOGGED-IN DASHBOARD
+        ============================================ */
+    .dashboard-container {
+        min-height: 100vh;
+        background: #0f0f0f;
+        color: #ffffff;
+        padding: 50px 70px 120px 70px;
+        margin: -1.5rem -1.5rem -1.5rem -1.5rem;
+        width: calc(100% + 3rem);
+    }
+
+    .hero-section {
+        margin-bottom: 48px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
+        border-radius: 24px;
+        padding: 56px 60px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(138,92,246,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .welcome-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+    }
+
+    .welcome-title {
+        font-size: 52px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -1.5px;
+        line-height: 1.1;
+        margin-bottom: 8px;
+    }
+
+    .welcome-subtitle {
+        font-size: 16px;
+        color: rgba(255,255,255,0.45);
+        margin-bottom: 36px;
+    }
+
+    .section-title {
+        font-size: 26px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+    }
+
     @@media (max-width: 768px) {
         .dashboard-container {
-            padding: 30px 20px 80px 20px;
+            padding: 24px 16px 100px;
         }
 
         .hero-section {
-            padding: 40px 30px;
+            padding: 36px 24px;
         }
 
         .welcome-title {
-            font-size: 36px;
-        }
-
-        .discovery-wheel {
-            flex-direction: column;
-        }
-
-        .wheel-container {
-            width: 160px;
-            height: 160px;
-        }
-
-        .wheel-circle {
-            width: 160px;
-            height: 160px;
-        }
-
-        .wheel-inner {
-            width: 120px;
-            height: 120px;
+            font-size: 34px;
         }
     }
 
     /* ============================================
-           LANDING PAGE STYLES (NON-LOGGED-IN)
-           ============================================ */
+           LANDING PAGE
+        ============================================ */
     .landing-page {
         min-height: 100vh;
         background: #0f0f0f;
@@ -520,26 +177,20 @@
         position: sticky;
         top: 0;
         z-index: 100;
-        background: rgba(15, 15, 15, 0.95);
+        background: rgba(15,15,15,0.95);
         backdrop-filter: blur(10px);
         padding: 20px 60px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255,255,255,0.07);
     }
 
-    .logo {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+    .logo img {
+        height: 44px;
+        width: auto;
+        object-fit: contain;
     }
-
-        .logo img {
-            height: 44px;
-            width: auto;
-            object-fit: contain;
-        }
 
     .auth-buttons {
         display: flex;
@@ -561,7 +212,7 @@
     .btn-login {
         background: transparent;
         color: #ffffff;
-        border: 2px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255,255,255,0.2);
     }
 
         .btn-login:hover {
@@ -570,13 +221,13 @@
         }
 
     .btn-signup {
-        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
         color: #ffffff;
     }
 
         .btn-signup:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 10px 25px rgba(139,92,246,0.4);
         }
 
     .hero {
@@ -596,14 +247,14 @@
     }
 
         .hero-title .highlight {
-            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            background: linear-gradient(135deg, #8B5CF6, #A78BFA);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
     .hero-subtitle {
         font-size: 24px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.6);
         margin-bottom: 50px;
     }
 
@@ -617,23 +268,23 @@
 
     .stat-box {
         padding: 30px 20px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 15px;
         backdrop-filter: blur(10px);
         transition: all 0.3s;
     }
 
         .stat-box:hover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.3);
+            background: rgba(139,92,246,0.1);
+            border-color: rgba(139,92,246,0.3);
             transform: translateY(-4px);
         }
 
     .landing-stat-number {
         font-size: 48px;
         font-weight: 900;
-        background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+        background: linear-gradient(135deg, #8B5CF6, #A78BFA);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 8px;
@@ -641,7 +292,7 @@
 
     .landing-stat-label {
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.6);
         font-weight: 500;
     }
 
@@ -649,13 +300,6 @@
         padding: 60px;
         max-width: 1400px;
         margin: 0 auto;
-    }
-
-    .section-header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 40px;
     }
 
     .landing-section-title {
@@ -670,7 +314,7 @@
         overflow-x: auto;
         padding-bottom: 20px;
         scrollbar-width: thin;
-        scrollbar-color: #8B5CF6 rgba(255, 255, 255, 0.1);
+        scrollbar-color: #8B5CF6 rgba(255,255,255,0.1);
     }
 
         .tracks-scroll::-webkit-scrollbar {
@@ -678,7 +322,7 @@
         }
 
         .tracks-scroll::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             border-radius: 10px;
         }
 
@@ -689,8 +333,8 @@
 
     .track-card {
         min-width: 280px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 15px;
         padding: 20px;
         cursor: pointer;
@@ -717,8 +361,8 @@
 
         .track-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(139, 92, 246, 0.4);
-            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.3);
+            border-color: rgba(139,92,246,0.4);
+            box-shadow: 0 15px 40px rgba(139,92,246,0.25);
         }
 
     .track-rank {
@@ -727,7 +371,7 @@
         right: 15px;
         width: 40px;
         height: 40px;
-        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
         color: #fff;
         border-radius: 50%;
         display: flex;
@@ -740,7 +384,7 @@
     .track-art {
         width: 100%;
         aspect-ratio: 1;
-        background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+        background: linear-gradient(135deg, #1f1f1f, #2a2a2a);
         border-radius: 8px;
         margin-bottom: 12px;
         display: flex;
@@ -759,7 +403,7 @@
     .track-title {
         font-size: 16px;
         font-weight: 700;
-        color: #ffffff;
+        color: #fff;
         margin-bottom: 6px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -768,7 +412,7 @@
 
     .track-artist {
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.6);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -777,30 +421,7 @@
 
     .track-plays {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.5);
-    }
-
-    .logo-section {
-        padding: 80px 60px;
-        text-align: center;
-        background: rgba(255, 255, 255, 0.02);
-    }
-
-    .logo-container {
-        max-width: 300px;
-        margin: 0 auto 20px;
-        cursor: pointer;
-    }
-
-    .interactive-logo {
-        width: 100%;
-        height: auto;
-        transition: transform 0.6s ease-in-out;
-    }
-
-    .logo-subtitle {
-        font-size: 18px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(255,255,255,0.4);
     }
 
     .genres-grid {
@@ -819,15 +440,15 @@
         transition: all 0.3s;
         position: relative;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
         .genre-card::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,0.3);
             transition: opacity 0.3s;
         }
 
@@ -837,7 +458,7 @@
 
         .genre-card:hover {
             transform: scale(1.05);
-            border-color: rgba(139, 92, 246, 0.4);
+            border-color: rgba(139,92,246,0.4);
         }
 
     .genre-content {
@@ -848,54 +469,21 @@
     .genre-name {
         font-size: 24px;
         font-weight: 800;
-        color: #ffffff;
+        color: #fff;
         margin-bottom: 5px;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
     .genre-count {
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.9);
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .features-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 30px;
-    }
-
-    .feature-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
-        padding: 35px;
-        transition: all 0.3s;
-    }
-
-        .feature-card:hover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.3);
-            transform: translateY(-5px);
-        }
-
-    .feature-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #ffffff;
-        margin-bottom: 12px;
-    }
-
-    .feature-desc {
-        font-size: 16px;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.6;
+        color: rgba(255,255,255,0.9);
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
     .cta-section {
         padding: 100px 60px;
         text-align: center;
-        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
         color: #ffffff;
     }
 
@@ -922,11 +510,10 @@
         .btn-cta:hover {
             background: #f3f4f6;
             transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
         }
 </style>
 
-@* add translation button *@
 @if (isLoading)
 {
     <div class="loading-state">
@@ -937,104 +524,229 @@
 else if (isLoggedIn)
 {
     <div class="dashboard-container">
-        <!-- Hero Discovery Section -->
+
+        <!-- ── HERO ── -->
         <div class="hero-section">
             <div class="hero-content">
-                <div class="welcome-label">Welcome Back</div>
+                <div class="welcome-label">@Lang.T("Welcome Back")</div>
                 <h1 class="welcome-title">@userName</h1>
-                <p class="welcome-subtitle">Not sure what to listen to? Let the discovery wheel decide your next adventure.</p>
+                <p class="welcome-subtitle">Where do you want to go today?</p>
 
-                <div class="discovery-wheel">
-                    <div class="wheel-container">
-                        <div class="wheel-arrow"></div>
-                        <div class="wheel-circle" id="discoveryWheel" onclick="spinDiscoveryWheel()">
-                            <div class="wheel-inner">
-                                <span>SPIN<br />TO<br />DISCOVER</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="wheel-options">
-                        <div class="wheel-option" id="option0">Browse All Music</div>
-                        <div class="wheel-option" id="option1">Open Visualizer</div>
-                        <div class="wheel-option" id="option2">Your Playlists</div>
-                        <div class="wheel-option" id="option3">Liked Songs</div>
-                        <div class="wheel-option" id="option4">Listening Stats</div>
-                        <div class="wheel-option" id="option5">Upload Music</div>
-                    </div>
-                </div>
-                <button class="spin-button" id="goButton" style="display: none;" onclick="navigateToSelected('@userName')">Go There →</button>
-            </div>
-        </div>
-
-        <!-- Your Stats -->
-        <div class="stats-section">
-            <h2 class="section-title">Your Activity</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">▶</div>
-                    <div class="stat-number">@userStats.TotalPlays</div>
-                    <div class="stat-label">Total Plays</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">♫</div>
-                    <div class="stat-number">@userStats.UniqueTracksPlayed</div>
-                    <div class="stat-label">Unique Tracks</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⏱</div>
-                    <div class="stat-number">@userStats.TotalMinutes</div>
-                    <div class="stat-label">Minutes Listened</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">☰</div>
-                    <div class="stat-number">@userStats.PlaylistCount</div>
-                    <div class="stat-label">Playlists</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recently Played -->
-        @if (recentTracks.Any())
-        {
-            <div class="activity-section">
-                <div class="section-header">
-                    <h2 class="section-title">Recently Played</h2>
-                    <a href="/account/manage/statistics" class="view-all-link">View All →</a>
-                </div>
-                <div class="activity-grid">
-                    @foreach (var track in recentTracks.Take(6))
+                <!-- Mode Grid -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;" id="modeGrid">
+                    @{
+                        var modes = new[] {
+                        ("/player",                      "Browse Music",    "Dive into the full library",      "#8B5CF6", "♪"),
+                        ("/visualizer",                  "Visualizer",      "See your music come alive",       "#10B981", "◉"),
+                        ("/playlists",                   "Your Playlists",  "Your curated collections",        "#F59E0B", "☰"),
+                        ("/liked-songs",                 "Liked Songs",     "Your saved favourites",           "#EC4899", "♥"),
+                        ("/account/manage/statistics",   "Listening Stats", "Your musical journey",            "#06B6D4", "◈"),
+                        ("/admin/upload",                "Upload Music",    "Add to the library",              "#EF4444", "↑")
+                        };
+                    }
+                    @for (int i = 0; i < modes.Length; i++)
                     {
-                        var trackId = track.TrackId;
-                        <div class="activity-card" onclick="playTrack(@trackId)">
-                            <div class="activity-art">
-                                @if (!string.IsNullOrEmpty(track.AlbumArt))
-                                {
-                                    <img src="@track.AlbumArt" alt="@track.Title" />
-                                }
-                                else
-                                {
-                                    <img src="/images/default-album-cover.png" alt="@track.Title" />
-                                }
+                        var m = modes[i];
+                        var idx = i;
+                        <div id="modeCard@(idx)"
+                             onclick="selectMode(@idx, '@m.Item1')"
+                             style="background: rgba(255,255,255,0.03);
+                                    border: 1px solid rgba(255,255,255,0.08);
+                                    border-radius: 14px;
+                                    padding: 20px 16px;
+                                    cursor: pointer;
+                                    transition: all 0.25s;
+                                    position: relative;
+                                    overflow: hidden;"
+                             onmouseover="hoverCard(@idx, true)"
+                             onmouseout="hoverCard(@idx, false)">
+                            <div style="font-size: 26px; margin-bottom: 8px;">@m.Item5</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 3px;">@m.Item2</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.35);">@m.Item3</div>
+                        </div>
+                    }
+                </div>
+
+                <button onclick="pickRandom()"
+                        style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+                               border: none;
+                               border-radius: 12px;
+                               padding: 13px 36px;
+                               font-size: 14px;
+                               font-weight: 700;
+                               color: #fff;
+                               cursor: pointer;
+                               transition: all 0.3s;
+                               box-shadow: 0 4px 20px rgba(139,92,246,0.3);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(139,92,246,0.5)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(139,92,246,0.3)'">
+                    ✦ Surprise Me
+                </button>
+            </div>
+        </div>
+
+        <!-- ── STATS STRIP ── -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px;">
+            @{
+                var statItems = new[] {
+                ("▶", userStats.TotalPlays.ToString(),          "Total Plays",       "#8B5CF6", "139,92,246"),
+                ("♫", userStats.UniqueTracksPlayed.ToString(),  "Unique Tracks",     "#10B981", "16,185,129"),
+                ("⏱", userStats.TotalMinutes.ToString(),        "Minutes Listened",  "#F59E0B", "245,158,11"),
+                ("☰", userStats.PlaylistCount.ToString(),       "Playlists",         "#EC4899", "236,72,153")
+                };
+            }
+            @foreach (var s in statItems)
+            {
+                <div style="background: rgba(255,255,255,0.03);
+                            border: 1px solid rgba(255,255,255,0.08);
+                            border-radius: 16px;
+                            padding: 28px 24px;
+                            position: relative;
+                            overflow: hidden;
+                            transition: all 0.3s;"
+                     onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(@(s.Item5),0.35)'"
+                     onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255,255,255,0.08)'">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: @s.Item4; border-radius: 16px 16px 0 0;"></div>
+                    <div style="font-size: 26px; margin-bottom: 10px;">@s.Item1</div>
+                    <div style="font-size: 38px; font-weight: 800; color: #fff; letter-spacing: -1px; margin-bottom: 6px;">@s.Item2</div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 500;">@s.Item3</div>
+                </div>
+            }
+        </div>
+
+        <!-- ── RECENTLY PLAYED + SIDEBAR ── -->
+        <div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; margin-bottom: 48px; align-items: start;">
+
+            <!-- Recently Played -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title">Recently Played</h2>
+                    <a href="/account/manage/statistics"
+                       style="font-size: 13px; color: #8B5CF6; text-decoration: none; font-weight: 600; transition: all 0.3s;"
+                       onmouseover="this.style.color='#A78BFA'; this.style.transform='translateX(4px)'"
+                       onmouseout="this.style.color='#8B5CF6'; this.style.transform='translateX(0)'">
+                        View All →
+                    </a>
+                </div>
+
+                @if (recentTracks.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        @foreach (var track in recentTracks.Take(7))
+                        {
+                            var tid = track.TrackId;
+                            <div style="display: flex; align-items: center; gap: 14px;
+                                        padding: 11px 14px;
+                                        background: rgba(255,255,255,0.02);
+                                        border: 1px solid rgba(255,255,255,0.06);
+                                        border-radius: 12px;
+                                        cursor: pointer;
+                                        transition: all 0.25s;"
+                                 onclick="playTrack(@tid)"
+                                 onmouseover="this.style.background='rgba(139,92,246,0.08)'; this.style.borderColor='rgba(139,92,246,0.25)'; this.style.transform='translateX(4px)'"
+                                 onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='rgba(255,255,255,0.06)'; this.style.transform='translateX(0)'">
+                                <div style="width: 46px; height: 46px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg,#1f1f1f,#2a2a2a);">
+                                    <img src="@(string.IsNullOrEmpty(track.AlbumArt) ? "/images/default-album-cover.png" : track.AlbumArt)"
+                                         alt="@track.Title"
+                                         style="width:100%;height:100%;object-fit:cover;" />
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:14px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px;">@track.Title</div>
+                                    <div style="font-size:12px;color:rgba(255,255,255,0.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@track.ArtistName</div>
+                                </div>
+                                <div style="font-size:12px;color:rgba(255,255,255,0.25);flex-shrink:0;margin-right:8px;">@track.PlayedAt</div>
+                                <div style="width:30px;height:30px;border-radius:50%;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:#8B5CF6;flex-shrink:0;">▶</div>
                             </div>
-                            <div class="activity-track-title">@track.Title</div>
-                            <div class="activity-track-artist">@track.ArtistName</div>
-                            <div class="activity-time">@track.PlayedAt</div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px dashed rgba(255,255,255,0.08);">
+                        <div style="font-size:44px;margin-bottom:14px;opacity:0.25;">♫</div>
+                        <div style="font-size:17px;font-weight:600;color:rgba(255,255,255,0.35);margin-bottom:8px;">No listening history yet</div>
+                        <p style="font-size:13px;color:rgba(255,255,255,0.2);margin-bottom:22px;">Start playing music to build your personal history</p>
+                        <button onclick="window.location.href='/player'"
+                                style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:8px;padding:11px 28px;color:#8B5CF6;font-size:13px;font-weight:600;cursor:pointer;">
+                            Browse Music
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar -->
+            <div style="display:flex;flex-direction:column;gap:16px;">
+
+                <!-- Top Genre -->
+                @if (userStats.TopGenre != null)
+                {
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;position:relative;overflow:hidden;">
+                        <div style="position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:@userStats.TopGenreColor;opacity:0.1;filter:blur(20px);pointer-events:none;"></div>
+                        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Your Top Genre</div>
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                            <div style="width:36px;height:36px;border-radius:8px;background:@userStats.TopGenreColor;flex-shrink:0;"></div>
+                            <div style="font-size:20px;font-weight:800;color:#fff;">@userStats.TopGenre</div>
+                        </div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.35);">@userStats.TopGenrePlays plays this month</div>
+                    </div>
+                }
+
+                <!-- Quick Actions -->
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;">
+                    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Quick Actions</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        @foreach (var qa in new[] {
+                    ("/player",                    "Browse Music",    "#8B5CF6"),
+                    ("/visualizer",                "Open Visualizer", "#10B981"),
+                    ("/map",                       "World Map",       "#F59E0B"),
+                    ("/liked-songs",               "Liked Songs",     "#EC4899"),
+                    ("/playlists",                 "My Playlists",    "#06B6D4")
+                    })
+                        {
+                            <a href="@qa.Item1"
+                               style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;text-decoration:none;transition:all 0.2s;background:rgba(255,255,255,0.02);"
+                               onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.paddingLeft='16px'"
+                               onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.paddingLeft='12px'">
+                                <div style="width:6px;height:6px;border-radius:50%;background:@qa.Item3;flex-shrink:0;"></div>
+                                <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);">@qa.Item2</span>
+                                <span style="margin-left:auto;font-size:13px;color:rgba(255,255,255,0.2);">→</span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── LISTENING HEATMAP ── -->
+        @if (userStats.TotalPlays > 0)
+        {
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:32px;margin-bottom:48px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                    <div>
+                        <h2 class="section-title" style="margin-bottom:4px;">Your Listening Journey</h2>
+                        <p style="font-size:13px;color:rgba(255,255,255,0.35);">Last 30 days — each color represents a genre</p>
+                    </div>
+                    <a href="/account/manage/statistics"
+                       style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);border-radius:20px;padding:7px 18px;font-size:12px;font-weight:700;color:#8B5CF6;text-decoration:none;transition:all 0.3s;"
+                       onmouseover="this.style.background='rgba(139,92,246,0.2)'"
+                       onmouseout="this.style.background='rgba(139,92,246,0.1)'">
+                        Full Stats →
+                    </a>
+                </div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    @for (int d = 0; d < 30; d++)
+                    {
+                        var color = listeningHeatmap.ContainsKey(d) ? listeningHeatmap[d] : "#1a1a1a";
+                        var hasData = color != "#1a1a1a";
+                        <div style="width:28px;height:28px;border-radius:4px;background:@color;opacity:@(hasData ? "0.9" : "0.35");transition:transform 0.2s;cursor:@(hasData ? "pointer" : "default");"
+                             onmouseover="this.style.transform='scale(1.3)'"
+                             onmouseout="this.style.transform='scale(1)'">
                         </div>
                     }
                 </div>
             </div>
         }
-        else
-        {
-            <div class="activity-section">
-                <h2 class="section-title">Recently Played</h2>
-                <div class="empty-state">
-                    <div class="empty-state-title">No listening history yet</div>
-                    <p class="empty-state-text">Start exploring music to build your personalized experience and see your recent tracks here.</p>
-                    <button class="empty-state-button" onclick="window.location.href='/player'">Browse Music</button>
-                </div>
-            </div>
-        }
+
     </div>
 }
 else
@@ -1042,9 +754,7 @@ else
     <div class="landing-page">
         <header class="header">
             <div class="logo">
-                <a href="/">
-                    <img src="/images/piece_logo_white.png" alt="Piece logo">
-                </a>
+                <a href="/"><img src="/images/piece_logo_white.png" alt="Piece logo"></a>
             </div>
             <div class="auth-buttons">
                 <a href="/Account/Login" class="btn btn-login">Log In</a>
@@ -1052,7 +762,7 @@ else
             </div>
         </header>
 
-        <!-- Hero Section -->
+        <!-- Hero -->
         <section class="hero">
             <h1 class="hero-title"><span class="highlight">Discover</span> Music From Every Corner of the World</h1>
             <p class="hero-subtitle">500,000+ tracks. Real-time visualizers. Global discovery.</p>
@@ -1079,15 +789,203 @@ else
             <a href="/Account/Register" class="btn btn-signup btn-cta">Start Your Journey</a>
         </section>
 
-        <!-- Experience the visualizers -->
-
-        <!-- Learn about artists from around the world with the map -->
         
-        <!-- Hear sounds you haven't yet, with our huge selection of copyright free music -->
 
-        <!-- See your music journey through the colorful stats -->
+        <!-- Visualizer Section -->
+        <section class="section">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#8B5CF6;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">VISUALIZER</div>
+                    <h2 style="font-size:48px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:20px;letter-spacing:-1px;">
+                        Feel the music,<br /><span style="background:linear-gradient(135deg,#8B5CF6,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">not just hear it</span>
+                    </h2>
+                    <p style="font-size:17px;color:rgba(255,255,255,0.55);line-height:1.7;margin-bottom:28px;">
+                        Watch your music come alive with real-time audio visualizations. Five unique visual modes transform sound frequencies into stunning visual experiences — from pulsing bars to a breathing 3D sphere.
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        @foreach (var vm in new[] {
+                    ("Frequency Bars","#8B5CF6"), ("Waveform","#10B981"), ("Circular Pattern","#F59E0B"),
+                    ("Particle Flow","#EC4899"), ("3D Sphere","#06B6D4")
+                    })
+                        {
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:7px;height:7px;border-radius:50%;background:@vm.Item2;flex-shrink:0;"></div>
+                                <span style="font-size:14px;color:rgba(255,255,255,0.65);font-weight:500;">@vm.Item1</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Fake visualizer -->
+                <div style="position:relative;height:300px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:24px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding:20px;gap:5px;"
+                     id="fakeVisualizer">
+                    @for (int i = 0; i < 32; i++)
+                    {
+                        <div class="viz-bar" style="flex:1;border-radius:4px 4px 0 0;background:linear-gradient(to top,#8B5CF6,#10B981);min-height:4px;"></div>
+                    }
+                    <div style="position:absolute;top:18px;left:22px;font-size:12px;color:rgba(255,255,255,0.3);font-weight:700;letter-spacing:1px;">LIVE PREVIEW</div>
+                    <div style="position:absolute;top:14px;right:18px;width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 8px #10B981;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- World Map Section -->
+        <section style="padding:60px;background:rgba(139,92,246,0.03);border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+
+                <!-- Fake map -->
+                <div style="position:relative;height:300px;background:#0d1117;border-radius:24px;overflow:hidden;border:1px solid rgba(139,92,246,0.2);">
+                    <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.12;" xmlns="http://www.w3.org/2000/svg">
+                        @for (int i = 1; i < 6; i++)
+                        {
+                            <line x1="@(i*16.6)%" y1="0" x2="@(i*16.6)%" y2="100%" stroke="#8B5CF6" stroke-width="0.5" />
+                        }
+                        @for (int i = 1; i < 5; i++)
+                        {
+                            <line x1="0" y1="@(i*25)%" x2="100%" y2="@(i*25)%" stroke="#8B5CF6" stroke-width="0.5" />
+                        }
+                    </svg>
+                    @{
+                        var mapDots = new[] {
+                (25,35,"#8B5CF6"),(45,30,"#10B981"),(52,28,"#F59E0B"),
+                (60,40,"#8B5CF6"),(70,45,"#10B981"),(30,55,"#EC4899"),
+                (80,35,"#8B5CF6"),(15,45,"#10B981"),(50,55,"#F59E0B"),
+                (65,60,"#8B5CF6"),(38,25,"#EC4899"),(72,28,"#10B981")
+                };
+                    }
+                    @foreach (var dot in mapDots)
+                    {
+                        <div style="position:absolute;left:@(dot.Item1)%;top:@(dot.Item2)%;transform:translate(-50%,-50%);">
+                            <div style="width:11px;height:11px;border-radius:50%;background:@dot.Item3;box-shadow:0 0 10px @dot.Item3;animation:mapPulse 2s ease-in-out infinite;"></div>
+                            <div style="position:absolute;inset:-4px;border-radius:50%;border:2px solid @dot.Item3;opacity:0.25;animation:mapRing 2s ease-in-out infinite;"></div>
+                        </div>
+                    }
+                    <div style="position:absolute;bottom:14px;left:18px;font-size:12px;color:rgba(255,255,255,0.3);font-weight:700;letter-spacing:1px;">WORLD MAP</div>
+                    <div style="position:absolute;top:14px;right:16px;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);border-radius:20px;padding:3px 10px;font-size:11px;color:#A78BFA;font-weight:700;">PREMIUM</div>
+                </div>
+
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#10B981;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">WORLD MAP</div>
+                    <h2 style="font-size:48px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:20px;letter-spacing:-1px;">
+                        Music has<br /><span style="background:linear-gradient(135deg,#10B981,#06B6D4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">no borders</span>
+                    </h2>
+                    <p style="font-size:17px;color:rgba(255,255,255,0.55);line-height:1.7;margin-bottom:28px;">
+                        Click on any country and instantly discover its most iconic artists, local genres, and 30-second track previews. From K-Pop in South Korea to Bossa Nova in Brazil — the world's music is at your fingertips.
+                    </p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                        @foreach (var ms in new[] {
+                    ("190+","Countries mapped"), ("Local Artists","Per country"),
+                    ("30s Previews","Instant playback"), ("Real Data","Via MusicBrainz")
+                    })
+                        {
+                            <div style="background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:14px;">
+                                <div style="font-size:19px;font-weight:800;color:#10B981;margin-bottom:3px;">@ms.Item1</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,0.4);">@ms.Item2</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Catalog Section -->
+        <section class="section">
+            <div style="text-align:center;margin-bottom:56px;">
+                <div style="font-size:13px;font-weight:700;color:#F59E0B;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">CATALOG</div>
+                <h2 style="font-size:48px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:20px;letter-spacing:-1px;">
+                    Half a million tracks,<br /><span style="background:linear-gradient(135deg,#F59E0B,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">zero restrictions</span>
+                </h2>
+                <p style="font-size:17px;color:rgba(255,255,255,0.55);max-width:580px;margin:0 auto;line-height:1.7;">
+                    Every track on Piece is royalty-free and licensed for streaming. Discover indie artists from Jamendo alongside our curated local library — all without copyright barriers.
+                </p>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+                @foreach (var cc in new[] {
+            ("500,000+","Royalty-Free Tracks","Access a massive catalog via Jamendo — all licensed for free streaming with no copyright restrictions.","#F59E0B","♪"),
+            ("Search & Filter","Find Your Sound","Search by artist, genre, year or keyword. Filter down to exactly the sound you're looking for in seconds.","#8B5CF6","⊞"),
+            ("Indie Artists","Undiscovered Gems","Piece champions independent artists who make their music freely available. Find your next favourite act before anyone else.","#10B981","★")
+            })
+                {
+                    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:36px;transition:all 0.3s;"
+                         onmouseover="this.style.transform='translateY(-6px)'; this.style.borderColor='rgba(255,255,255,0.16)'"
+                         onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255,255,255,0.08)'">
+                        <div style="font-size:34px;margin-bottom:18px;">@cc.Item5</div>
+                        <div style="font-size:28px;font-weight:900;color:@cc.Item4;margin-bottom:6px;">@cc.Item1</div>
+                        <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:10px;">@cc.Item2</div>
+                        <p style="font-size:14px;color:rgba(255,255,255,0.45);line-height:1.6;">@cc.Item3</p>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Stats / Heatmap Section -->
+        <section style="padding:60px;background:rgba(255,255,255,0.01);border-top:1px solid rgba(255,255,255,0.05);">
+            <div style="max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#EC4899;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">STATISTICS</div>
+                    <h2 style="font-size:48px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:20px;letter-spacing:-1px;">
+                        Your listening,<br /><span style="background:linear-gradient(135deg,#EC4899,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">painted in color</span>
+                    </h2>
+                    <p style="font-size:17px;color:rgba(255,255,255,0.55);line-height:1.7;margin-bottom:28px;">
+                        Every genre has a color. Every day you listen builds a heatmap of your musical journey. See your most-played tracks, top genres, and listening patterns come to life visually.
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        @foreach (var f in new[] {
+                    ("90-day listening heatmap","#EC4899"), ("Genre color breakdown","#8B5CF6"),
+                    ("Most played tracks","#10B981"), ("Daily play patterns","#F59E0B")
+                    })
+                        {
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="@f.Item2" stroke-width="2.5">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <span style="font-size:14px;color:rgba(255,255,255,0.65);">@f.Item1</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Fake heatmap -->
+                <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px;">
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);font-weight:700;letter-spacing:1px;margin-bottom:18px;">LISTENING HISTORY</div>
+                    @{
+                        var heatColors = new[] { "#1a1a1a", "#3b1f6e", "#5b2d8f", "#8B5CF6", "#10B981", "#F59E0B", "#EC4899" };
+                        var rng = new Random(42);
+                    }
+                    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+                        @foreach (var month in new[] { "Jan", "Feb", "Mar" })
+                        {
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span style="font-size:10px;color:rgba(255,255,255,0.25);width:24px;text-align:right;">@month</span>
+                                <div style="display:flex;gap:3px;">
+                                    @for (int d = 0; d < 28; d++)
+                                    {
+                                        var ci = rng.Next(0, heatColors.Length);
+                                        <div style="width:11px;height:11px;border-radius:2px;background:@heatColors[ci];"></div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                        @foreach (var g in new[] {
+                    ("Pop","#8B5CF6"), ("Rock","#10B981"), ("Jazz","#F59E0B"),
+                    ("Electronic","#EC4899"), ("Classical","#06B6D4")
+                    })
+                        {
+                            <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border-radius:20px;padding:3px 9px;">
+                                <div style="width:7px;height:7px;border-radius:50%;background:@g.Item2;"></div>
+                                <span style="font-size:11px;color:rgba(255,255,255,0.4);">@g.Item1</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
 
         
+
         <!-- CTA -->
         <section class="cta-section">
             <h2 class="cta-title">Ready to experience music differently?</h2>
@@ -1098,73 +996,100 @@ else
 }
 
 <script>
-    let currentRotation = 0;
-    let isSpinning = false;
-    let selectedOption = -1;
-    const routes = ["/player", "/visualizer", "/playlists", "/liked-songs", null, "/admin/upload"];
-    let isRotating = false;
+    /* ── Dashboard mode grid ── */
+    const modeColors = ["#8B5CF6","#10B981","#F59E0B","#EC4899","#06B6D4","#EF4444"];
 
-    function spinDiscoveryWheel() {
-        if (isSpinning) return;
+    function hexToRgb(hex) {
+        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '139,92,246';
+    }
 
-        isSpinning = true;
-        const wheel = document.getElementById('discoveryWheel');
-        if (!wheel) return;
+    function hoverCard(idx, on) {
+        const card = document.getElementById('modeCard' + idx);
+        if (!card) return;
+        if (on) {
+            card.style.background = `rgba(${hexToRgb(modeColors[idx])},0.1)`;
+            card.style.borderColor = `rgba(${hexToRgb(modeColors[idx])},0.4)`;
+            card.style.transform = 'translateY(-3px)';
+        } else {
+            card.style.background = 'rgba(255,255,255,0.03)';
+            card.style.borderColor = 'rgba(255,255,255,0.08)';
+            card.style.transform = 'translateY(0)';
+        }
+    }
+
+    function selectMode(idx, route) {
+        for (let i = 0; i < 6; i++) {
+            const c = document.getElementById('modeCard' + i);
+            if (c) { c.style.background='rgba(255,255,255,0.03)'; c.style.borderColor='rgba(255,255,255,0.08)'; c.style.transform='scale(1)'; }
+        }
+        const sel = document.getElementById('modeCard' + idx);
+        if (sel) {
+            sel.style.background = `rgba(${hexToRgb(modeColors[idx])},0.18)`;
+            sel.style.borderColor = modeColors[idx];
+            sel.style.transform = 'scale(1.04)';
+        }
+        setTimeout(() => { window.location.href = route; }, 280);
+    }
+
+    function pickRandom() {
+        let current = 0;
+        let speed = 70;
+        let iterations = 0;
+        const total = 20 + Math.floor(Math.random() * 8);
+        const finalIdx = Math.floor(Math.random() * 6);
 
         for (let i = 0; i < 6; i++) {
-            const option = document.getElementById('option' + i);
-            if (option) option.classList.remove('active');
+            const c = document.getElementById('modeCard' + i);
+            if (c) { c.style.background='rgba(255,255,255,0.03)'; c.style.borderColor='rgba(255,255,255,0.08)'; c.style.transform='scale(1)'; }
         }
 
-        const fullSpins = 5 + Math.floor(Math.random() * 4);
-        const segments = 6;
-        selectedOption = Math.floor(Math.random() * segments);
-        const degreesPerSegment = 360 / segments;
+        function step() {
+            const prev = document.getElementById('modeCard' + current);
+            if (prev) { prev.style.background='rgba(255,255,255,0.03)'; prev.style.borderColor='rgba(255,255,255,0.08)'; prev.style.transform='scale(1)'; }
 
-        const extraDegrees = (selectedOption * degreesPerSegment) + (degreesPerSegment / 2);
-        currentRotation += (fullSpins * 360) + extraDegrees;
+            current = iterations >= total ? finalIdx : (current + 1) % 6;
 
-        wheel.style.transition = 'transform 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        wheel.style.transform = `rotate(${currentRotation}deg)`;
+            const curr = document.getElementById('modeCard' + current);
+            if (curr) {
+                curr.style.background = `rgba(${hexToRgb(modeColors[current])},0.22)`;
+                curr.style.borderColor = modeColors[current];
+                curr.style.transform = 'scale(1.06)';
+            }
 
-        setTimeout(() => {
-            isSpinning = false;
-
-            const activeOption = document.getElementById('option' + selectedOption);
-            if (activeOption) activeOption.classList.add('active');
-
-            const goButton = document.getElementById('goButton');
-            if (goButton) goButton.style.display = 'inline-block';
-        }, 3000);
-    }
-
-    function navigateToSelected(username) {
-        if (selectedOption === 4) {
-            window.location.href = '/profile/' + username;
-        } else if (selectedOption >= 0 && selectedOption < routes.length && routes[selectedOption] !== null) {
-            window.location.href = routes[selectedOption];
+            iterations++;
+            if (iterations <= total) {
+                speed = Math.min(speed * 1.09, 420);
+                setTimeout(step, speed);
+            } else {
+                setTimeout(() => { window.location.href = ["/player","/visualizer","/playlists","/liked-songs","/statistics","/admin/upload"][finalIdx]; }, 650);
+            }
         }
+        step();
     }
 
-    function playTrack(trackId) {
-        window.location.href = '/player?play=' + trackId;
-    }
+    function playTrack(id) { window.location.href = '/player?play=' + id; }
 
+    /* ── Landing fake visualizer ── */
+    function animateVisualizer() {
+        document.querySelectorAll('.viz-bar').forEach(bar => {
+            bar.style.height = (18 + Math.random() * 200) + 'px';
+            bar.style.transition = 'height 0.14s ease';
+        });
+    }
+    setInterval(animateVisualizer, 140);
+
+    /* ── Landing logo spin ── */
+    let isRotating = false, currentRotation = 0;
     function rotatePuzzleLogo() {
         if (isRotating) return;
-
         const logo = document.getElementById('puzzleLogo');
         if (!logo) return;
-
         isRotating = true;
         currentRotation += 90;
-
         logo.style.transition = 'transform 0.6s ease-in-out';
         logo.style.transform = `rotate(${currentRotation}deg)`;
-
-        setTimeout(() => {
-            isRotating = false;
-        }, 600);
+        setTimeout(() => { isRotating = false; }, 600);
     }
 </script>
 
@@ -1178,8 +1103,9 @@ else
 
     private UserStats userStats = new();
     private List<RecentTrack> recentTracks = new();
+    private Dictionary<int, string> listeningHeatmap = new();
 
-    private int totalTracks = 0;
+    // Landing page data
     private int totalGenres = 0;
     private int totalPlays = 0;
     private int continentCount = 6;
@@ -1191,18 +1117,15 @@ else
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
         isLoggedIn = user.Identity?.IsAuthenticated == true;
 
         if (isLoggedIn)
         {
             currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            // Fetch user's display name from database
             if (!string.IsNullOrEmpty(currentUserId))
             {
-                using var context = await DbFactory.CreateDbContextAsync();
-                var currentUser = await context.Users.FindAsync(currentUserId);
+                using var ctx = await DbFactory.CreateDbContextAsync();
+                var currentUser = await ctx.Users.FindAsync(currentUserId);
                 userName = !string.IsNullOrEmpty(currentUser?.DisplayName)
                     ? currentUser.DisplayName
                     : user.Identity?.Name ?? "User";
@@ -1211,7 +1134,7 @@ else
             {
                 userName = user.Identity?.Name ?? "User";
             }
-            pageTitle = $"Home - Piece";
+            pageTitle = "Home - Piece";
             loadingMessage = "Loading your dashboard...";
             await LoadUserDashboard();
         }
@@ -1236,22 +1159,59 @@ else
             userStats.TotalPlays = listeningHistory.Count;
             userStats.UniqueTracksPlayed = listeningHistory.Select(h => h.TrackId).Distinct().Count();
             userStats.TotalMinutes = (int)(listeningHistory.Sum(h => h.DurationListened) / 60.0);
-            userStats.PlaylistCount = await context.Playlists.Where(p => p.UserId == currentUserId).CountAsync();
+            userStats.PlaylistCount = await context.Playlists
+                .Where(p => p.UserId == currentUserId)
+                .CountAsync();
 
-            var recentHistoryItems = await context.ListeningHistory
+            // Top genre this month
+            var topGenreData = await context.ListeningHistory
+                .Where(h => h.UserId == currentUserId && h.PlayedAt >= DateTime.UtcNow.AddDays(-30))
+                .Include(h => h.Track).ThenInclude(t => t.Genre)
+                .Where(h => h.Track.Genre != null)
+                .GroupBy(h => new { h.Track.Genre!.Name, h.Track.Genre.Color })
+                .Select(g => new { g.Key.Name, g.Key.Color, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .FirstOrDefaultAsync();
+
+            if (topGenreData != null)
+            {
+                userStats.TopGenre = topGenreData.Name;
+                userStats.TopGenreColor = topGenreData.Color ?? "#8B5CF6";
+                userStats.TopGenrePlays = topGenreData.Count;
+            }
+
+            // Heatmap — last 30 days with dominant genre color per day
+            var last30 = await context.ListeningHistory
+                .Where(h => h.UserId == currentUserId && h.PlayedAt >= DateTime.UtcNow.AddDays(-30))
+                .Include(h => h.Track).ThenInclude(t => t.Genre)
+                .Where(h => h.Track.Genre != null)
+                .ToListAsync();
+
+            for (int d = 0; d < 30; d++)
+            {
+                var dayStart = DateTime.UtcNow.Date.AddDays(-29 + d);
+                var dayEnd = dayStart.AddDays(1);
+                var dayPlays = last30.Where(h => h.PlayedAt >= dayStart && h.PlayedAt < dayEnd).ToList();
+                listeningHeatmap[d] = dayPlays.Any()
+                    ? dayPlays.GroupBy(h => h.Track.Genre!.Color).OrderByDescending(g => g.Count()).First().Key ?? "#1a1a1a"
+                    : "#1a1a1a";
+            }
+
+            // Recent tracks
+            var recentItems = await context.ListeningHistory
                 .Where(h => h.UserId == currentUserId)
                 .OrderByDescending(h => h.PlayedAt)
                 .Take(12)
                 .Include(h => h.Track)
                 .ToListAsync();
 
-            recentTracks = recentHistoryItems.Select(h => new RecentTrack
+            recentTracks = recentItems.Select(h => new RecentTrack
                 {
                     Title = h.Track?.Title ?? "Unknown",
                     ArtistName = h.Track?.ArtistName ?? "Unknown Artist",
                     AlbumArt = h.Track != null && !string.IsNullOrEmpty(h.Track.CoverImageUrl)
-                                ? h.Track.CoverImageUrl
-                                : "/images/default-album-cover.png",
+                        ? h.Track.CoverImageUrl
+                        : "/images/default-album-cover.png",
                     PlayedAt = GetRelativeTime(h.PlayedAt),
                     TrackId = h.TrackId
                 }).ToList();
@@ -1277,7 +1237,6 @@ else
                 .Where(t => t.IsActive && t.Source == TrackSource.Local)
                 .ToListAsync();
 
-            totalTracks = 500000;
             totalGenres = await context.Genres.CountAsync();
             totalPlays = allTracks.Sum(t => t.PlayCount);
             trendingTracks = allTracks.OrderByDescending(t => t.PlayCount).Take(10).ToList();
@@ -1294,14 +1253,14 @@ else
         }
     }
 
-    private string GetRelativeTime(DateTime dateTime)
+    private string GetRelativeTime(DateTime dt)
     {
-        var timeSpan = DateTime.UtcNow - dateTime;
-        if (timeSpan.TotalMinutes < 1) return "Just now";
-        if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes}m ago";
-        if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours}h ago";
-        if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays}d ago";
-        return dateTime.ToString("MMM d");
+        var ts = DateTime.UtcNow - dt;
+        if (ts.TotalMinutes < 1) return "Just now";
+        if (ts.TotalMinutes < 60) return $"{(int)ts.TotalMinutes}m ago";
+        if (ts.TotalHours < 24) return $"{(int)ts.TotalHours}h ago";
+        if (ts.TotalDays < 7) return $"{(int)ts.TotalDays}d ago";
+        return dt.ToString("MMM d");
     }
 
     private class UserStats
@@ -1310,6 +1269,9 @@ else
         public int UniqueTracksPlayed { get; set; }
         public int TotalMinutes { get; set; }
         public int PlaylistCount { get; set; }
+        public string? TopGenre { get; set; }
+        public string TopGenreColor { get; set; } = "#8B5CF6";
+        public int TopGenrePlays { get; set; }
     }
 
     private class RecentTrack
