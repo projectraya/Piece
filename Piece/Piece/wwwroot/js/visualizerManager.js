@@ -467,11 +467,23 @@
         }
     }
 
-    initThreeSphere(canvasId) {
+    async initThreeSphere(canvasId) {
         if (!this.analyser || !this.dataArray) {
             console.error('[VisualizerManager] Audio not initialized yet');
             return false;
         }
+
+        await new Promise(resolve => {
+            const check = () => {
+                const canvas = document.getElementById(canvasId);
+                if (canvas && canvas.offsetWidth > 300 && canvas.offsetHeight > 150) {
+                    resolve();
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            check();
+        });
 
         window.threeSphere.initialize(canvasId, this.analyser, this.dataArray);
         console.log('[VisualizerManager] ThreeSphere initialized');

@@ -261,22 +261,17 @@
 
     private async Task SwitchMode(string mode)
     {
-        var previousMode = currentMode;
         currentMode = mode;
         StateHasChanged();
 
-        await Task.Delay(200);
-
         if (mode == "sphere")
         {
-            var canvasExists = await JSRuntime.InvokeAsync<bool>("eval",
-                "document.getElementById('threeSphereCanvas') !== null");
-            Console.WriteLine($"[Visualizer] threeSphereCanvas exists: {canvasExists}");
-
+            await Task.Delay(300);
             await JSRuntime.InvokeVoidAsync("visualizerManager.initThreeSphere", "threeSphereCanvas");
         }
         else
         {
+            await Task.Delay(150);
             await JSRuntime.InvokeVoidAsync("visualizerManager.registerFullCanvas", "fullVisualizer");
             await JSRuntime.InvokeVoidAsync("visualizerManager.setMode", mode);
         }
