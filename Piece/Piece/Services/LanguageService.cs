@@ -232,7 +232,6 @@
 			{ ("bg", "Welcome Back") , "Добре дошъл" },
 			{ ("bg", "Where do you want to start?") , "От къде искаш да започнеш?" },
 			{ ("bg", "Surprise Me") , "Изненадай ме" },
-			{ ("bg", "Recently Played") , "Наскоро слушани" },
 			{ ("bg", "View All") , "Виж всички" },
 			{ ("bg", ">No listening history yet") , "Все още няма история на слушани парчета" },
 			{ ("bg", "Start playing music to build your personal history") , "Пусни музика за да създадеш своята история на слушани парчета" },
@@ -243,6 +242,9 @@
 			{ ("bg", "Your Listening Journey") , "Твоето музикално пътуване" },
 			{ ("bg", "Last 30 days — each color represents a genre") , "Последните 30 дни - всеки цвят показва жанр" },
 			{ ("bg", "Full Stats") , "Пълна статистика" },
+			{ ("bg", "Your Playlists") , "Твоите Плейлисти" },
+			{ ("bg", "Listening Stats") , "Статистика на слушане" },
+
 
 
             // Landing
@@ -272,8 +274,29 @@
 			{ ("bg", "Every genre has a color. Every day you listen builds a heatmap of your musical journey. See your most-played tracks, top genres, and listening patterns come to life visually.") , "Всеки жанр има цвят. Всеки ден, в който слушаш, сглобява шарена карта на твоето музикално пътуване. Виж своите най-слушани парчета и жанрове, както и тенденцията ти на слушане как оживяват." },
 			{ ("bg", "Ready to experience music differently?") , "Готов ли си да преживееш музиката по различен начин?" },
 			{ ("bg", "Get started here") , "Започни тук" },
+			{ ("bg", "Discover") , "Открий" },
 
+			// Heatmap Features
+			{ ("bg", "90-day listening heatmap") , "90-дневна топлинна карта" },
+			{ ("bg", "Genre color breakdown") , "Разбивка на жанровете" },
+			{ ("bg", "Most played tracks") , "Най-слушани парчета" },
+			{ ("bg", "Daily play patterns") , "Дневни навици на слушане" },
 			
+			// Heatmap Interface
+			{ ("bg", "LISTENING HISTORY") , "ИСТОРИЯ НА СЛУШАНЕ" },
+			{ ("bg", "Jan") , "Ян" },
+			{ ("bg", "Feb") , "Фев" },
+			{ ("bg", "Mar") , "Март" },
+			
+			// Genres
+			{ ("bg", "Pop") , "Поп" },
+			{ ("bg", "Rock") , "Рок" },
+			{ ("bg", "Jazz") , "Джаз" },
+			{ ("bg", "Electronic") , "Електронна" },
+			{ ("bg", "Classical") , "Класическа" },
+			
+			// CTA
+			{ ("bg", "Join us in the new way of enjoying music") , "Присъедини се към нас в новия начин за слушане на музика" },
 		};
 	}
 }

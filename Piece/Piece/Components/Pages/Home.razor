@@ -525,24 +525,22 @@ else if (isLoggedIn)
 {
     <div class="dashboard-container">
 
-        <!-- ── HERO ── -->
         <div class="hero-section">
             <div class="hero-content">
                 <div class="welcome-label">@Lang.T("Welcome Back")</div>
                 <h1 class="welcome-title">@userName</h1>
-                <p class="welcome-subtitle">Where do you want to go today?</p>
+                <p class="welcome-subtitle">@Lang.T("Where do you want to start?")</p>
 
-                <!-- Mode Grid -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;" id="modeGrid">
                     @{
                         var modes = new[] {
-                        ("/player",                      "Browse Music",    "Dive into the full library",      "#8B5CF6", "♪"),
-                        ("/visualizer",                  "Visualizer",      "See your music come alive",       "#10B981", "◉"),
-                        ("/playlists",                   "Your Playlists",  "Your curated collections",        "#F59E0B", "☰"),
-                        ("/liked-songs",                 "Liked Songs",     "Your saved favourites",           "#EC4899", "♥"),
-                        ("/account/manage/statistics",   "Listening Stats", "Your musical journey",            "#06B6D4", "◈"),
-                        ("/admin/upload",                "Upload Music",    "Add to the library",              "#EF4444", "↑")
-                        };
+                ("/player",       Lang.T("Browse Music"),    Lang.T("Dive into the full library"),   "#8B5CF6", "♪"),
+                ("/visualizer",   Lang.T("Visualizer"),      Lang.T("See your music come alive"),    "#10B981", "◉"),
+                ("/playlists",    Lang.T("Your Playlists"),  Lang.T("Your curated collections"),     "#F59E0B", "☰"),
+                ("/liked-songs",   Lang.T("Liked Songs"),     Lang.T("Your saved favourites"),        "#EC4899", "♥"),
+                ("/account/manage/statistics", Lang.T("Listening Stats"), Lang.T("Your musical journey"), "#06B6D4", "◈"),
+                ("/admin/upload",  Lang.T("Upload Music"),    Lang.T("Add to the library"),           "#EF4444", "↑")
+                };
                     }
                     @for (int i = 0; i < modes.Length; i++)
                     {
@@ -550,14 +548,7 @@ else if (isLoggedIn)
                         var idx = i;
                         <div id="modeCard@(idx)"
                              onclick="selectMode(@idx, '@m.Item1')"
-                             style="background: rgba(255,255,255,0.03);
-                                    border: 1px solid rgba(255,255,255,0.08);
-                                    border-radius: 14px;
-                                    padding: 20px 16px;
-                                    cursor: pointer;
-                                    transition: all 0.25s;
-                                    position: relative;
-                                    overflow: hidden;"
+                             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px 16px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;"
                              onmouseover="hoverCard(@idx, true)"
                              onmouseout="hoverCard(@idx, false)">
                             <div style="font-size: 26px; margin-bottom: 8px;">@m.Item5</div>
@@ -568,42 +559,26 @@ else if (isLoggedIn)
                 </div>
 
                 <button onclick="pickRandom()"
-                        style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-                               border: none;
-                               border-radius: 12px;
-                               padding: 13px 36px;
-                               font-size: 14px;
-                               font-weight: 700;
-                               color: #fff;
-                               cursor: pointer;
-                               transition: all 0.3s;
-                               box-shadow: 0 4px 20px rgba(139,92,246,0.3);"
+                        style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); border: none; border-radius: 12px; padding: 13px 36px; font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 20px rgba(139,92,246,0.3);"
                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(139,92,246,0.5)'"
                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(139,92,246,0.3)'">
-                    ✦ Surprise Me
+                    ✦ @Lang.T("Surprise Me")
                 </button>
             </div>
         </div>
 
-        <!-- ── STATS STRIP ── -->
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px;">
             @{
                 var statItems = new[] {
-                ("▶", userStats.TotalPlays.ToString(),          "Total Plays",       "#8B5CF6", "139,92,246"),
-                ("♫", userStats.UniqueTracksPlayed.ToString(),  "Unique Tracks",     "#10B981", "16,185,129"),
-                ("⏱", userStats.TotalMinutes.ToString(),        "Minutes Listened",  "#F59E0B", "245,158,11"),
-                ("☰", userStats.PlaylistCount.ToString(),       "Playlists",         "#EC4899", "236,72,153")
-                };
+        ("▶", userStats.TotalPlays.ToString(),          Lang.T("Total Plays"),       "#8B5CF6", "139,92,246"),
+        ("♫", userStats.UniqueTracksPlayed.ToString(),  Lang.T("Unique Tracks"),     "#10B981", "16,185,129"),
+        ("⏱", userStats.TotalMinutes.ToString(),        Lang.T("Minutes Listened"),  "#F59E0B", "245,158,11"),
+        ("☰", userStats.PlaylistCount.ToString(),       Lang.T("Playlists"),         "#EC4899", "236,72,153")
+        };
             }
             @foreach (var s in statItems)
             {
-                <div style="background: rgba(255,255,255,0.03);
-                            border: 1px solid rgba(255,255,255,0.08);
-                            border-radius: 16px;
-                            padding: 28px 24px;
-                            position: relative;
-                            overflow: hidden;
-                            transition: all 0.3s;"
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px 24px; position: relative; overflow: hidden; transition: all 0.3s;"
                      onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(@(s.Item5),0.35)'"
                      onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255,255,255,0.08)'">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: @s.Item4; border-radius: 16px 16px 0 0;"></div>
@@ -614,18 +589,16 @@ else if (isLoggedIn)
             }
         </div>
 
-        <!-- ── RECENTLY PLAYED + SIDEBAR ── -->
         <div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; margin-bottom: 48px; align-items: start;">
 
-            <!-- Recently Played -->
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 class="section-title">Recently Played</h2>
+                    <h2 class="section-title">@Lang.T("Recently Played")</h2>
                     <a href="/account/manage/statistics"
                        style="font-size: 13px; color: #8B5CF6; text-decoration: none; font-weight: 600; transition: all 0.3s;"
                        onmouseover="this.style.color='#A78BFA'; this.style.transform='translateX(4px)'"
                        onmouseout="this.style.color='#8B5CF6'; this.style.transform='translateX(0)'">
-                        View All →
+                        @Lang.T("View All") →
                     </a>
                 </div>
 
@@ -635,13 +608,7 @@ else if (isLoggedIn)
                         @foreach (var track in recentTracks.Take(7))
                         {
                             var tid = track.TrackId;
-                            <div style="display: flex; align-items: center; gap: 14px;
-                                        padding: 11px 14px;
-                                        background: rgba(255,255,255,0.02);
-                                        border: 1px solid rgba(255,255,255,0.06);
-                                        border-radius: 12px;
-                                        cursor: pointer;
-                                        transition: all 0.25s;"
+                            <div style="display: flex; align-items: center; gap: 14px; padding: 11px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; cursor: pointer; transition: all 0.25s;"
                                  onclick="playTrack(@tid)"
                                  onmouseover="this.style.background='rgba(139,92,246,0.08)'; this.style.borderColor='rgba(139,92,246,0.25)'; this.style.transform='translateX(4px)'"
                                  onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='rgba(255,255,255,0.06)'; this.style.transform='translateX(0)'">
@@ -664,43 +631,40 @@ else if (isLoggedIn)
                 {
                     <div style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px dashed rgba(255,255,255,0.08);">
                         <div style="font-size:44px;margin-bottom:14px;opacity:0.25;">♫</div>
-                        <div style="font-size:17px;font-weight:600;color:rgba(255,255,255,0.35);margin-bottom:8px;">No listening history yet</div>
-                        <p style="font-size:13px;color:rgba(255,255,255,0.2);margin-bottom:22px;">Start playing music to build your personal history</p>
+                        <div style="font-size:17px;font-weight:600;color:rgba(255,255,255,0.35);margin-bottom:8px;">@Lang.T("No listening history yet")</div>
+                        <p style="font-size:13px;color:rgba(255,255,255,0.2);margin-bottom:22px;">@Lang.T("Start playing music to build your personal history")</p>
                         <button onclick="window.location.href='/player'"
                                 style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:8px;padding:11px 28px;color:#8B5CF6;font-size:13px;font-weight:600;cursor:pointer;">
-                            Browse Music
+                            @Lang.T("Browse Music")
                         </button>
                     </div>
                 }
             </div>
 
-            <!-- Sidebar -->
             <div style="display:flex;flex-direction:column;gap:16px;">
 
-                <!-- Top Genre -->
                 @if (userStats.TopGenre != null)
                 {
                     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;position:relative;overflow:hidden;">
                         <div style="position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:@userStats.TopGenreColor;opacity:0.1;filter:blur(20px);pointer-events:none;"></div>
-                        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Your Top Genre</div>
+                        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">@Lang.T("Your Top Genre")</div>
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
                             <div style="width:36px;height:36px;border-radius:8px;background:@userStats.TopGenreColor;flex-shrink:0;"></div>
                             <div style="font-size:20px;font-weight:800;color:#fff;">@userStats.TopGenre</div>
                         </div>
-                        <div style="font-size:12px;color:rgba(255,255,255,0.35);">@userStats.TopGenrePlays plays this month</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.35);">@userStats.TopGenrePlays @Lang.T("plays this month")</div>
                     </div>
                 }
 
-                <!-- Quick Actions -->
                 <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;">
-                    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Quick Actions</div>
+                    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">@Lang.T("Quick Actions")</div>
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         @foreach (var qa in new[] {
-                    ("/player",                    "Browse Music",    "#8B5CF6"),
-                    ("/visualizer",                "Open Visualizer", "#10B981"),
-                    ("/map",                       "World Map",       "#F59E0B"),
-                    ("/liked-songs",               "Liked Songs",     "#EC4899"),
-                    ("/playlists",                 "My Playlists",    "#06B6D4")
+                    ("/player",       Lang.T("Browse Music"),    "#8B5CF6"),
+                    ("/visualizer",   Lang.T("Open Visualizer"), "#10B981"),
+                    ("/map",          Lang.T("World Map"),       "#F59E0B"),
+                    ("/liked-songs",   Lang.T("Liked Songs"),     "#EC4899"),
+                    ("/playlists",    Lang.T("My Playlists"),    "#06B6D4")
                     })
                         {
                             <a href="@qa.Item1"
@@ -717,20 +681,19 @@ else if (isLoggedIn)
             </div>
         </div>
 
-        <!-- ── LISTENING HEATMAP ── -->
         @if (userStats.TotalPlays > 0)
         {
             <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:32px;margin-bottom:48px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
                     <div>
-                        <h2 class="section-title" style="margin-bottom:4px;">Your Listening Journey</h2>
-                        <p style="font-size:13px;color:rgba(255,255,255,0.35);">Last 30 days — each color represents a genre</p>
+                        <h2 class="section-title" style="margin-bottom:4px;">@Lang.T("Your Listening Journey")</h2>
+                        <p style="font-size:13px;color:rgba(255,255,255,0.35);">@Lang.T("Last 30 days — each color represents a genre")</p>
                     </div>
                     <a href="/account/manage/statistics"
                        style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);border-radius:20px;padding:7px 18px;font-size:12px;font-weight:700;color:#8B5CF6;text-decoration:none;transition:all 0.3s;"
                        onmouseover="this.style.background='rgba(139,92,246,0.2)'"
                        onmouseout="this.style.background='rgba(139,92,246,0.1)'">
-                        Full Stats →
+                        @Lang.T("Full Stats") →
                     </a>
                 </div>
                 <div style="display:flex;gap:4px;flex-wrap:wrap;">
