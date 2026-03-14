@@ -58,44 +58,6 @@ namespace Piece.Services
 			}
 		}
 
-		public async Task SeedArtistsForCountry(int countryId, string countryName, int limit = 30)
-		{
-			try
-			{
-				Console.WriteLine($"Calling MusicBrainz API for {countryName}...");
-				var artists = await SearchArtistsByCountry(countryName, limit);
-				Console.WriteLine($"MusicBrainz returned {artists.Count} artists");
-
-				using var context = await _dbFactory.CreateDbContextAsync();
-				foreach (var artistInfo in artists)
-				{
-					var existingArtist = await context.Artists
-						.FirstOrDefaultAsync(a => a.MusicBrainzId == artistInfo.MusicBrainzId);
-
-					if (existingArtist == null)
-					{
-						var newArtist = new Artist
-						{
-							Name = artistInfo.Name,
-							Bio = artistInfo.Bio,
-							Genre = artistInfo.Genre,
-							CountryId = countryId,
-							DataSource = ArtistDataSource.MusicBrainz,
-							MusicBrainzId = artistInfo.MusicBrainzId,
-							CreatedAt = DateTime.UtcNow
-						};
-						context.Artists.Add(newArtist);
-					}
-				}
-				await context.SaveChangesAsync();
-				Console.WriteLine($"Seeded {artists.Count} artists for {countryName}");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Error seeding artists: {ex.Message}");
-			}
-		}
-
 		private class MusicBrainzSearchResponse
 		{
 			[JsonPropertyName("artists")]

@@ -27,7 +27,5 @@ namespace Piece.Data.Models
 		public double Latitude { get; set; }
 		public double Longitude { get; set; }
 
-		// Navigation properties
-		public ICollection<Artist> Artists { get; set; } = new List<Artist>();
 	}
 }

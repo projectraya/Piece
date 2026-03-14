@@ -3,19 +3,14 @@ using Piece.Data.Models;
 using Piece.Data;
 using Microsoft.EntityFrameworkCore;
 using Piece.Services;
-using Microsoft.EntityFrameworkCore.Internal;
-using Piece.Services.LastFm;
 
 public class DatabaseSeeder
 {
 	private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-	private readonly LastFmSeeder _lastFmSeeder;
 
-
-	public DatabaseSeeder(IDbContextFactory<ApplicationDbContext> dbFactory, LastFmSeeder lastFmSeeder)
+	public DatabaseSeeder(IDbContextFactory<ApplicationDbContext> dbFactory)
 	{
 		_dbFactory = dbFactory;
-		_lastFmSeeder = lastFmSeeder;
 	}
 
 	public async Task SeedAllAsync()
@@ -31,10 +26,6 @@ public class DatabaseSeeder
 		if (!await context.Tracks.AnyAsync())
 		{
 			await SeedLocalTracksAsync();
-		}
-		if (!await context.Artists.AnyAsync())
-		{
-			await _lastFmSeeder.SeedCountryTracksAsync();
 		}
 
 		await context.SaveChangesAsync();
@@ -52,8 +43,8 @@ public class DatabaseSeeder
 		new Genre { Name = "Trance", Description = "Subgenre of trap", Color = "#ffeb3b" },
 		new Genre { Name = "Trap", Description = "Bass based", Color = "#3498db" },
 		new Genre { Name = "Lofi", Description = "Slow and calm", Color = "#CBC3E3" },
-		new Genre { Name = "Bounce", Description = "Bouncy ambient music", Color = "#41dc8e" }, 
-        new Genre { Name = "RNB", Description = "Rock and blues music", Color = "#FF474C" },
+		new Genre { Name = "Bounce", Description = "Bouncy ambient music", Color = "#41dc8e" },
+		new Genre { Name = "RNB", Description = "Rock and blues music", Color = "#FF474C" },
 		new Genre { Name = "Electronic", Description = "Music created by electric impulses", Color = "#FF00FF" }
 	};
 
@@ -81,8 +72,8 @@ public class DatabaseSeeder
 					Name = "Free",
 					Description = "Access to most features.",
 					Price = 0.00m,
-					DurationDays = 365, 
-                    CanUseMap = false,
+					DurationDays = 365,
+					CanUseMap = false,
 					IsActive = true
 				},
 				new SubscriptionPlan
@@ -98,7 +89,7 @@ public class DatabaseSeeder
 
 		await context.SubscriptionPlans.AddRangeAsync(plans);
 		await context.SaveChangesAsync();
-	} 
+	}
 
 	private async Task SeedLocalTracksAsync()
 	{
@@ -109,7 +100,7 @@ public class DatabaseSeeder
 		var bounceGenre = await context.Genres.FirstAsync(g => g.Name == "Bounce");
 		var lofiGenre = await context.Genres.FirstAsync(g => g.Name == "Lofi");
 		var edmGenre = await context.Genres.FirstAsync(g => g.Name == "EDM");
-		
+
 
 		var tracks = new List<Track>
 		{
@@ -263,7 +254,7 @@ public class DatabaseSeeder
 				IsActive = true,
 				YearPublished = 2024
 			}
-			
+
 
 		};
 
@@ -288,22 +279,5 @@ public class DatabaseSeeder
 		await context.SaveChangesAsync();
 
 		Console.WriteLine($"[Seeder] Seeded {tracks.Count} tracks with file hashes!");
-	}
-
-	private readonly MusicBrainzService _musicBrainz;
-
-	public DatabaseSeeder(
-		IDbContextFactory<ApplicationDbContext> dbFactory,
-		LastFmSeeder lastFmSeeder,
-		MusicBrainzService musicBrainz)
-	{
-		_dbFactory = dbFactory;
-		_lastFmSeeder = lastFmSeeder;
-		_musicBrainz = musicBrainz;
-	}
-	public async Task SeedCountryMusicDataAsync()
-	{
-		await _lastFmSeeder.SeedCountryArtistsAsync();
-		await _lastFmSeeder.SeedCountryTracksAsync();
 	}
 }

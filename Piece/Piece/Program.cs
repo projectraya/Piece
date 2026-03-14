@@ -7,7 +7,6 @@ using Piece.Components;
 using Piece.Components.Account;
 using Piece.Data;
 using Piece.Services;
-using Piece.Services.LastFm;
 using System.Threading.RateLimiting;
 
 
@@ -40,8 +39,6 @@ namespace Piece
 			builder.Services.AddScoped<IInputSanitizer, InputSanitizer>();
 			builder.Services.AddScoped<CountryMusicService>();
 			builder.Services.AddHttpClient<MusicBrainzService>();
-			builder.Services.AddHttpClient<LastFmService>();
-			builder.Services.AddScoped<LastFmSeeder>();
 			builder.Services.AddHttpClient();
 			builder.Services.AddScoped<CountryMusicService>();
 			builder.Services.AddHttpClient<DeezerService>();
@@ -154,7 +151,6 @@ namespace Piece
 				var seeder = services.GetRequiredService<DatabaseSeeder>();
 				await seeder.SeedAllAsync();
 
-				await seeder.SeedCountryMusicDataAsync();
 
 				var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 				var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();

@@ -23,8 +23,7 @@ namespace Piece.Data
 
 		// Map feature entities
 		public DbSet<Country> Countries { get; set; }
-		public DbSet<Artist> Artists { get; set; }
-		public DbSet<ArtistTrack> ArtistTracks { get; set; }
+		
 
 		// Payment entities
 		public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
@@ -91,19 +90,6 @@ namespace Piece.Data
 				.HasForeignKey(ph => ph.TrackId)
 				.OnDelete(DeleteBehavior.Cascade);
 
-			// Artist-Country relationship
-			builder.Entity<Artist>()
-				.HasOne(a => a.Country)
-				.WithMany(c => c.Artists)
-				.HasForeignKey(a => a.CountryId)
-				.OnDelete(DeleteBehavior.Restrict);
-
-			// ArtistTrack relationships
-			builder.Entity<ArtistTrack>()
-				.HasOne(at => at.Artist)
-				.WithMany(a => a.ArtistTracks)
-				.HasForeignKey(at => at.ArtistId)
-				.OnDelete(DeleteBehavior.Cascade);
 
 			// UserSubscription relationships
 			builder.Entity<UserSubscription>()
@@ -142,11 +128,6 @@ namespace Piece.Data
 				.HasIndex(c => c.CountryCode)
 				.IsUnique();
 
-			builder.Entity<Artist>()
-				.HasIndex(a => a.MusicBrainzId);
-
-			builder.Entity<Artist>()
-				.HasIndex(a => a.SpotifyId);
 
 			builder.Entity<UserFavorites
 				>()

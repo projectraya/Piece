@@ -15,67 +15,125 @@ namespace Piece.Services
 		public CountryMusicService(
 			IDbContextFactory<ApplicationDbContext> dbFactory,
 			IHttpClientFactory httpClientFactory,
-			DeezerService deezerService) 
+			DeezerService deezerService)
 		{
 			_dbFactory = dbFactory;
 			_httpClient = httpClientFactory.CreateClient();
 			_httpClient.DefaultRequestHeaders.Add("User-Agent", "Piece/1.0 (music-discovery-app)");
-			_deezerService = deezerService; 
+			_deezerService = deezerService;
 		}
 
-		public async Task<CountryMusicData> GetCountryMusicData(string countryCode)
+		public async Task<CountryMusicData> GetCountryMusicData(string countryCode, int offset = 0, int limit = 20)
 		{
-			Console.WriteLine($"[CountryMusicService] Fetching data for: {countryCode}");
+			Console.WriteLine($"[CountryMusicService] Fetching data for: {countryCode} (offset: {offset}, limit: {limit})");
 
-			using var context = await _dbFactory.CreateDbContextAsync();
-
-			var country = await context.Countries
-				.FirstOrDefaultAsync(c => c.CountryCode == countryCode);
-
-			if (country == null)
+			try
 			{
-				Console.WriteLine($"[CountryMusicService] Country not found: {countryCode}");
-				return new CountryMusicData { CountryName = countryCode };
+				using var context = await _dbFactory.CreateDbContextAsync();
+
+				var country = await context.Countries
+					.FirstOrDefaultAsync(c => c.CountryCode == countryCode);
+
+				if (country == null)
+				{
+					Console.WriteLine($"[CountryMusicService] Country not found: {countryCode}");
+					return new CountryMusicData
+					{
+						CountryName = countryCode,
+						CountryCode = countryCode,
+						HasData = false,
+						ErrorMessage = "Country not found in database."
+					};
+				}
+
+				Console.WriteLine($"[CountryMusicService] Found country: {country.Name}");
+
+				var artistsFromCountry = await GetArtistsFromCountryViaMusicBrainz(country.Name, offset, limit);
+
+				if (artistsFromCountry.Count == 0 && offset == 0)
+				{
+					Console.WriteLine($"[CountryMusicService] No artists found for {country.Name}");
+
+					return new CountryMusicData
+					{
+						CountryName = country.Name,
+						CountryCode = country.CountryCode,
+						HasData = false,
+						ErrorMessage = $"No music data available for {country.Name}. MusicBrainz returned no artists for this country."
+					};
+				}
+
+				Console.WriteLine($"[CountryMusicService] Returning {artistsFromCountry.Count} artists from MusicBrainz");
+
+				return new CountryMusicData
+				{
+					CountryName = country.Name,
+					CountryCode = country.CountryCode,
+					HasData = true,
+					TotalArtists = artistsFromCountry.Count,
+					TotalTracks = 0,
+					HasMore = artistsFromCountry.Count == limit,
+					TopTracks = new List<CountryTrackInfo>(),
+					FeaturedArtists = artistsFromCountry,
+					Artists = artistsFromCountry,
+					TopGenres = artistsFromCountry
+						.Where(a => !string.IsNullOrEmpty(a.Genre))
+						.GroupBy(a => a.Genre)
+						.OrderByDescending(g => g.Count())
+						.Take(3)
+						.Select(g => g.Key!)
+						.ToList()
+				};
 			}
-
-			Console.WriteLine($"[CountryMusicService] Found country: {country.Name}");
-
-			var artistsFromCountry = await GetArtistsFromCountryViaMusicBrainz(country.Name);
-
-			if (artistsFromCountry.Count == 0)
+			catch (Exception ex)
 			{
-				Console.WriteLine($"[CountryMusicService] No MusicBrainz artists found, falling back to local database");
-				
-				return await GetCountryMusicDataFromDatabase(context, country);
+				Console.WriteLine($"[CountryMusicService] Error: {ex.Message}");
+				return new CountryMusicData
+				{
+					CountryName = countryCode,
+					CountryCode = countryCode,
+					HasData = false,
+					ErrorMessage = $"Failed to fetch data: {ex.Message}"
+				};
 			}
-
-			Console.WriteLine($"[CountryMusicService] Returning {artistsFromCountry.Count} artists from MusicBrainz");
-
-			return new CountryMusicData
-			{
-				CountryName = country.Name,
-				CountryCode = country.CountryCode,
-				TotalArtists = artistsFromCountry.Count,
-				TotalTracks = 0,
-				TopTracks = new List<CountryTrackInfo>(),
-				FeaturedArtists = artistsFromCountry,
-				Artists = artistsFromCountry,
-				TopGenres = artistsFromCountry
-					.Where(a => !string.IsNullOrEmpty(a.Genre))
-					.GroupBy(a => a.Genre)
-					.OrderByDescending(g => g.Count())
-					.Take(3)
-					.Select(g => g.Key!)
-					.ToList()
-			};
 		}
 
-		private async Task<List<CountryArtistInfo>> GetArtistsFromCountryViaMusicBrainz(string countryName)
+		// NEW: Method to get full discography for a specific artist
+		public async Task<List<CountryTrackInfo>> GetArtistDiscography(string artistName, int limit = 50)
+		{
+			Console.WriteLine($"[CountryMusicService] Fetching discography for: {artistName}");
+
+			try
+			{
+				var deezerTracks = await _deezerService.GetArtistTopTracksAsync(artistName, limit);
+
+				return deezerTracks.Select(dt => new CountryTrackInfo
+				{
+					Id = 0,
+					TrackName = dt.Title,
+					AlbumName = dt.Album?.Title ?? "",
+					ArtistName = artistName,
+					PreviewUrl = dt.Preview,
+					AlbumArtUrl = dt.Album?.CoverMedium,
+					DurationSeconds = dt.Duration,
+					Popularity = 0
+				}).ToList();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[CountryMusicService] Error fetching discography: {ex.Message}");
+				return new List<CountryTrackInfo>();
+			}
+		}
+
+		private async Task<List<CountryArtistInfo>> GetArtistsFromCountryViaMusicBrainz(string countryName, int offset = 0, int limit = 20)
 		{
 			try
 			{
 				var encodedCountry = Uri.EscapeDataString(countryName);
-				var url = $"https://musicbrainz.org/ws/2/artist?query=area:\"{encodedCountry}\" AND (type:person OR type:group) AND NOT type:character&limit=100&fmt=json";
+				// Request more from MusicBrainz to account for filtering
+				var mbLimit = Math.Min(100, (offset + limit) * 3);
+				var url = $"https://musicbrainz.org/ws/2/artist?query=area:\"{encodedCountry}\" AND (type:person OR type:group) AND NOT type:character&limit={mbLimit}&fmt=json";
 
 				Console.WriteLine($"[CountryMusicService] MusicBrainz query: {url}");
 
@@ -91,7 +149,8 @@ namespace Piece.Services
 
 				var filteredArtists = response.Artists
 					.Where(a => !string.IsNullOrEmpty(a.Name) && IsLikelyMusician(a))
-					.Take(20)
+					.Skip(offset)
+					.Take(limit)
 					.ToList();
 
 				Console.WriteLine($"[CountryMusicService] Filtered to {filteredArtists.Count} musicians from MusicBrainz");
@@ -113,11 +172,11 @@ namespace Piece.Services
 
 					var artist = new CountryArtistInfo
 					{
-						Id = index,
+						Id = offset + index,
 						Name = mbArtist.Name ?? "Unknown Artist",
 						ArtistName = mbArtist.Name ?? "Unknown Artist",
 						Bio = mbArtist.Disambiguation,
-						ImageUrl = deezerTracks.FirstOrDefault()?.Album?.CoverBig, 
+						ImageUrl = deezerTracks.FirstOrDefault()?.Album?.CoverBig,
 						Genre = GetGenreFromType(mbArtist.Type) ?? GetGenreFromTags(mbArtist.Tags),
 						TrackCount = deezerTracks.Count,
 						AveragePopularity = 100 - (index * 2),
@@ -127,7 +186,7 @@ namespace Piece.Services
 							TrackName = dt.Title,
 							AlbumName = dt.Album?.Title ?? "",
 							ArtistName = mbArtist.Name ?? "Unknown Artist",
-							PreviewUrl = dt.Preview, 
+							PreviewUrl = dt.Preview,
 							AlbumArtUrl = dt.Album?.CoverMedium,
 							DurationSeconds = dt.Duration,
 							Popularity = 0
@@ -154,17 +213,14 @@ namespace Piece.Services
 
 		private bool IsLikelyMusician(MusicBrainzArtist artist)
 		{
-			// Filter out non-musicians based on tags and disambiguation
 			var disambiguation = artist.Disambiguation?.ToLower() ?? "";
 
-			// Exclude writers, authors, producers (unless music producer)
 			var excludeKeywords = new[] { "writer", "author", "novelist", "poet", "journalist", "actor", "director" };
 			if (excludeKeywords.Any(keyword => disambiguation.Contains(keyword)))
 			{
 				return false;
 			}
 
-			// If they have music-related tags, they're likely a musician
 			if (artist.Tags != null && artist.Tags.Any())
 			{
 				var musicTags = new[] { "rock", "pop", "jazz", "classical", "hip hop", "electronic", "metal", "folk", "country", "blues", "soul", "r&b", "rap", "punk", "indie" };
@@ -175,83 +231,6 @@ namespace Piece.Services
 			}
 
 			return artist.Type == "Group" || artist.Type == "Person";
-		}
-
-		private async Task<CountryMusicData> GetCountryMusicDataFromDatabase(ApplicationDbContext context, Country country)
-		{
-			var artists = await context.Artists
-				.Where(a => a.CountryId == country.Id)
-				.Include(a => a.ArtistTracks)
-				.ToListAsync();
-
-			var allTracks = artists.SelectMany(a => a.ArtistTracks).ToList();
-
-			var topTracks = allTracks
-				.OrderByDescending(t => t.Popularity)
-				.Take(10)
-				.Select(t => new CountryTrackInfo
-				{
-					Id = t.Id,
-					TrackName = t.TrackName,
-					AlbumName = t.AlbumName,
-					ArtistName = t.Artist?.Name ?? "Unknown",
-					PreviewUrl = t.PreviewUrl,
-					AlbumArtUrl = t.AlbumArtUrl,
-					DurationSeconds = t.DurationSeconds,
-					Popularity = t.Popularity
-				})
-				.ToList();
-
-			var featuredArtists = artists
-				.Select(a => new CountryArtistInfo
-				{
-					Id = a.Id,
-					Name = a.Name,
-					ArtistName = a.Name,
-					Bio = a.Bio,
-					ImageUrl = a.ImageUrl,
-					Genre = a.Genre,
-					TrackCount = a.ArtistTracks.Count,
-					AveragePopularity = a.Popularity > 0
-						? a.Popularity
-						: (a.ArtistTracks.Any() ? (int)a.ArtistTracks.Average(t => t.Popularity) : 0),
-					TopTracks = a.ArtistTracks
-						.OrderByDescending(t => t.Popularity)
-						.Take(3)
-						.Select(t => new CountryTrackInfo
-						{
-							Id = t.Id,
-							TrackName = t.TrackName,
-							AlbumName = t.AlbumName,
-							ArtistName = a.Name,
-							PreviewUrl = t.PreviewUrl,
-							AlbumArtUrl = t.AlbumArtUrl,
-							DurationSeconds = t.DurationSeconds,
-							Popularity = t.Popularity
-						})
-						.ToList()
-				})
-				.OrderByDescending(a => a.AveragePopularity)
-				.Take(10)
-				.ToList();
-
-			return new CountryMusicData
-			{
-				CountryName = country.Name,
-				CountryCode = country.CountryCode,
-				TotalArtists = artists.Count,
-				TotalTracks = allTracks.Count,
-				TopTracks = topTracks,
-				FeaturedArtists = featuredArtists,
-				Artists = featuredArtists,
-				TopGenres = artists
-					.Where(a => !string.IsNullOrEmpty(a.Genre))
-					.GroupBy(a => a.Genre)
-					.OrderByDescending(g => g.Count())
-					.Take(3)
-					.Select(g => g.Key!)
-					.ToList()
-			};
 		}
 
 		private string? GetGenreFromType(string? type)
@@ -323,6 +302,9 @@ namespace Piece.Services
 	{
 		public string CountryName { get; set; } = string.Empty;
 		public string CountryCode { get; set; } = string.Empty;
+		public bool HasData { get; set; }
+		public bool HasMore { get; set; } // NEW: Indicates if there are more artists to load
+		public string? ErrorMessage { get; set; }
 		public List<CountryArtistInfo> Artists { get; set; } = new();
 		public int TotalArtists { get; set; }
 		public int TotalTracks { get; set; }
