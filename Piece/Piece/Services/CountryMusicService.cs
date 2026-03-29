@@ -98,7 +98,6 @@ namespace Piece.Services
 			}
 		}
 
-		// NEW: Method to get full discography for a specific artist
 		public async Task<List<CountryTrackInfo>> GetArtistDiscography(string artistName, int limit = 50)
 		{
 			Console.WriteLine($"[CountryMusicService] Fetching discography for: {artistName}");
@@ -154,7 +153,7 @@ namespace Piece.Services
 					.ToList();
 
 				Console.WriteLine($"[CountryMusicService] Filtered to {filteredArtists.Count} musicians from MusicBrainz");
-
+				Console.WriteLine($"[CountryMusicService] MusicBrainz response status: {response?.Artists?.Count ?? 0} artists");
 				var artistsList = new List<CountryArtistInfo>();
 				int index = 0;
 

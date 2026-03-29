@@ -267,6 +267,7 @@
     private string GetTitle() => StatusCode switch
     {
         404 => Lang.T("404"),
+        401 => Lang.T("401"),
         500 => Lang.T("System Jammed"),
         _ => Lang.T("Out of Tune")
     };
@@ -274,6 +275,7 @@
     private string GetSubtitle() => StatusCode switch
     {
         404 => Lang.T("This piece of the app seems to be missing. Perhaps the coordinates were wrong?"),
+        401 => Lang.T("You seem to be unauthorized. Perhaps you are secretly a spy?"),
         500 => Lang.T("Something went wrong on our end. Our engineers are currently retuning the system."),
         _ => Lang.T("An unexpected interruption occurred. Please try again in a moment.")
     };
@@ -281,6 +283,7 @@
     private string[] GetPills() => StatusCode switch
     {
         404 => new[] { "Route Not Found", "Broken Link", "404 Error" },
+        401 => new[] { "Unauthorized", "Access denied", "It's called 401" },
         500 => new[] { "Server Error", "Log Created", "Engineers Notified" },
         _ => new[] { "Interrupted", "Connectivity", "Check Status" }
     };

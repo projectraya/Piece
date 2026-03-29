@@ -581,15 +581,6 @@
     {
         Console.WriteLine("[GlobalPlayer] Track ended");
 
-        // Record the full track play
-        if (!string.IsNullOrEmpty(currentUserId) &&
-            !string.IsNullOrEmpty(lastTrackedTrackId) &&
-            ListeningHistoryService != null)
-        {
-            var duration = (int)(DateTime.UtcNow - trackStartTime).TotalSeconds;
-            await RecordListening(lastTrackedTrackId, duration);
-        }
-
         PlayerService.PlayNext();
     }
 

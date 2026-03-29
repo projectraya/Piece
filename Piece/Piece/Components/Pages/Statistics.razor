@@ -610,7 +610,8 @@
 
         var mostPlayedRaw = await context.ListeningHistory
             .Where(h => h.UserId == currentUserId &&
-                        h.Track.Source == TrackSource.Local)
+                        h.Track.Source == TrackSource.Local &&
+                        h.Track.IsActive)
             .GroupBy(h => h.TrackId)
             .Select(g => new
             {
@@ -646,7 +647,7 @@
         recentlyPlayed = await context.ListeningHistory
             .Include(h => h.Track)
                 .ThenInclude(t => t.Genre)
-            .Where(h => h.UserId == currentUserId && h.Track.Source == TrackSource.Local)
+            .Where(h => h.UserId == currentUserId && h.Track.Source == TrackSource.Local && h.Track.IsActive)
             .OrderByDescending(h => h.PlayedAt)
             .Take(10)
             .ToListAsync();

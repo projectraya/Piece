@@ -85,7 +85,6 @@
             this.fullCanvas.height = window.innerHeight;
             this.fullCtx = this.fullCanvas.getContext('2d');
 
-            // Handle resize
             window.addEventListener('resize', () => {
                 if (this.fullCanvas) {
                     this.fullCanvas.width = window.innerWidth;
@@ -188,7 +187,6 @@
         }
     }
 
-    
     drawBars() {
         const barCount = 48;
         const spacing = this.fullCanvas.width / barCount;

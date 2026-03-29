@@ -13,7 +13,7 @@
 <div class="nav-menu @(isCollapsed ? "collapsed" : "")" id="sidebar">
     <div class="nav-header">
         <a href="/" class="app-logo">
-            <img src="/images/piece_logo_white.png"
+            <img src="/images/piece_logo_E.png"
             alt="Piece"
             class="sidebar-logo @(isCollapsed ? "logo-sm" : "logo-md")" />
 
@@ -147,37 +147,7 @@
             </nav>
         </Authorized>
 
-        @* <NotAuthorized>
-            <nav class="nav-items">
-                <div class="nav-section">
-                    @if (!isCollapsed)
-                    {
-                        <div class="section-label">WELCOME</div>
-                    }
-                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                        <span class="nav-icon">🏠︎</span>
-                        @if (!isCollapsed)
-                        {
-                            <span class="nav-text">Home</span>
-                        }
-                    </NavLink>
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="nav-icon">🗝</span>
-                        @if (!isCollapsed)
-                        {
-                            <span class="nav-text">Login</span>
-                        }
-                    </NavLink>
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="nav-icon">✎</span>
-                        @if (!isCollapsed)
-                        {
-                            <span class="nav-text">Sign Up</span>
-                        }
-                    </NavLink>
-                </div>
-            </nav>
-        </NotAuthorized> *@
+        
     </AuthorizeView>
 
     <div class="nav-footer">
@@ -299,7 +269,7 @@
     }
 
     .sidebar-logo {
-    height: 32px;
+    height: 72px;
     width: auto;
     object-fit: contain;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);

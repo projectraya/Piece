@@ -200,10 +200,12 @@
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     }
 
     .track-card:hover {
+    z-index: 500;
+    position: relative;
     background-color: #3a3a3a;
     transform: translateY(-5px);
     border: 2px solid #10B981;

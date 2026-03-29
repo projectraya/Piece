@@ -9,10 +9,8 @@ namespace Piece.Services
 		private List<PlayableTrack> _allAvailableTracks = new();
 		private List<PlayableTrack> _history = new();
 		private int _currentIndex = 0;
-
 		public event Action? OnChange;
 		public event Action? OnTrackChanged;
-
 		public PlayableTrack? CurrentTrack => _currentTrack;
 		public List<PlayableTrack> Queue => _queue;
 		public bool IsPlaying { get; private set; }
@@ -23,7 +21,6 @@ namespace Piece.Services
 			_allAvailableTracks = tracks;
 			Console.WriteLine($"[PlayerService] Set {tracks.Count} available tracks");
 		}
-
 		public void PlayTrack(PlayableTrack track)
 		{
 			Console.WriteLine($"[PlayerService] Playing: {track.Title}");
@@ -49,7 +46,6 @@ namespace Piece.Services
 			NotifyTrackChanged();
 			NotifyStateChanged();
 		}
-
 		public void PlayPlaylist(List<PlayableTrack> tracks, int startIndex = 0)
 		{
 			Console.WriteLine($"[PlayerService] Playing playlist: {tracks.Count} tracks");
@@ -64,7 +60,6 @@ namespace Piece.Services
 				NotifyStateChanged();
 			}
 		}
-
 		public void PlayNext()
 		{
 			if (_currentTrack != null && (_history.Count == 0 || _history.Last().Id != _currentTrack.Id))
@@ -109,7 +104,6 @@ namespace Piece.Services
 			NotifyTrackChanged();
 			NotifyStateChanged();
 		}
-
 		public void PlayPrevious()
 		{
 			if (_history.Any())
@@ -151,13 +145,11 @@ namespace Piece.Services
 			NotifyTrackChanged();
 			NotifyStateChanged();
 		}
-
 		public void TogglePlayPause()
 		{
 			IsPlaying = !IsPlaying;
 			NotifyStateChanged();
 		}
-
 		public void ToggleShuffle()
 		{
 			IsShuffleOn = !IsShuffleOn;
@@ -190,7 +182,6 @@ namespace Piece.Services
 
 			NotifyStateChanged();
 		}
-
 		public void UpdateFavoriteStatus(bool isFavorite)
 		{
 			if (_currentTrack != null)
@@ -199,15 +190,12 @@ namespace Piece.Services
 				NotifyStateChanged();
 			}
 		}
-
-
 		public void AddToQueue(PlayableTrack track)
 		{
 			_queue.Add(track);
 			Console.WriteLine($"[PlayerService] Added to queue: {track.Title} (Queue now has {_queue.Count} tracks)");
 			NotifyStateChanged();
 		}
-
 		public void RemoveFromQueue(int index)
 		{
 			if (index >= 0 && index < _queue.Count)
@@ -240,7 +228,6 @@ namespace Piece.Services
 				NotifyStateChanged();
 			}
 		}
-
 		public void ReorderQueue(int fromIndex, int toIndex)
 		{
 			if (fromIndex >= 0 && fromIndex < _queue.Count &&
@@ -260,7 +247,6 @@ namespace Piece.Services
 				NotifyStateChanged();
 			}
 		}
-
 		public void ClearQueue()
 		{
 			_queue.Clear();
@@ -272,7 +258,6 @@ namespace Piece.Services
 			NotifyTrackChanged();
 			NotifyStateChanged();
 		}
-
 		private void NotifyStateChanged() => OnChange?.Invoke();
 		private void NotifyTrackChanged() => OnTrackChanged?.Invoke();
 	}

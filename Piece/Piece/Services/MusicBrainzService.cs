@@ -18,7 +18,7 @@ namespace Piece.Services
 		{
 			_httpClient = httpClient;
 			_dbFactory = dbFactory;
-			_httpClient.DefaultRequestHeaders.Add("User-Agent", "Piece/1.0 (rayapetkova@gmail.com)");
+			_httpClient.DefaultRequestHeaders.Add("User-Agent", "Piece/1.0 (petkova@gmail.com)");
 		}
 
 		public async Task<List<ArtistInfo>> SearchArtistsByCountry(string countryName, int limit = 100)

@@ -163,13 +163,9 @@ namespace Piece
 				Console.WriteLine("Database seeding skipped");
 			}
 
-
-
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
 			{
-				//app.UseWebAssemblyDebugging();
-				//app.UseMigrationsEndPoint();
 				app.UseExceptionHandler("/Error");
 				app.UseStatusCodePagesWithReExecute("/Error/{0}");
 				app.UseHsts();
