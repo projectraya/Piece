@@ -92,7 +92,7 @@ https://localhost:7289
 | Field    | Value           |
 |----------|-----------------|
 | Email    | admin@piece.com |
-| Password | Admin123!       |
+| Password | *provided in a separate file*       |
 
 The admin account is created automatically during seeding. It has access to:
 - `/admin/dashboard` — Platform overview and statistics
