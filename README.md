@@ -1,4 +1,4 @@
-# Piece — Music Streaming Web Application
+# Piece — Interactive music streaming web application
 
 Piece is a full-stack music streaming web application built with ASP.NET Core 8 Blazor Server. It combines a local music library with the Jamendo API for royalty-free streaming, real-time audio visualizers, an interactive world music map, playlist management, subscription plans, and a full admin panel.
 
