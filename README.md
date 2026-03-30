@@ -91,7 +91,7 @@ https://localhost:7289
 
 | Field    | Value           |
 |----------|-----------------|
-| Email    | admin@piece.com |
+| Email    | admin1@piece.com |
 | Password | *provided in a separate file*       |
 
 The admin account is created automatically during seeding. It has access to:
