@@ -284,18 +284,6 @@
             <button type="submit" class="btn-login">Log in</button>
         </EditForm>
 
-        <div class="links-section">
-            <a href="Account/ForgotPassword" class="link-item">Forgot your password?</a>
-            <a href="Account/ResendEmailConfirmation" class="link-item">Resend email confirmation</a>
-        </div>
-
-        <div class="divider">
-            <span>or continue with</span>
-        </div>
-
-        <div class="external-logins">
-            <ExternalLoginPicker />
-        </div>
 
         <div class="register-link">
             Don't have an account? <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Sign up</a>
