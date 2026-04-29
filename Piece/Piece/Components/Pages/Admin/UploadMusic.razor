@@ -592,6 +592,9 @@
             }
 
             Console.WriteLine($"[Upload] Extracted duration: {durationSeconds}s");
+            // BPM Detection
+            int detectedBpm = BpmDetectionService.DetectBpm(filePath);
+            Console.WriteLine($"[Upload] Detected BPM: {detectedBpm}");
 
             // Save cover image if provided
             string? coverImagePath = null;
@@ -637,6 +640,7 @@
                     CoverImageUrl = coverImagePath ?? "/images/default-album-cover.png",
                     IsActive = true,
                     FileHash = fileHash,
+                    DetectedBpm = detectedBpm,
                     CreatedAt = DateTime.UtcNow
                 };
 

@@ -1,0 +1,161 @@
+﻿@page "/rhythm-game/{TrackId:int}"
+@rendermode InteractiveServer
+@using Piece.Data
+@using Piece.Services
+@using Microsoft.EntityFrameworkCore
+@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NeonBeatInterop NeonBeat
+@inject NavigationManager Navigation
+
+<PageTitle>NeonBeat - Piece</PageTitle>
+
+<link rel="stylesheet" href="/neonbeat/style.css" />
+
+@if (isLoading)
+{
+    <div style="display:flex;align-items:center;justify-content:center;
+                height:100vh;background:#05050f;color:white;font-size:20px;">
+        Loading...
+    </div>
+}
+else if (track == null)
+{
+    <div style="display:flex;flex-direction:column;align-items:center;
+                justify-content:center;height:100vh;background:#05050f;color:white;">
+        <p>Track not found.</p>
+        <button @onclick="GoBack"
+                style="margin-top:20px;background:#8B5CF6;border:none;
+                       border-radius:8px;padding:12px 24px;color:white;cursor:pointer;">
+            Go Back
+        </button>
+    </div>
+}
+else
+{
+    <!-- Целият HTML от index.html на NeonBeat — минус html/head/body тагове -->
+    <div id="screen-menu" class="screen active">
+        <div class="menu-title">NEONBEAT</div>
+        <div class="menu-sub">@track.Title — @track.ArtistName</div>
+        <div class="menu-buttons">
+            <button class="menu-btn" id="btn-play-bot">▶ Auto Play</button>
+            <button class="menu-btn" id="btn-play-manual">🎮 Play Yourself</button>
+            <button class="menu-btn" @onclick="GoBack">← Back to Piece</button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div id="hud">
+            <span id="hud-song-title">@track.Title</span>
+            <span id="hud-score">000000</span>
+            <span id="hud-combo">x0</span>
+            <span id="hud-judgment-label"></span>
+            <span id="hud-mode-label">MODE</span>
+            <span id="hud-bot-state">OFF</span>
+        </div>
+        <canvas id="game-canvas"></canvas>
+        <div id="key-lights">
+            <div class="key-light" data-key="D">D</div>
+            <div class="key-light" data-key="F">F</div>
+            <div class="key-light" data-key="J">J</div>
+            <div class="key-light" data-key="K">K</div>
+        </div>
+        <div id="countdown-overlay" class="hidden">
+            <div id="countdown-number">3</div>
+            <div id="countdown-sub">GET READY</div>
+        </div>
+        <div id="pause-overlay" class="hidden">
+            <div>PAUSED</div>
+            <button id="btn-resume">Resume</button>
+        </div>
+        <div id="record-banner" class="hidden">⏺ RECORDING</div>
+        <div id="record-time">0:00</div>
+    </div>
+
+    <div id="screen-results" class="screen">
+        <div class="results-title">RESULTS</div>
+        <div id="res-rank" class="rank"></div>
+        <div id="res-new-best" class="hidden">NEW BEST!</div>
+        <table class="res-table">
+            <tr><td>Score</td><td id="res-score">0</td></tr>
+            <tr><td>Accuracy</td><td id="res-acc">0%</td></tr>
+            <tr><td>Max Combo</td><td id="res-combo">0</td></tr>
+            <tr><td>Perfect</td><td id="res-perfect">0</td></tr>
+            <tr><td>Good</td><td id="res-good">0</td></tr>
+            <tr><td>Miss</td><td id="res-miss">0</td></tr>
+        </table>
+        <div id="result-mode-badge"></div>
+        <button class="menu-btn" id="btn-retry">↩ Play Again</button>
+        <button class="menu-btn" onclick="window.location.href='/player'">← Back to Piece</button>
+    </div>
+}
+
+@code {
+    [Parameter] public int TrackId { get; set; }
+
+    private Track? track;
+    private bool isLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        using var context = await DbFactory.CreateDbContextAsync();
+        track = await context.Tracks.FindAsync(TrackId);
+
+        if (track == null || string.IsNullOrEmpty(track.LocalFilePath))
+        {
+            isLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        isLoading = false;
+        StateHasChanged();
+
+        // Зареди скриптовете динамично само на тази страница
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            (function() {
+                if (window._neonbeatLoaded) return;
+                window._neonbeatLoaded = true;
+
+                function loadScript(src, callback) {
+                    var s = document.createElement('script');
+                    s.src = src;
+                    s.onload = callback || function(){};
+                    document.body.appendChild(s);
+                }
+
+                loadScript('/neonbeat/src/bpm.js', function() {
+                loadScript('/neonbeat/src/fsm.js', function() {
+                loadScript('/neonbeat/src/notes.js', function() {
+                loadScript('/neonbeat/src/saves.js', function() {
+                loadScript('/neonbeat/src/stats.js', function() {
+                loadScript('/neonbeat/src/events.js', function() {
+                loadScript('/neonbeat/src/game.js', function() {
+                loadScript('/neonbeat/blazor-bridge.js');
+                });});});});});});});
+            })();
+        ");
+
+        // Изчакай скриптовете и game-canvas да са готови
+        await Task.Delay(2000);
+
+        var wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var filePath = Path.Combine(wwwroot, track.LocalFilePath.TrimStart('/'));
+
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine($"[RhythmGame] File not found: {filePath}");
+            return;
+        }
+
+        var bytes = await File.ReadAllBytesAsync(filePath);
+        await NeonBeat.LoadSong(track.Title, track.DetectedBpm ?? 128, bytes);
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/player");
+    }
+}

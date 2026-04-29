@@ -43,6 +43,7 @@ namespace Piece
 			builder.Services.AddScoped<CountryMusicService>();
 			builder.Services.AddHttpClient<DeezerService>();
 			builder.Services.AddSingleton<LanguageService>();
+			builder.Services.AddScoped<NeonBeatInterop>();
 
 
 			builder.Services.AddAuthentication(options =>

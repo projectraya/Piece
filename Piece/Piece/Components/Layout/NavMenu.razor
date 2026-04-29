@@ -35,26 +35,11 @@
                     {
                         <div class="section-label">@Lang.T("DISCOVER")</div>
                     }
-
-                    <NavLink class="nav-link" href="search/users">
-                        <span class="nav-icon">+</span>
-                        @if (!isCollapsed)
-                        {
-                            <span class="nav-text">@Lang.T("Search")</span>
-                        }
-                    </NavLink>
                     <NavLink class="nav-link" href="player">
                         <span class="nav-icon">▶︎</span>
                         @if (!isCollapsed)
                         {
                             <span class="nav-text">@Lang.T("Player")</span>
-                        }
-                    </NavLink>
-                    <NavLink class="nav-link" href="map">
-                        <span class="nav-icon">🗺</span>
-                        @if (!isCollapsed)
-                        {
-                            <span class="nav-text">@Lang.T("Map")</span>
                         }
                     </NavLink>
                     <NavLink class="nav-link" href="visualizer">
@@ -64,6 +49,22 @@
                             <span class="nav-text">@Lang.T("Visualizer")</span>
                         }
                     </NavLink>
+                    <NavLink class="nav-link" href="map">
+                        <span class="nav-icon">🗺</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">@Lang.T("Map")</span>
+                        }
+                    </NavLink>
+                    <NavLink class="nav-link" href="search/users">
+                        <span class="nav-icon">+</span>
+                        @if (!isCollapsed)
+                        {
+                            <span class="nav-text">@Lang.T("Connect")</span>
+                        }
+                    </NavLink>
+                    
+                    
                 </div>
 
                 <div class="nav-section">
@@ -269,7 +270,7 @@
     }
 
     .sidebar-logo {
-    height: 72px;
+    height: 60px;
     width: auto;
     object-fit: contain;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);

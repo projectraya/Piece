@@ -172,6 +172,31 @@
             <div style="margin-right: 20px;">
                 <MiniVisualizer />
             </div>
+            @* !!since i started developing the rhythm game but couldn't fix all bugs, i decided to comment out the button for it!!*@
+
+            @* @if (PlayerService.CurrentTrack?.Source == TrackSource.Local &&
+           PlayerService.CurrentTrack.LocalTrackId.HasValue)
+            {
+                <a href="/rhythm-game/@PlayerService.CurrentTrack.LocalTrackId"
+                   style="width: 40px; height: 40px; border-radius: 50%;
+              background: rgba(139,92,246,0.1);
+              border: 2px solid rgba(139,92,246,0.4);
+              display: flex; align-items: center; justify-content: center;
+              color: #8B5CF6; font-size: 16px; text-decoration: none;
+              transition: all 0.3s;"
+                   title="Play in NeonBeat"
+                   onmouseover="this.style.background='rgba(139,92,246,0.3)'"
+                   onmouseout="this.style.background='rgba(139,92,246,0.1)'">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="#888" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3l3 3v3l-3 3-3-3V6l3-3z" />
+                        <path d="M21 12l-3 3h-3l-3-3 3-3h3l3 3z" />
+                        <path d="M12 21l-3-3v-3l3-3 3 3v3l-3 3z" />
+                        <path d="M3 12l3-3h3l3 3-3 3H6l-3-3z" />
+                    </svg>
+                </a>
+            } *@
             <button @onclick="ToggleFavorite"
             style="background: none;
                    border: 2px solid @(PlayerService.CurrentTrack.IsFavorite ? "#10B981" : "#3a3a3a");

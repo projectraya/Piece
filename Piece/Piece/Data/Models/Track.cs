@@ -51,6 +51,8 @@ namespace Piece.Data.Models
 		public bool IsActive { get; set; } = true;
 		public DateTime? ArchivedAt { get; set; }
 
+		public int? DetectedBpm { get; set; }
+
 
 		// Navigation properties
 		public ICollection<PlaylistTrack> PlaylistTracks { get; set; } = new List<PlaylistTrack>();
