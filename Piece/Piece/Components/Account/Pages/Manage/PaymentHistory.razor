@@ -1,5 +1,6 @@
 ﻿@page "/Account/Manage/PaymentHistory"
 @rendermode InteractiveServer
+@inject Services.LanguageService Lang
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
@@ -11,7 +12,7 @@
 <PageTitle>Payment History</PageTitle>
 
 <div class="payment-history-page">
-    <h1 class="page-title">Subscription & Payments</h1>
+    <h1 class="page-title">@Lang.T("Subscription & Payments")</h1>
 
     @if (isLoading)
     {
@@ -27,7 +28,7 @@
     else
     {
         <div class="current-subscription-card">
-            <h2>Current Subscription</h2>
+            <h2>@Lang.T("Current Subscription")</h2>
 
             @if (currentSubscription != null)
             {
@@ -77,13 +78,13 @@
                         @if (currentSubscription.SubscriptionPlan.Price > 0)
                         {
                             <button class="downgrade-btn" @onclick="OpenDowngradeModal">
-                                Downgrade to Free
+                                @Lang.T("Downgrade to Free")
                             </button>
                         }
                         else
                         {
                             <button class="upgrade-btn" @onclick='() => Navigation.NavigateTo("/subscriptions")'>
-                                Upgrade to Premium
+                                @Lang.T("Upgrade to Premium")
                             </button>
                         }
                     </div>
@@ -92,16 +93,16 @@
             else
             {
                 <div class="no-subscription">
-                    <p>You don't have an active subscription.</p>
+                    <p>@Lang.T("You don't have an active subscription.")</p>
                     <button class="get-started-btn" @onclick='() => Navigation.NavigateTo("/subscriptions")'>
-                        Get Started
+                        @Lang.T("Get Started")
                     </button>
                 </div>
             }
         </div>
 
         <div class="payment-history-section">
-            <h2>Payment History</h2>
+            <h2>@Lang.T("Payment History")</h2>
 
             @if (payments.Any())
             {
@@ -164,13 +165,13 @@
             else
             {
                 <div class="no-payments">
-                    <p>No payment history yet.</p>
+                    <p>@Lang.T("No payment history yet.")</p>
                 </div>
             }
         </div>
 
         <div class="subscription-history-section">
-            <h2>Subscription History</h2>
+            <h2>@Lang.T("Subscription History")</h2>
 
             @if (subscriptionHistory.Any())
             {
@@ -209,7 +210,7 @@
             else
             {
                 <div class="no-history">
-                    <p>No subscription history.</p>
+                    <p>@Lang.T("No subscription history.")</p>
                 </div>
             }
         </div>
@@ -220,25 +221,22 @@
         <div class="modal-overlay" @onclick="CloseDowngradeModal">
             <div class="confirm-modal" @onclick:stopPropagation="true">
                 <div class="modal-icon warning">⚠️</div>
-                <h2>Downgrade to Free?</h2>
+                <h2>@Lang.T("Downgrade to Free?")</h2>
                 <p>
-                    You'll still have access to Premium features until
+                    @Lang.T("You'll still have access to Premium features until")
                     <strong>@currentSubscription?.EndDate.ToString("MMMM dd, yyyy")</strong>.
                 </p>
-                <p>After that date, you'll lose access to:</p>
+                <p>@Lang.T("After that date, you'll lose access to:")</p>
                 <ul class="features-lost">
-                    <li>🗺️ Interactive World Map</li>
-                    <li>🎵 High Quality Audio</li>
-                    <li>📥 Music Downloads</li>
-                    <li>🚫 Ad-Free Experience</li>
+                    <li>@Lang.T("Interactive World Map")</li>
                 </ul>
 
                 <div class="modal-actions">
                     <button class="cancel-modal-btn" @onclick="CloseDowngradeModal">
-                        Keep Premium
+                        @Lang.T("Keep Premium")
                     </button>
                     <button class="confirm-downgrade-btn" @onclick="ConfirmDowngrade">
-                        Confirm Downgrade
+                        @Lang.T("Confirm Downgrade")
                     </button>
                 </div>
             </div>

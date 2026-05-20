@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject Services.LanguageService Lang
 @layout AccountLayout
 
 <style>
@@ -121,8 +122,8 @@
 
 <div class="manage-container">
     <div class="manage-header">
-        <h1 class="manage-title">Account Settings</h1>
-        <p class="manage-subtitle">Manage your account preferences and security</p>
+        <h1 class="manage-title">@Lang.T("Account Settings")</h1>
+        <p class="manage-subtitle">@Lang.T("Manage your account preferences and security")</p>
     </div>
 
     <div class="manage-layout">

@@ -11,10 +11,11 @@
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject IdentityUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
+@inject Services.LanguageService Lang
 
 <PageTitle>Manage email</PageTitle>
 
-<h3>Manage email</h3>
+<h3>@Lang.T("Manage email")</h3>
 
 <StatusMessage Message="@message"/>
 <div class="row">
@@ -47,7 +48,7 @@
                 <label for="new-email" class="form-label">New email</label>
                 <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Change email</button>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">@Lang.T("Save")</button>
         </EditForm>
     </div>
 </div>

@@ -21,12 +21,27 @@
     <div style="position: fixed; right: 0; top: 0; width: 380px; height: 100vh; background: #1a1a1a; border-left: 2px solid #8B5CF6; z-index: 9998; padding: 20px; overflow-y: auto; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
             <h3 style="margin: 0; font-size: 18px; font-weight: 700;">@queue.Count @(queue.Count == 1 ? Lang.T("track") : Lang.T("tracks")) @Lang.T("in queue")</h3>
-            <button style="background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 36px; height: 36px; color: white; cursor: pointer; font-size: 20px; transition: all 0.2s;"
+            <button style="
+                background: rgba(255,255,255,0.1);
+                border: none;
+                border-radius: 8px;
+                width: 36px;
+                height: 36px;
+                color: white;
+                cursor: pointer;
+                font-size: 20px;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                "
                     @onclick="ToggleQueue"
                     onmouseover="this.style.background='rgba(255,255,255,0.2)'"
                     onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                <i data-lucide="cancel"></i>
+                <i data-lucide="x" style="display: block; width: 20px; height: 20px;"></i>
             </button>
+
+
         </div>
 
         @if (!queue.Any())
@@ -254,6 +269,12 @@
 
         window.queueDragState.initialized = true;
     };
+
+    window.renderLucideIcons = function () {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    };
 </script>
 
 @code {
@@ -270,15 +291,21 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (isOpen && queue.Any())
+        if (isOpen)
         {
             try
             {
-                if (dotNetHelper == null)
+                if (queue.Any())
                 {
-                    dotNetHelper = DotNetObjectReference.Create<object>(this);
+                    if (dotNetHelper == null)
+                    {
+                        dotNetHelper = DotNetObjectReference.Create<object>(this);
+                    }
+                    await JSRuntime.InvokeVoidAsync("initQueueDragDrop", dotNetHelper);
                 }
-                await JSRuntime.InvokeVoidAsync("initQueueDragDrop", dotNetHelper);
+
+                // Always render Lucide icons when the panel is open
+                await JSRuntime.InvokeVoidAsync("renderLucideIcons");
             }
             catch (Exception ex)
             {
@@ -286,6 +313,8 @@
             }
         }
     }
+
+
 
     [JSInvokable]
     public async Task ReorderQueueFromJS(int fromIndex, int toIndex)

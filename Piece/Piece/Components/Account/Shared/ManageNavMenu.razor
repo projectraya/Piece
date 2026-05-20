@@ -1,6 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Piece.Data
 @inject SignInManager<ApplicationUser> SignInManager
+@inject Services.LanguageService Lang
 
 <style>
     .manage-nav-list {
@@ -41,24 +42,24 @@
 <ul class="manage-nav-list">
     <li>
         <NavLink class="nav-link" href="Account/Manage/PaymentHistory">
-            Payment History
+            @Lang.T("Payment History")
         </NavLink>
     </li>
     <li>
         <NavLink class="nav-link" href="Account/Manage/Email">
-            Email
+            @Lang.T("Email")
         </NavLink>
     </li>
     <li>
         <NavLink class="nav-link" href="Account/Manage/ChangePassword">
-            Password
+            @Lang.T("Password")
         </NavLink>
     </li>
     @if (hasExternalLogins)
     {
         <li>
             <NavLink class="nav-link" href="Account/Manage/ExternalLogins">
-                External Logins
+                @Lang.T("External Logins")
             </NavLink>
         </li>
     }

@@ -244,6 +244,7 @@
 			{ ("bg", "Full Stats") , "Пълна статистика" },
 			{ ("bg", "Your Playlists") , "Твоите Плейлисти" },
 			{ ("bg", "Listening Stats") , "Статистика на слушане" },
+			{ ("bg", "Connect") , "Свържи се" },
 
 
 
@@ -297,6 +298,35 @@
 			
 			// CTA
 			{ ("bg", "Join us in the new way of enjoying music") , "Присъедини се към нас в новия начин за слушане на музика" },
+
+			//Settings
+			{ ("bg", "Account Settings") , "Настройки на акаунта" },
+			{ ("bg", "Manage your account preferences and security") , "Управлявай предпочитанията на акаунта си и сигурността" },
+			{ ("bg", "Payment History") , "История на плащания" },
+			{ ("bg", "Email") , "Имейл" },
+			{ ("bg", "Manage email") , "Промени имейл" },
+			{ ("bg", "Save") , "Запази" },
+			{ ("bg", "Password") , "Парола" },
+			{ ("bg", "Manage password") , "Промени парола" },
+			{ ("bg", "Change email") , "Промени имейл" },
+			{ ("bg", "Change password") , "Промени парола" },
+			{ ("bg", "You don't have an active subscription.") , "Нямаш активиран абонамент." },
+			{ ("bg", "Get Started") , "Започни оттук" },
+			{ ("bg", "Upgrade to Premium") , "Вземи премиум тук" },
+			{ ("bg", "No subscription history.") , "Няма история на абонаменти" },
+			{ ("bg", "Downgrade to Free?") , "Искаш ли да се върнеш към безплатен абонамент?" },
+			{ ("bg", "You'll still have access to Premium features until") , "Все още ще имаш достъп до Премиум функционалности до" },
+			{ ("bg", "After that date, you'll lose access to:") , "След тази дата, ще загубиш достъп до:" },
+			{ ("bg", "Interactive World Map") , "Интерактивна световна карта" },
+			{ ("bg", "Keep Premium") , "Остани с Премиум" },
+			{ ("bg", "Confirm Downgrade") , "Върни се към безплатния план" },
+
+			//Subscription details
+			{ ("bg", "Subscription & Payments") , "Абонамент и плащания" },
+			{ ("bg", "Current Subscription") , "Активен абонамент" },
+			{ ("bg", "Downgrade to Free") , "Върни се към безплатен абонамент" },
+			{ ("bg", "Subscription History") , "История на абонаменти" },
+			{ ("bg", "No payment history yet.") , "Все още няма история на плащания" },
 		};
 	}
 }
