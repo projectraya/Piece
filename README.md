@@ -180,3 +180,14 @@ Unit tests are located in the `Piece.Tests` project and cover core services incl
 ## License
 
 This project was developed as a diploma project. All music in the local library is original or royalty-free. Jamendo tracks are streamed under their respective Creative Commons licenses.
+
+## Images
+<img width="2869" height="1574" alt="image" src="https://github.com/user-attachments/assets/d5023207-9ca0-4752-b5bd-ea9863fce48e" />
+<img width="2873" height="1567" alt="image" src="https://github.com/user-attachments/assets/e69fa4cb-df07-4d21-8b38-1f26be3a5aa2" />
+<img width="2871" height="1564" alt="image" src="https://github.com/user-attachments/assets/7d0f6046-84ed-4190-8a63-531840417845" />
+<img width="2875" height="1567" alt="image" src="https://github.com/user-attachments/assets/748dd795-6f37-4431-9fbc-43518ff92b65" />
+<img width="2870" height="1562" alt="image" src="https://github.com/user-attachments/assets/d9fed139-f558-4a74-8c95-be14ead2170d" />
+
+
+
+
