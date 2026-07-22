@@ -182,11 +182,26 @@ Unit tests are located in the `Piece.Tests` project and cover core services incl
 This project was developed as a diploma project. All music in the local library is original or royalty-free. Jamendo tracks are streamed under their respective Creative Commons licenses.
 
 ## Images
+<img width="2850" height="1515" alt="image" src="https://github.com/user-attachments/assets/86f94cb9-5f9c-4d81-a5a6-9e49a4765b73" />
+<img width="2823" height="1534" alt="image" src="https://github.com/user-attachments/assets/bfd1b10e-6707-4e81-b7e3-5349e96f6207" />
+<img width="2848" height="1533" alt="image" src="https://github.com/user-attachments/assets/a3089c2b-cd9a-484c-a30c-41c8047928e9" />
 <img width="2869" height="1574" alt="image" src="https://github.com/user-attachments/assets/d5023207-9ca0-4752-b5bd-ea9863fce48e" />
 <img width="2873" height="1567" alt="image" src="https://github.com/user-attachments/assets/e69fa4cb-df07-4d21-8b38-1f26be3a5aa2" />
 <img width="2871" height="1564" alt="image" src="https://github.com/user-attachments/assets/7d0f6046-84ed-4190-8a63-531840417845" />
 <img width="2875" height="1567" alt="image" src="https://github.com/user-attachments/assets/748dd795-6f37-4431-9fbc-43518ff92b65" />
 <img width="2870" height="1562" alt="image" src="https://github.com/user-attachments/assets/d9fed139-f558-4a74-8c95-be14ead2170d" />
+<img width="2852" height="1550" alt="image" src="https://github.com/user-attachments/assets/2c748222-9b6a-4e08-bc99-1b4485f91b9e" />
+<img width="2842" height="1549" alt="image" src="https://github.com/user-attachments/assets/69b3d6e9-dd59-4213-8b0b-731fa3223e88" />
+<img width="2845" height="1552" alt="image" src="https://github.com/user-attachments/assets/7070f6fa-e792-4e75-a58c-6d22c165609d" />
+<img width="2835" height="1547" alt="image" src="https://github.com/user-attachments/assets/695f4177-bd74-4a12-ae04-ca67eaae41ea" />
+<img width="2837" height="1550" alt="image" src="https://github.com/user-attachments/assets/5472f30d-5d1f-4c23-813d-255a70c36c41" />
+<img width="2837" height="1550" alt="image" src="https://github.com/user-attachments/assets/b33e453b-e06d-40cb-b43e-420568ced7a6" />
+
+
+
+
+
+
 
 
 
